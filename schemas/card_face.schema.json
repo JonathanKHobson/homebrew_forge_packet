@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Homebrew Forge CardFaceRecord",
+  "type": "object",
+  "required": [
+    "card_id",
+    "face_index",
+    "face_name",
+    "type_line",
+    "frame_type"
+  ],
+  "properties": {
+    "card_id": {
+      "type": "string"
+    },
+    "face_index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "face_name": {
+      "type": "string"
+    },
+    "mana_cost": {
+      "type": "string"
+    },
+    "type_line": {
+      "type": "string"
+    },
+    "oracle_text": {
+      "type": "string"
+    },
+    "flavor_text": {
+      "type": "string"
+    },
+    "power": {
+      "type": "string"
+    },
+    "toughness": {
+      "type": "string"
+    },
+    "loyalty": {
+      "type": "string"
+    },
+    "defense": {
+      "type": "string"
+    },
+    "colors": {
+      "type": "string"
+    },
+    "frame_type": {
+      "type": "string"
+    },
+    "art_id": {
+      "type": "string"
+    },
+    "artist_display": {
+      "type": "string"
+    },
+    "watermark": {
+      "type": "string"
+    },
+    "rules_text_size_hint": {
+      "type": "string"
+    },
+    "rules_text_padding_top": {
+      "type": "number"
+    },
+    "rules_text_padding_right": {
+      "type": "number"
+    },
+    "rules_text_padding_bottom": {
+      "type": "number"
+    },
+    "rules_text_padding_left": {
+      "type": "number"
+    },
+    "layout_variant": {
+      "type": "string"
+    }
+  }
+}

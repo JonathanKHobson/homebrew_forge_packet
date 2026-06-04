@@ -1,0 +1,170 @@
+pack_id: genevensis-local
+name: GenevensiS Local Frames
+version: 2023.09.14
+asset_base_path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14"
+source_summary: Local GenevensiS MSE-style frame and mana-symbol assets supplied by Kyle.
+license_status: user_supplied_private_use
+redistribution_allowed: false
+commit_allowed: false
+supported_layouts:
+  - normal
+  - token
+  - normal_creature
+  - normal_artifact
+  - normal_land
+  - token_creature
+roles:
+  - id: genevensis-frame-creature-w
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: W
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/card/wcard.png
+  - id: genevensis-frame-creature-u
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: U
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/card/ucard.png
+  - id: genevensis-frame-creature-b
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: B
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/card/bcard.png
+  - id: genevensis-frame-creature-r
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: R
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/card/rcard.png
+  - id: genevensis-frame-creature-g
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: G
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/card/gcard.png
+  - id: genevensis-frame-artifact-c
+    role: frame.full_card
+    layout: normal_artifact
+    color_variant: C
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/card/ccard.png
+  - id: genevensis-frame-land-g
+    role: frame.full_card
+    layout: normal_land
+    color_variant: G
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/card/gcard.png
+  - id: genevensis-frame-token-w
+    role: frame.full_card
+    layout: token_creature
+    color_variant: W
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/token/wtoken.png
+  - id: genevensis-pt-w
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: W
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/pt/wpt.png
+  - id: genevensis-pt-u
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: U
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/pt/upt.png
+  - id: genevensis-pt-b
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: B
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/pt/bpt.png
+  - id: genevensis-pt-r
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: R
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/pt/rpt.png
+  - id: genevensis-pt-g
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: G
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/pt/gpt.png
+  - id: genevensis-pt-token-w
+    role: frame.pt_box
+    layout: token_creature
+    color_variant: W
+    required: true
+    path: magic-genevensis-00-main.mse-style/elements/pt/wpt.png
+  - id: genevensis-mana-w
+    role: symbol.mana
+    symbol: w
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/mana_sol_w.png
+  - id: genevensis-mana-u
+    role: symbol.mana
+    symbol: u
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/mana_sol_u.png
+  - id: genevensis-mana-b
+    role: symbol.mana
+    symbol: b
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/mana_sol_b.png
+  - id: genevensis-mana-r
+    role: symbol.mana
+    symbol: r
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/mana_sol_r.png
+  - id: genevensis-mana-g
+    role: symbol.mana
+    symbol: g
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/mana_sol_g.png
+  - id: genevensis-mana-c
+    role: symbol.mana
+    symbol: c
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/mana_sol_c.png
+  - id: genevensis-mana-t
+    role: symbol.mana
+    symbol: t
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/tap.png
+  - id: genevensis-mana-1
+    role: symbol.mana
+    symbol: "1"
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/mana_1.png
+  - id: genevensis-mana-2
+    role: symbol.mana
+    symbol: "2"
+    required: true
+    path: magic-mana-genevensis-large.mse-symbol-font/mana_2.png
+layout_maps:
+  - layout: normal
+    canvas:
+      width: 750
+      height: 1046
+    zones:
+      name: { x: 66, y: 54, w: 500, h: 44 }
+      mana_cost: { x: 535, y: 54, w: 150, h: 44 }
+      art: { x: 66, y: 117, w: 620, h: 455 }
+      type_line: { x: 66, y: 594, w: 620, h: 42 }
+      rules_text: { x: 86, y: 672, w: 570, h: 240 }
+      pt: { x: 589, y: 955, w: 95, h: 45 }
+      footer: { x: 74, y: 1004, w: 600, h: 30 }
+  - layout: token
+    canvas:
+      width: 750
+      height: 1046
+    zones:
+      name: { x: 66, y: 54, w: 500, h: 44 }
+      mana_cost: { x: 535, y: 54, w: 150, h: 44 }
+      art: { x: 66, y: 117, w: 620, h: 455 }
+      type_line: { x: 66, y: 594, w: 620, h: 42 }
+      rules_text: { x: 86, y: 672, w: 570, h: 240 }
+      pt: { x: 589, y: 955, w: 95, h: 45 }
+      footer: { x: 74, y: 1004, w: 600, h: 30 }

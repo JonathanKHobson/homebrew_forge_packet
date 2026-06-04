@@ -1,0 +1,23 @@
+{
+  "name": "homebrew-forge-packet",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.0",
+  "scripts": {
+    "build": "node .tools/pnpm/bin/pnpm.cjs -r build",
+    "typecheck": "node .tools/pnpm/bin/pnpm.cjs -r typecheck",
+    "lint": "node .tools/pnpm/bin/pnpm.cjs -r lint",
+    "test": "node .tools/pnpm/bin/pnpm.cjs -r test",
+    "forge": "node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/forge run cli",
+    "editor": "node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/editor dev"
+  },
+  "dependencies": {
+    "@homebrew-forge/forge": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "6.0.3",
+    "vite": "^4.5.5"
+  }
+}

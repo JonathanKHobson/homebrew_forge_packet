@@ -1,0 +1,10 @@
+set_code: DEMO
+set_name: Demo Homebrew Set
+set_type: custom
+version: 0.1.0
+default_language: en
+default_asset_pack: debug
+default_export_profile: cockatrice
+author: User
+status: draft
+notes: Generic demo set; replace with your own set/deck.

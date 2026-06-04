@@ -1,0 +1,282 @@
+pack_id: figma-mtg-card-assets
+name: Figma MTG Card Assets
+version: 0.1.0
+asset_base_path: "/Users/kyle/Documents/My Games/Magic The Gathering/Magic The Gathering Card Assets"
+source_summary: Local SVG export from the Magic the Gathering Card Designer MTG Community Figma file, with mtg-vectors and Keyrune-compatible symbol sources used alongside it.
+license_status: user_supplied_private_use
+redistribution_allowed: false
+commit_allowed: false
+render_hints:
+  source_profile: figma_mtg_card_assets
+  cover_placeholder_text: true
+  overlay_art_over_frame: true
+supported_layouts:
+  - normal
+  - token
+  - normal_creature
+  - normal_noncreature
+  - normal_artifact
+  - normal_land
+  - token_creature
+  - adventure
+  - saga
+  - vehicle
+roles:
+  - id: figma-frame-creature-w
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: W
+    required: true
+    path: "Card Components/Standard Colors/Frame=Creature, Color=White, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-creature-u
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: U
+    required: true
+    path: "Card Components/Standard Colors/Frame=Creature, Color=Blue, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-creature-b
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: B
+    required: true
+    path: "Card Components/Standard Colors/Frame=Creature, Color=Black, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-creature-r
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: R
+    required: true
+    path: "Card Components/Standard Colors/Frame=Creature, Color=Red, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-creature-g
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: G
+    required: true
+    path: "Card Components/Standard Colors/Frame=Creature, Color=Green, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-creature-m
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: M
+    required: true
+    path: "Card Components/Standard Colors/Frame=Creature, Color=Gold-3+, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-creature-c
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: C
+    required: true
+    path: "Card Components/Standard Colors/Frame=Creature, Color=Colorless, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-artifact-c
+    role: frame.full_card
+    layout: normal_artifact
+    color_variant: C
+    required: true
+    path: "Card Components/Standard Colors/Frame=Noncreature, Color=Artifact, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-noncreature-w
+    role: frame.full_card
+    layout: normal_noncreature
+    color_variant: W
+    required: true
+    path: "Card Components/Standard Colors/Frame=Noncreature, Color=White, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-noncreature-u
+    role: frame.full_card
+    layout: normal_noncreature
+    color_variant: U
+    required: true
+    path: "Card Components/Standard Colors/Frame=Noncreature, Color=Blue, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-noncreature-b
+    role: frame.full_card
+    layout: normal_noncreature
+    color_variant: B
+    required: true
+    path: "Card Components/Standard Colors/Frame=Noncreature, Color=Black, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-noncreature-r
+    role: frame.full_card
+    layout: normal_noncreature
+    color_variant: R
+    required: true
+    path: "Card Components/Standard Colors/Frame=Noncreature, Color=Red, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-noncreature-g
+    role: frame.full_card
+    layout: normal_noncreature
+    color_variant: G
+    required: true
+    path: "Card Components/Standard Colors/Frame=Noncreature, Color=Green, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-noncreature-m
+    role: frame.full_card
+    layout: normal_noncreature
+    color_variant: M
+    required: true
+    path: "Card Components/Standard Colors/Frame=Noncreature, Color=Gold-3+, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-noncreature-c
+    role: frame.full_card
+    layout: normal_noncreature
+    color_variant: C
+    required: true
+    path: "Card Components/Standard Colors/Frame=Noncreature, Color=Colorless, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-land-g
+    role: frame.full_card
+    layout: normal_land
+    color_variant: G
+    required: true
+    path: "Card Components/Standard Colors/Frame=Nonbasic Land, Color=Green, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-land-c
+    role: frame.full_card
+    layout: normal_land
+    color_variant: C
+    required: false
+    path: "Card Components/Standard Colors/Frame=Nonbasic Land, Color=Colorless, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-token-w
+    role: frame.full_card
+    layout: token_creature
+    color_variant: W
+    required: true
+    path: "Card Components/Standard Colors/Frame=Creature, Color=White, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-adventure-g
+    role: frame.full_card
+    layout: adventure
+    color_variant: G
+    required: false
+    path: "Card Components/Standard Colors/Frame=Adventure, Color=Green, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-saga-w
+    role: frame.full_card
+    layout: saga
+    color_variant: W
+    required: false
+    path: "Card Components/Standard Colors/Frame=Saga, Color=White, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-frame-vehicle-c
+    role: frame.full_card
+    layout: vehicle
+    color_variant: C
+    required: false
+    path: "Card Components/Standard Colors/Frame=Vehicle, Color=Colorless, Legendary=No, Holo Stamp=No.svg"
+  - id: figma-pt-base
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: all
+    required: true
+    path: ".base/pt.svg"
+  - id: figma-pt-token
+    role: frame.pt_box
+    layout: token_creature
+    color_variant: all
+    required: true
+    path: ".base/pt.svg"
+  - id: figma-demo-set-symbol
+    role: symbol.set
+    symbol: demo
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/set/M15/C.svg"
+  - id: figma-watermark-planeswalker
+    role: symbol.watermark
+    symbol: planeswalker
+    required: false
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/watermark/planeswalker.svg"
+  - id: figma-mana-w
+    role: symbol.mana
+    symbol: w
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_sol_w.png"
+  - id: figma-mana-u
+    role: symbol.mana
+    symbol: u
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_sol_u.png"
+  - id: figma-mana-b
+    role: symbol.mana
+    symbol: b
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_sol_b.png"
+  - id: figma-mana-r
+    role: symbol.mana
+    symbol: r
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_sol_r.png"
+  - id: figma-mana-g
+    role: symbol.mana
+    symbol: g
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_sol_g.png"
+  - id: figma-mana-c
+    role: symbol.mana
+    symbol: c
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_sol_c.png"
+  - id: figma-mana-t
+    role: symbol.mana
+    symbol: t
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/tap.png"
+  - id: figma-mana-0
+    role: symbol.mana
+    symbol: "0"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_0.png"
+  - id: figma-mana-1
+    role: symbol.mana
+    symbol: "1"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_1.png"
+  - id: figma-mana-2
+    role: symbol.mana
+    symbol: "2"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_2.png"
+  - id: figma-mana-3
+    role: symbol.mana
+    symbol: "3"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_3.png"
+  - id: figma-mana-4
+    role: symbol.mana
+    symbol: "4"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_4.png"
+  - id: figma-mana-5
+    role: symbol.mana
+    symbol: "5"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_5.png"
+  - id: figma-mana-6
+    role: symbol.mana
+    symbol: "6"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_6.png"
+  - id: figma-mana-7
+    role: symbol.mana
+    symbol: "7"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_7.png"
+  - id: figma-mana-8
+    role: symbol.mana
+    symbol: "8"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_8.png"
+  - id: figma-mana-9
+    role: symbol.mana
+    symbol: "9"
+    required: true
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/GenevensiS_Frames_2023_09_14/magic-mana-genevensis-large.mse-symbol-font/mana_9.png"
+layout_maps:
+  - layout: normal
+    canvas:
+      width: 672
+      height: 936
+    zones:
+      name: { x: 50, y: 48, w: 430, h: 52 }
+      mana_cost: { x: 494, y: 52, w: 130, h: 44 }
+      art: { x: 52, y: 106, w: 569, h: 414 }
+      type_line: { x: 50, y: 528, w: 572, h: 53 }
+      rules_text: { x: 60, y: 606, w: 545, h: 214 }
+      pt: { x: 545, y: 822, w: 75, h: 38 }
+      footer: { x: 52, y: 878, w: 568, h: 30 }
+  - layout: token
+    canvas:
+      width: 672
+      height: 936
+    zones:
+      name: { x: 50, y: 48, w: 430, h: 52 }
+      mana_cost: { x: 494, y: 52, w: 130, h: 44 }
+      art: { x: 52, y: 106, w: 569, h: 414 }
+      type_line: { x: 50, y: 528, w: 572, h: 53 }
+      rules_text: { x: 60, y: 606, w: 545, h: 214 }
+      pt: { x: 545, y: 822, w: 75, h: 38 }
+      footer: { x: 52, y: 878, w: 568, h: 30 }

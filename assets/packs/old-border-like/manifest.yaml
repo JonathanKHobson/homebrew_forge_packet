@@ -1,0 +1,11 @@
+pack_id: old-border-like
+name: Old-Border-Like User Asset Pack
+version: 0.1.0
+source_summary: Empty placeholder for private, user-supplied old-border-style assets.
+license_status: user_supplied_private_use
+redistribution_allowed: false
+commit_allowed: false
+supported_layouts: []
+roles: []
+layout_maps: []
+

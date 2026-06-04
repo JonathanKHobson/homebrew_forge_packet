@@ -1,0 +1,51 @@
+{
+  "name": "@homebrew-forge/forge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./reference": {
+      "types": "./dist/reference/catalog.d.ts",
+      "import": "./dist/reference/catalog.js"
+    },
+    "./mana": {
+      "types": "./dist/domain/mana.d.ts",
+      "import": "./dist/domain/mana.js"
+    }
+  },
+  "bin": {
+    "forge": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit --pretty false",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "cli": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "commander": "15.0.0",
+    "csv-parse": "6.2.1",
+    "fast-xml-parser": "5.8.0",
+    "jszip": "3.10.1",
+    "react": "19.2.6",
+    "playwright": "1.60.0",
+    "react-dom": "19.2.6",
+    "yaml": "2.9.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.1",
+    "@types/react": "19.2.15",
+    "@types/pngjs": "6.0.5",
+    "@types/react-dom": "19.2.3",
+    "pngjs": "7.0.0",
+    "tsx": "4.22.4"
+  }
+}

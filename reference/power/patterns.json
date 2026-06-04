@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-04T00:00:00.000Z",
+  "patterns": [
+    {
+      "id": "ward-n",
+      "termId": "keyword-ability:ward",
+      "label": "Ward",
+      "kind": "formula",
+      "match": "\\bward\\s+\\{?(\\d+)\\}?",
+      "base": 0.05,
+      "perUnit": 0.2,
+      "max": 1.25,
+      "rationale": "Ward {1}/{2}/{3} maps to 0.25/0.45/0.65 from the seed table.",
+      "source": "sheet-seed"
+    },
+    {
+      "id": "scry-n",
+      "termId": "keyword-action:scry",
+      "label": "Scry",
+      "kind": "formula",
+      "match": "\\bscry\\s+(\\d+)",
+      "perUnit": 0.25,
+      "max": 1.5,
+      "rationale": "Scry 1 is valued at 0.25 in the seed table.",
+      "source": "sheet-seed"
+    },
+    {
+      "id": "surveil-n",
+      "termId": "keyword-action:surveil",
+      "label": "Surveil",
+      "kind": "formula",
+      "match": "\\bsurveil\\s+(\\d+)",
+      "perUnit": 0.3,
+      "max": 1.8,
+      "rationale": "Surveil is card selection with graveyard setup.",
+      "source": "model-seed"
+    },
+    {
+      "id": "toxic-n",
+      "termId": "keyword-ability:toxic",
+      "label": "Toxic",
+      "kind": "formula",
+      "match": "\\btoxic\\s+(\\d+)",
+      "perUnit": 0.22,
+      "max": 1.4,
+      "rationale": "Poison pressure scales with the toxic value but still needs combat to matter.",
+      "source": "model-seed"
+    },
+    {
+      "id": "amass-n",
+      "termId": "keyword-action:amass",
+      "label": "Amass",
+      "kind": "formula",
+      "match": "\\bamass(?:\\s+\\w+)?\\s+(\\d+)",
+      "perUnit": 0.45,
+      "max": 2.5,
+      "rationale": "Amass creates or grows board stats and scales by N.",
+      "source": "model-seed"
+    },
+    {
+      "id": "draw-card",
+      "label": "Draw a card",
+      "kind": "contextual",
+      "match": "\\bdraw\\s+(?:a|one|1)\\s+cards?\\b",
+      "value": 1.5,
+      "rationale": "One sorcery-speed/ETB draw is valued at 1.5 in the seed table.",
+      "source": "sheet-seed"
+    },
+    {
+      "id": "create-clue",
+      "label": "Create a Clue",
+      "kind": "contextual",
+      "match": "\\bcreate\\s+(?:a|one|1)\\s+clue\\b",
+      "value": 0.8,
+      "rationale": "Clue creation is delayed card draw from the seed table.",
+      "source": "sheet-seed"
+    },
+    {
+      "id": "create-treasure",
+      "label": "Create a Treasure",
+      "kind": "contextual",
+      "match": "\\bcreate\\s+(?:a|one|1)\\s+treasure\\b",
+      "value": 1,
+      "rationale": "Treasure creation is valued at 1.0 in the seed table.",
+      "source": "sheet-seed"
+    },
+    {
+      "id": "create-powerstone",
+      "label": "Create a Powerstone",
+      "kind": "contextual",
+      "match": "\\bcreate\\s+(?:a|one|1)\\s+powerstone\\b",
+      "value": 0.6,
+      "rationale": "Powerstone creation is restricted colorless ramp from the seed table.",
+      "source": "sheet-seed"
+    },
+    {
+      "id": "bounce-nonland",
+      "label": "Bounce nonland permanent",
+      "kind": "contextual",
+      "match": "\\breturn\\s+target\\s+nonland\\s+permanent\\b[^.]*\\bto\\s+its\\s+owner",
+      "value": 1.2,
+      "rationale": "Sorcery-speed bounce target nonland permanent is valued at 1.2 in the seed table.",
+      "source": "sheet-seed"
+    },
+    {
+      "id": "destroy-tapped",
+      "label": "Destroy tapped creature",
+      "kind": "contextual",
+      "match": "\\bdestroy\\s+target\\s+tapped\\s+creature\\b",
+      "value": 1.8,
+      "rationale": "Destroy target tapped creature is valued at 1.8 in the seed table.",
+      "source": "sheet-seed"
+    }
+  ]
+}

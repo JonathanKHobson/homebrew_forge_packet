@@ -1,0 +1,249 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-04T00:00:00.000Z",
+  "model": "effect-minus-allowance",
+  "seedSources": [
+    "Jonathan Kyle Hobson Preview__Weights_table.csv",
+    "Homebrew Forge reference catalog",
+    "Wizards keyword and comprehensive-rules references"
+  ],
+  "categoryTreatments": {
+    "keyword-ability": {
+      "kind": "needs-review",
+      "confidence": 0.35,
+      "source": "category-policy",
+      "rationale": "Keyword abilities need direct weights or formulas before they can safely affect the score."
+    },
+    "keyword-action": {
+      "kind": "needs-review",
+      "confidence": 0.35,
+      "source": "category-policy",
+      "rationale": "Keyword actions need effect-specific parsing before they can safely affect the score."
+    },
+    "ability-word": {
+      "kind": "contextual",
+      "confidence": 0.55,
+      "source": "category-policy",
+      "rationale": "Ability words have no rules meaning; score the actual rules text that follows them."
+    },
+    "token": {
+      "kind": "contextual",
+      "confidence": 0.55,
+      "source": "category-policy",
+      "rationale": "Token terms score when a card creates or modifies the token, not by name alone."
+    },
+    "counter": {
+      "kind": "contextual",
+      "confidence": 0.55,
+      "source": "category-policy",
+      "rationale": "Counter terms score when a card places, uses, or removes the counter."
+    },
+    "subtype": {
+      "kind": "neutral",
+      "confidence": 0.8,
+      "source": "category-policy",
+      "rationale": "Most subtypes do not change standalone card strength unless the rules text uses them."
+    },
+    "supertype": {
+      "kind": "neutral",
+      "confidence": 0.8,
+      "source": "category-policy",
+      "rationale": "Most supertypes are identity or deck-building signals unless a term-specific treatment overrides them."
+    },
+    "card-type": {
+      "kind": "contextual",
+      "confidence": 0.65,
+      "source": "category-policy",
+      "rationale": "Card types affect timing, stats, and frame expectations through card-level scoring rules."
+    },
+    "homebrew": {
+      "kind": "needs-review",
+      "confidence": 0.3,
+      "source": "category-policy",
+      "rationale": "Homebrew mechanics should be reviewed before they affect the score."
+    },
+    "action-phrase": {
+      "kind": "needs-review",
+      "confidence": 0.35,
+      "source": "category-policy",
+      "rationale": "Action phrases need effect-specific parsing before they can safely affect the score."
+    },
+    "mana-color": {
+      "kind": "neutral",
+      "confidence": 0.75,
+      "source": "category-policy",
+      "rationale": "Mana colors are handled by mana-cost and color-restriction scoring."
+    },
+    "frame": {
+      "kind": "neutral",
+      "confidence": 0.7,
+      "source": "category-policy",
+      "rationale": "Frame terms do not change standalone card strength."
+    }
+  },
+  "termTreatments": {
+    "keyword-ability:flying": {
+      "kind": "direct",
+      "value": 0.7,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Strong evergreen evasion from the original weight table."
+    },
+    "keyword-ability:vigilance": {
+      "kind": "direct",
+      "value": 0.3,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Evergreen combat flexibility from the original weight table."
+    },
+    "keyword-ability:reach": {
+      "kind": "direct",
+      "value": 0.3,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Defensive anti-evasion value from the original weight table."
+    },
+    "keyword-ability:menace": {
+      "kind": "direct",
+      "value": 0.5,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Moderate evergreen evasion from the original weight table."
+    },
+    "keyword-ability:deathtouch": {
+      "kind": "direct",
+      "value": 0.7,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Combat and blocking pressure from the original weight table."
+    },
+    "keyword-ability:haste": {
+      "kind": "direct",
+      "value": 0.5,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Tempo value from attacking or tapping immediately."
+    },
+    "keyword-ability:lifelink": {
+      "kind": "direct",
+      "value": 0.6,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Race-swinging evergreen value from the original weight table."
+    },
+    "keyword-ability:flanking": {
+      "kind": "direct",
+      "value": 0.4,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Classic evasion-adjacent blocker penalty from the original weight table."
+    },
+    "keyword-ability:training": {
+      "kind": "direct",
+      "value": 0.3,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Conditional growth from the original weight table."
+    },
+    "keyword-ability:mentor": {
+      "kind": "direct",
+      "value": 0.4,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Attacking-team growth from the original weight table."
+    },
+    "keyword-ability:trample": {
+      "kind": "direct",
+      "value": 0.5,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Combat damage carryover is a moderate evergreen upside."
+    },
+    "keyword-ability:first-strike": {
+      "kind": "direct",
+      "value": 0.45,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Combat survivability and attack pressure."
+    },
+    "keyword-ability:double-strike": {
+      "kind": "direct",
+      "value": 1,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Large combat multiplier that often doubles damage output."
+    },
+    "keyword-ability:flash": {
+      "kind": "direct",
+      "value": 0.35,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Timing flexibility, especially on creatures and interaction."
+    },
+    "keyword-ability:hexproof": {
+      "kind": "direct",
+      "value": 0.9,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Strong protection from targeted interaction."
+    },
+    "keyword-ability:indestructible": {
+      "kind": "direct",
+      "value": 1.1,
+      "confidence": 0.7,
+      "source": "sheet-seed",
+      "rationale": "Strong resilience against destroy effects and damage."
+    },
+    "keyword-ability:ward": {
+      "kind": "formula",
+      "confidence": 0.72,
+      "source": "seed-pattern",
+      "rationale": "Ward scales with its cost; the pattern table converts the numeric value."
+    },
+    "keyword-ability:toxic": {
+      "kind": "formula",
+      "confidence": 0.58,
+      "source": "seed-pattern",
+      "rationale": "Toxic scales by the poison amount and needs combat context."
+    },
+    "keyword-action:scry": {
+      "kind": "formula",
+      "confidence": 0.7,
+      "source": "seed-pattern",
+      "rationale": "Scry scales by N using the original weight table."
+    },
+    "keyword-action:surveil": {
+      "kind": "formula",
+      "confidence": 0.68,
+      "source": "seed-pattern",
+      "rationale": "Surveil scales like card selection with graveyard upside."
+    },
+    "keyword-action:investigate": {
+      "kind": "direct",
+      "value": 0.8,
+      "confidence": 0.72,
+      "source": "sheet-seed",
+      "rationale": "Investigate creates a Clue, valued as delayed card draw in the original weight table."
+    },
+    "keyword-action:goad": {
+      "kind": "direct",
+      "value": 0.6,
+      "confidence": 0.65,
+      "source": "sheet-seed",
+      "rationale": "One-shot goad value from the original weight table."
+    },
+    "keyword-action:amass": {
+      "kind": "formula",
+      "confidence": 0.58,
+      "source": "seed-pattern",
+      "rationale": "Amass scales by the created or grown Army size."
+    },
+    "supertype:legendary": {
+      "kind": "direct",
+      "value": 0.1,
+      "confidence": 0.5,
+      "source": "sheet-seed",
+      "rationale": "Minor commander/tutoring identity upside from the original weight table."
+    }
+  }
+}

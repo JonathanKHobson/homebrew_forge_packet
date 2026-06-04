@@ -1,0 +1,165 @@
+pack_id: private-mtg-style
+name: Private MTG-Style Composited Frame Pack
+version: 0.1.0
+source_summary: Local private frame and icon files supplied by the user.
+license_status: user_supplied_private_use
+redistribution_allowed: false
+commit_allowed: false
+supported_layouts:
+  - normal_creature
+  - normal_artifact
+  - normal_enchantment
+  - normal_instant
+  - normal_sorcery
+  - normal_land
+  - token_creature
+  - planeswalker
+  - saga
+  - battle
+  - vehicle
+  - equipment
+  - aura
+roles:
+  - id: frame-normal-creature-w
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: W
+    required: true
+    path: frames/full-card/normal_creature/W.png
+  - id: frame-normal-creature-u
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: U
+    required: true
+    path: frames/full-card/normal_creature/U.png
+  - id: frame-normal-creature-b
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: B
+    required: true
+    path: frames/full-card/normal_creature/B.png
+  - id: frame-normal-creature-r
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: R
+    required: true
+    path: frames/full-card/normal_creature/R.png
+  - id: frame-normal-creature-g
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: G
+    required: true
+    path: frames/full-card/normal_creature/G.png
+  - id: frame-normal-creature-c
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: C
+    required: true
+    path: frames/full-card/normal_creature/C.png
+  - id: frame-normal-artifact
+    role: frame.full_card
+    layout: normal_artifact
+    color_variant: C
+    required: true
+    path: frames/full-card/normal_artifact/C.png
+  - id: frame-normal-instant-u
+    role: frame.full_card
+    layout: normal_instant
+    color_variant: U
+    required: true
+    path: frames/full-card/normal_instant/U.png
+  - id: frame-normal-sorcery-r
+    role: frame.full_card
+    layout: normal_sorcery
+    color_variant: R
+    required: true
+    path: frames/full-card/normal_sorcery/R.png
+  - id: frame-normal-land
+    role: frame.full_card
+    layout: normal_land
+    color_variant: G
+    required: true
+    path: frames/full-card/normal_land/G.png
+  - id: frame-token-creature-w
+    role: frame.full_card
+    layout: token_creature
+    color_variant: W
+    required: true
+    path: frames/full-card/token_creature/W.png
+  - id: art-mask-normal
+    role: mask.art
+    layout: normal
+    color_variant: all
+    required: false
+    path: masks/art/normal.png
+  - id: mana-w
+    role: symbol.mana
+    symbol: w
+    required: true
+    path: symbols/mana/W.png
+  - id: mana-u
+    role: symbol.mana
+    symbol: u
+    required: true
+    path: symbols/mana/U.png
+  - id: mana-b
+    role: symbol.mana
+    symbol: b
+    required: true
+    path: symbols/mana/B.png
+  - id: mana-r
+    role: symbol.mana
+    symbol: r
+    required: true
+    path: symbols/mana/R.png
+  - id: mana-g
+    role: symbol.mana
+    symbol: g
+    required: true
+    path: symbols/mana/G.png
+  - id: mana-c
+    role: symbol.mana
+    symbol: c
+    required: true
+    path: symbols/mana/C.png
+  - id: mana-tap
+    role: symbol.mana
+    symbol: t
+    required: true
+    path: symbols/mana/T.png
+  - id: mana-x
+    role: symbol.mana
+    symbol: x
+    required: true
+    path: symbols/mana/X.png
+  - id: set-demo
+    role: symbol.set
+    symbol: demo
+    required: false
+    path: symbols/sets/DEMO.png
+layout_maps:
+  - layout: normal
+    canvas:
+      width: 744
+      height: 1039
+    zones:
+      name: { x: 62, y: 48, w: 470, h: 44 }
+      mana_cost: { x: 535, y: 48, w: 145, h: 44 }
+      art: { x: 67, y: 105, w: 610, h: 445 }
+      type_line: { x: 62, y: 562, w: 620, h: 42 }
+      rules_text: { x: 77, y: 630, w: 585, h: 245 }
+      pt: { x: 570, y: 882, w: 95, h: 45 }
+      footer: { x: 62, y: 943, w: 620, h: 42 }
+  - layout: token
+    canvas:
+      width: 744
+      height: 1039
+    zones:
+      name: { x: 62, y: 48, w: 470, h: 44 }
+      mana_cost: { x: 535, y: 48, w: 145, h: 44 }
+      art: { x: 67, y: 105, w: 610, h: 445 }
+      type_line: { x: 62, y: 562, w: 620, h: 42 }
+      rules_text: { x: 77, y: 630, w: 585, h: 245 }
+      pt: { x: 570, y: 882, w: 95, h: 45 }
+      footer: { x: 62, y: 943, w: 620, h: 42 }
+

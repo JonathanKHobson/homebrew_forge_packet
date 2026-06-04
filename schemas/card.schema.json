@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Homebrew Forge CardRecord",
+  "type": "object",
+  "required": [
+    "card_id",
+    "set_code",
+    "collector_number",
+    "name",
+    "layout",
+    "mode",
+    "rarity",
+    "status"
+  ],
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "set_code": {
+      "type": "string"
+    },
+    "collector_number": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "layout": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "split",
+        "flip",
+        "transform",
+        "modal_dfc",
+        "meld",
+        "adventure",
+        "saga",
+        "class",
+        "case",
+        "battle",
+        "plane",
+        "scheme",
+        "phenomenon",
+        "vanguard",
+        "dungeon",
+        "token"
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "custom",
+        "reskin",
+        "token",
+        "imported",
+        "placeholder"
+      ]
+    },
+    "source_card_name": {
+      "type": "string"
+    },
+    "source_set_code": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string",
+      "enum": [
+        "common",
+        "uncommon",
+        "rare",
+        "mythic",
+        "special",
+        "bonus",
+        "token"
+      ]
+    },
+    "color_identity": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idea",
+        "draft",
+        "review",
+        "playtest",
+        "final",
+        "cut"
+      ]
+    },
+    "print_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "export_name_override": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

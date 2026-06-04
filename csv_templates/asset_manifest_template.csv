@@ -1,0 +1,4 @@
+asset_id,pack_id,role,layout,color_variant,relative_path,source_id,license,redistribution_allowed,commit_allowed,checksum_sha256,notes
+frame-debug-normal,debug,frame.background,normal,all,frames/debug-normal.svg,debug,internal,true,true,,Debug only
+mana-symbols,mana-font,symbol.mana,all,all,fonts/mana.css,mana-font,SIL-OFL/MIT mixed,check,false,,Review package license
+set-symbols,keyrune,symbol.set,all,all,fonts/keyrune.css,keyrune,SIL-OFL/GPL mixed,check,false,,Review package license

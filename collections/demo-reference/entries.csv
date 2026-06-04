@@ -1,0 +1,3 @@
+collection_id,entry_id,quantity,card_name,set_code,set_name,collector_number,scryfall_id,finish,condition,language,location,source,source_row,match_key,match_strategy,review_status,review_notes
+demo-reference,entry-demo-sol-ring,1,Sol Ring,CMM,Commander Masters,703,,nonfoil,Near Mint,English,Demo Binder,generic,,Sol Ring::CMM::703,set_number,matched,
+demo-reference,entry-demo-mystery,1,Mystery Booster Test Card,,,,,nonfoil,Unknown,English,Review Stack,generic,,,unresolved,needs_review,Missing set code or Scryfall id.

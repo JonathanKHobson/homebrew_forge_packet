@@ -1,0 +1,17 @@
+node_modules/
+.pnpm-store/
+.tools/
+dist/
+packages/*/dist/
+coverage/
+output/
+output-*/
+.tmp/
+reference/official/history/
+reference/official/reports/
+*.tsbuildinfo
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store

@@ -1,0 +1,26 @@
+project:
+  name: Homebrew Forge
+  data_dir: sets
+  output_dir: output
+  asset_dir: assets/packs
+  reference_cache_dir: reference-cache
+
+validation:
+  fail_on_missing_art: false
+  fail_on_missing_asset: true
+  default_rules_lint_severity: warning
+
+rendering:
+  default_asset_pack: debug
+  default_export_profile: cockatrice
+  changed_card_cache: true
+
+reference:
+  enable_scryfall: true
+  enable_mtgjson: true
+  offline_mode: false
+
+safety:
+  require_playtest_watermark: true
+  allow_counterfeit_like_output: false
+  require_asset_license_metadata: true

@@ -1,0 +1,309 @@
+import type {
+  CardRecord,
+  CardFaceRecord,
+  CollectionExportResult,
+  CollectionExportTarget,
+  CollectionEntry,
+  CollectionImportMode,
+  CollectionImportResult,
+  CollectionImportSummary,
+  CollectionPurpose,
+  CollectionSourcePreset,
+  CollectionState,
+  CollectionSummary,
+  CreateCollectionRequest,
+  CreateDeckRequest as ForgeCreateDeckRequest,
+  DeckCardOption,
+  DeckEntry,
+  DeckExportResult,
+  DeckMetadata,
+  DeckState,
+  DeckSummary,
+  SaveDeckRequest
+} from '@homebrew-forge/forge';
+import type { CardPowerAssessment } from '@homebrew-forge/forge';
+
+export interface UniverseSummary {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  tags?: string[];
+}
+
+export interface SetSummary {
+  setCode: string;
+  setName: string;
+  universeId: string;
+  status: string;
+  tags: string[];
+  cardCount: number;
+  sortOrder: number;
+}
+
+export interface LibraryState {
+  universes: UniverseSummary[];
+  sets: SetSummary[];
+  selectedUniverseId: string;
+  selectedSetCode: string;
+}
+
+export type { DeckCardOption, DeckEntry, DeckExportResult, DeckMetadata, DeckState, DeckSummary, ForgeCreateDeckRequest as CreateDeckRequest, SaveDeckRequest };
+export type {
+  CollectionExportResult,
+  CollectionExportTarget,
+  CollectionEntry,
+  CollectionImportMode,
+  CollectionImportResult,
+  CollectionImportSummary,
+  CollectionPurpose,
+  CollectionSourcePreset,
+  CollectionState,
+  CollectionSummary,
+  CreateCollectionRequest
+};
+
+export interface CreateSetRequest {
+  universeId: string;
+  universeName?: string;
+  setCode: string;
+  setName: string;
+  author?: string;
+  status?: string;
+  tags?: string[];
+  notes?: string;
+}
+
+export interface CreateUniverseRequest {
+  name: string;
+  description?: string;
+  status?: string;
+  tags?: string[];
+}
+
+export interface UpdateUniverseRequest {
+  universeId: string;
+  name: string;
+  description?: string;
+  status?: string;
+  tags?: string[];
+}
+
+export interface UpdateSetRequest {
+  setCode: string;
+  setName: string;
+  status: string;
+  universeId: string;
+  tags?: string[];
+}
+
+export type ExportSourceTarget =
+  | 'set_csv'
+  | 'cards_csv'
+  | 'faces_csv'
+  | 'art_csv'
+  | 'profiles_csv'
+  | 'print_pdf'
+  | 'cockatrice_xml'
+  | 'cockatrice_zip';
+
+export interface ExportSourceRequest {
+  setCode: string;
+  target: ExportSourceTarget;
+}
+
+export interface ExportSourceResult {
+  filename: string;
+  mimeType: string;
+  encoding: 'text' | 'base64';
+  content: string;
+  sync?: CockatriceSyncResult;
+}
+
+export interface EditorProject {
+  setCode: string;
+  setName: string;
+  language: string;
+  designer: string;
+  assetPackId: string;
+  cards: CardSummary[];
+  drafts: CardDraft[];
+  libraryAssets: LibraryAssetSummary[];
+  frames: FrameOption[];
+  discoveredFrameFamilies: string[];
+  lastCockatriceSync?: CockatriceSyncResult;
+}
+
+export interface LibraryAssetSummary {
+  artId: string;
+  name: string;
+  assetType: string;
+  filePath: string;
+  sourceUrl: string;
+  sourceType: string;
+  artist: string;
+  license: string;
+  permissionStatus: string;
+  notes: string;
+  assignedCards: Array<{ cardId: string; name: string }>;
+}
+
+export interface CreateLibraryAssetRequest {
+  setCode: string;
+  artId: string;
+  assetType: string;
+  sourceMode: 'upload' | 'url' | 'local';
+  dataUri?: string;
+  filename?: string;
+  filePath?: string;
+  sourceUrl?: string;
+  artist?: string;
+  license?: string;
+  permissionStatus?: string;
+  notes?: string;
+  assignedCardIds?: string[];
+}
+
+export interface CardSummary {
+  cardId: string;
+  collectorNumber: string;
+  name: string;
+  typeLine: string;
+  rarity: CardRecord['rarity'];
+  colors: string;
+  layout: CardRecord['layout'];
+  frameType: string;
+  status: CardRecord['status'];
+  tags: string[];
+  notes: string;
+  manaCost: string;
+  colorIdentity: string;
+  oracleText: string;
+  flavorText: string;
+  power: string;
+  toughness: string;
+  hasArt: boolean;
+  needsReview: boolean;
+}
+
+export interface CardDraft {
+  cardId: string;
+  setCode: string;
+  setName: string;
+  collectorNumber: string;
+  setTotal: string;
+  language: string;
+  designer: string;
+  name: string;
+  manaCost: string;
+  rarity: CardRecord['rarity'];
+  layout: CardRecord['layout'];
+  mode: CardRecord['mode'];
+  frameType: string;
+  frameOverrideId: string;
+  supertypes: string[];
+  cardTypes: string[];
+  subtypes: string;
+  typeLine: string;
+  oracleText: string;
+  flavorText: string;
+  rulesTextSize: string;
+  rulesTextPaddingTop: string;
+  rulesTextPaddingRight: string;
+  rulesTextPaddingBottom: string;
+  rulesTextPaddingLeft: string;
+  rulesTextReminderMode: CardFaceRecord['rulesTextReminderMode'];
+  power: string;
+  toughness: string;
+  loyalty: string;
+  planeswalkerAbilityCount: '3' | '4';
+  planeswalkerAbility1Cost: string;
+  planeswalkerAbility1Text: string;
+  planeswalkerAbility2Cost: string;
+  planeswalkerAbility2Text: string;
+  planeswalkerAbility3Cost: string;
+  planeswalkerAbility3Text: string;
+  planeswalkerAbility4Cost: string;
+  planeswalkerAbility4Text: string;
+  colors: string;
+  colorIndicator: string;
+  borderColor: 'black' | 'white' | 'silver' | 'gold';
+  foilTreatment: 'none' | 'foil' | 'etched' | 'showcase';
+  artId: string;
+  artFilePath: string;
+  artUrl: string;
+  artDataUri?: string;
+  artPositionX: string;
+  artPositionY: string;
+  artScale: string;
+  artCropX: string;
+  artCropY: string;
+  artCropW: string;
+  artCropH: string;
+  artist: string;
+  setSymbolPath: string;
+  setSymbolUrl: string;
+  watermark: string;
+  status: CardRecord['status'];
+  tags: string[];
+  notes: string;
+  creationStatus?: CardRecord['status'];
+  creationNotes?: string;
+  sourceCard?: CardRecord;
+  sourceFace?: CardFaceRecord;
+}
+
+export interface FrameOption {
+  id: string;
+  label: string;
+  family: string;
+  layout: CardRecord['layout'];
+  frameType: string;
+  renderable: boolean;
+  description: string;
+  supportedTypes: string[];
+  source: 'basic-m15' | 'full-magic-pack' | 'planned';
+}
+
+export interface PreviewResponse {
+  imageDataUri?: string;
+  warnings: string[];
+  inferredFrame: FrameOption;
+  powerAssessment?: CardPowerAssessment;
+}
+
+export interface ImportCardsRequest {
+  setCode: string;
+  format: 'csv' | 'xml' | 'cockatrice' | 'planesculptors';
+  mode: 'append' | 'replace';
+  content: string;
+  dryRun?: boolean;
+}
+
+export interface ImportCardsSummary {
+  importedCards: number;
+  importedFaces: number;
+  artReferences: number;
+  missingArt: number;
+  legacyRenderReferences: number;
+  editableArtNeeded: number;
+  parsedTokens: number;
+  parsedSagas: number;
+  possibleTransformCards: number;
+  unsupportedLayouts: Array<{ layout: string; count: number }>;
+  duplicates: Array<{ collectorNumber: string; cardIds: string[] }>;
+  warnings: Array<{ code: string; severity: string; cardId?: string; collectorNumber?: string; name?: string; message: string }>;
+  rawSourcePath?: string;
+  reportPath?: string;
+  mode: 'append' | 'replace';
+  sourceFormat: ImportCardsRequest['format'];
+  dryRun: boolean;
+  markdownSummary: string;
+}
+
+export interface CockatriceSyncResult {
+  xmlPath: string;
+  zipPath?: string;
+  imageCount: number;
+  warnings: string[];
+}

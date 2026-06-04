@@ -1,0 +1,16 @@
+deck_id,section,count,set_code,card_id,name_snapshot
+demo-showcase,main,4,DEMO,DEMO-001,Example Vanguard
+demo-showcase,main,3,DEMO,DEMO-002,Clockwork Relic
+demo-showcase,main,4,DEMO,DEMO-003,Hidden Orchard
+demo-showcase,main,2,DEMO,DEMO-004,Aegis of Dawn
+demo-showcase,main,3,DEMO,DEMO-005,Arcane Insight
+demo-showcase,main,2,DEMO,DEMO-006,Rally the Gate
+demo-showcase,main,1,DEMO,DEMO-007,"Mira, Demo Seer"
+demo-showcase,main,1,DEMO,DEMO-008,Fourfold Mentor
+demo-showcase,side,2,DEMO,DEMO-T01,Soldier Token
+demo-showcase,side,1,DEMO,DEMO-T02,Full-Art Soldier
+demo-showcase,side,1,DEMO,DEMO-002,Clockwork Relic
+demo-showcase,side,1,DEMO,DEMO-004,Aegis of Dawn
+demo-showcase,maybe,1,DEMO,DEMO-007,"Mira, Demo Seer"
+demo-showcase,maybe,1,DEMO,DEMO-008,Fourfold Mentor
+demo-showcase,maybe,2,DEMO,DEMO-006,Rally the Gate

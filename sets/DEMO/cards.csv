@@ -1,0 +1,11 @@
+card_id,set_code,collector_number,name,layout,mode,source_card_name,source_set_code,rarity,color_identity,tags,status,print_count,export_name_override,notes
+DEMO-001,DEMO,001,Example Vanguard,normal,custom,,,rare,W,creature,review,1,,Demo creature template
+DEMO-002,DEMO,002,Clockwork Relic,normal,custom,,,uncommon,C,artifact,draft,1,,Demo artifact template
+DEMO-003,DEMO,003,Hidden Orchard,normal,custom,,,common,G,land,draft,1,,Demo land template
+DEMO-004,DEMO,004,Aegis of Dawn,normal,custom,,,uncommon,W,enchantment,draft,1,,Demo enchantment template
+DEMO-005,DEMO,005,Arcane Insight,normal,custom,,,common,U,instant,draft,1,,Demo instant template
+DEMO-006,DEMO,006,Rally the Gate,normal,custom,,,common,R,sorcery,draft,1,,Demo sorcery template
+DEMO-007,DEMO,007,"Mira, Demo Seer",normal,custom,,,mythic,U,planeswalker;three-ability,draft,1,,Demo three ability planeswalker template
+DEMO-008,DEMO,008,Fourfold Mentor,normal,custom,,,mythic,WU,planeswalker;four-ability,draft,1,,Demo four ability planeswalker template
+DEMO-T01,DEMO,T01,Soldier Token,token,token,,,token,W,creature;frame-token,draft,4,,Demo text token frame
+DEMO-T02,DEMO,T02,Full-Art Soldier,token,token,,,token,W,creature;frame-token;full-art,draft,4,,Demo full art token frame

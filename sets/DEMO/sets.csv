@@ -1,0 +1,2 @@
+set_code,set_name,set_type,version,default_language,default_asset_pack,default_export_profile,author,status,tags,notes
+DEMO,Demo Homebrew Set,custom,0.1.0,en,basic-m15-local,cockatrice,Jonathan Kyle Hobson,draft,demo,Generic demo set for the first vertical slice

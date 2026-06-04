@@ -1,0 +1,2 @@
+set_code,set_name,set_type,version,default_language,default_asset_pack,default_export_profile,author,status,tags,notes
+UNGRP,Ungrouped Cards,holding,0.1.0,en,basic-m15-local,cockatrice,Jonathan Kyle Hobson,draft,holding,Holding set for cards that are not assigned to a production set yet

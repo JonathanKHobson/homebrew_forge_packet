@@ -1,0 +1,352 @@
+@page {
+  size: Letter;
+  margin: 0;
+}
+
+:root {
+  --page-width: 8.5in;
+  --page-height: 11in;
+  --card-width: 2.5in;
+  --card-height: 3.5in;
+  --ink: #191919;
+  --muted: #555;
+  --line: #1f1f1f;
+  --paper: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: #e8e8e8;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+section {
+  break-after: page;
+  page-break-after: always;
+}
+
+.cover-page {
+  width: var(--page-width);
+  height: var(--page-height);
+  padding: 0.58in 0.62in;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  gap: 0.22in;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 10pt;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cover-page h1 {
+  margin: 0;
+  max-width: 6.7in;
+  font-size: 34pt;
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 6.6in;
+  color: var(--muted);
+  font-size: 14pt;
+  line-height: 1.35;
+}
+
+.cover-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.14in;
+  margin-top: 0.1in;
+}
+
+.cover-block {
+  min-height: 1.33in;
+  border: 2px solid var(--line);
+  padding: 0.16in;
+}
+
+.cover-block h2 {
+  margin: 0 0 0.08in;
+  font-size: 14pt;
+}
+
+.cover-block p,
+.fine-print {
+  margin: 0;
+  font-size: 10.5pt;
+  line-height: 1.35;
+}
+
+.fine-print {
+  margin-top: auto;
+  padding-top: 0.16in;
+  border-top: 2px solid var(--line);
+}
+
+.sheet-page {
+  width: var(--page-width);
+  height: var(--page-height);
+  padding: 0.25in 0.5in;
+  background: var(--paper);
+  display: grid;
+  grid-template-columns: repeat(3, var(--card-width));
+  grid-template-rows: repeat(3, var(--card-height));
+}
+
+.aid-card {
+  position: relative;
+  width: var(--card-width);
+  height: var(--card-height);
+  overflow: hidden;
+  border: 1.5px dashed #222;
+  border-radius: 0;
+  padding: 0.15in 0.14in 0.13in;
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(90deg, var(--accent, #777) 0 0.08in, transparent 0.08in),
+    repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.035) 0 1px, transparent 1px 0.14in),
+    #fff;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.08in;
+  min-height: 0.25in;
+}
+
+.card-kind,
+.card-tag {
+  font-size: 6.8pt;
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.card-tag {
+  color: var(--muted);
+  text-align: right;
+}
+
+.aid-card h2 {
+  margin: 0.12in 0 0.04in;
+  font-size: 22pt;
+  line-height: 1;
+  letter-spacing: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.aid-card[data-card-id="attached"] h2,
+.aid-card[data-card-id="wastelandGuide"] h2 {
+  font-size: 19pt;
+}
+
+.type-line {
+  margin: 0;
+  padding-bottom: 0.07in;
+  border-bottom: 1px solid #333;
+  font-size: 9.5pt;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.rules {
+  margin: 0.12in 0 0;
+  font-size: 12.2pt;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.write-line {
+  margin-top: 0.16in;
+  padding-top: 0.18in;
+  border-bottom: 1.5px solid #222;
+  color: var(--muted);
+  font-size: 9pt;
+}
+
+.card-bottom {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 0.08in;
+  font-size: 6.8pt;
+  font-weight: 700;
+}
+
+.pt {
+  min-width: 0.58in;
+  padding: 0.03in 0.06in;
+  border: 1.5px solid #222;
+  text-align: center;
+  font-size: 14pt;
+}
+
+.accent-green { --accent: #57965a; }
+.accent-blackgreen { --accent: #315741; }
+.accent-gray { --accent: #787878; }
+.accent-gold { --accent: #b18a2f; }
+.accent-blue { --accent: #4f7ba9; }
+.accent-purple { --accent: #7665a7; }
+.accent-black { --accent: #292929; }
+.accent-rust { --accent: #9a6542; }
+.accent-white { --accent: #d9d3b8; }
+.accent-lime { --accent: #8ca63f; }
+.accent-red { --accent: #a8584c; }
+
+.counter-page {
+  width: var(--page-width);
+  height: var(--page-height);
+  padding: 0.35in 0.5in;
+  background: var(--paper);
+  display: grid;
+  grid-template-columns: 2.45in 1fr;
+  grid-template-rows: 4.4in 1fr;
+  gap: 0.18in;
+}
+
+.counter-info {
+  border: 2px solid var(--line);
+  padding: 0.18in;
+}
+
+.counter-info h2 {
+  margin: 0.15in 0 0.12in;
+  font-size: 21pt;
+  line-height: 1.05;
+}
+
+.counter-info p {
+  margin: 0 0 0.12in;
+  font-size: 10.5pt;
+  line-height: 1.35;
+}
+
+.counter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 0.68in;
+  border-top: 1.5px dashed #222;
+  border-left: 1.5px dashed #222;
+}
+
+.counter-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1.5px dashed #222;
+  border-bottom: 1.5px dashed #222;
+  font-size: 14pt;
+  font-weight: 700;
+}
+
+.strip-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.12in;
+}
+
+.counter-strip {
+  min-height: 0.72in;
+  border: 1.5px dashed #222;
+  padding: 0.1in 0.14in;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.06in;
+}
+
+.counter-strip span {
+  font-size: 10pt;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.counter-strip b {
+  font-size: 15pt;
+}
+
+.label-page {
+  width: var(--page-width);
+  height: var(--page-height);
+  padding: 0.3in 0.5in;
+  background: var(--paper);
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  border: 0;
+}
+
+.mini-label {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1.5px dashed #222;
+  border-bottom: 1.5px dashed #222;
+  padding: 0.04in;
+  text-align: center;
+}
+
+.mini-label:nth-child(-n + 8) {
+  border-top: 1.5px dashed #222;
+}
+
+.mini-label:nth-child(8n + 1) {
+  border-left: 1.5px dashed #222;
+}
+
+.mini-label span {
+  color: #161616;
+  font-size: 10pt;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.mini-label.is-long span {
+  font-size: 8.7pt;
+}
+
+.mini-label.is-very-long span {
+  font-size: 7.4pt;
+}
+
+@media screen {
+  body {
+    display: flex;
+    justify-content: center;
+  }
+
+  #print-root {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25in;
+    padding: 0.25in 0;
+  }
+
+  section {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+}

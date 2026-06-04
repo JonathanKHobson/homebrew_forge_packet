@@ -1,0 +1,12 @@
+{
+  "deckId": "demo-showcase",
+  "name": "Demo Showcase Deck",
+  "description": "A seeded decklist for checking the Decks workspace with the DEMO cards populated.",
+  "linkedUniverseId": "demo",
+  "linkedSetCode": "DEMO",
+  "format": "Kitchen table playtest",
+  "status": "playtest",
+  "notes": "This is a compact showcase list, not a legality target. It keeps Main, Sideboard, and Maybeboard populated so the deck UI has real data to inspect.",
+  "createdAt": "2026-06-03T00:00:00.000Z",
+  "updatedAt": "2026-06-03T00:00:00.000Z"
+}

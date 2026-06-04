@@ -1,0 +1,38 @@
+profiles:
+  cockatrice:
+    target: cockatrice
+    image_format: jpg
+    width_px: 488
+    height_px: 680
+    quality: 86
+    include_bleed: false
+    include_crop_marks: false
+    include_playtest_watermark: true
+    watermark_text: "CUSTOM PLAYTEST — NOT FOR SALE"
+    allow_placeholder_art: true
+    filename_template: "{{collector_number}}_{{slug_name}}.jpg"
+
+  review_png:
+    target: images
+    image_format: png
+    width_px: 744
+    height_px: 1039
+    include_bleed: false
+    include_crop_marks: false
+    include_playtest_watermark: true
+    watermark_text: "CUSTOM PLAYTEST"
+    allow_placeholder_art: true
+    filename_template: "{{card_id}}_{{slug_name}}.png"
+
+  print_letter_9up:
+    target: print_pdf
+    image_format: png
+    width_px: 744
+    height_px: 1039
+    include_bleed: true
+    bleed_px: 36
+    include_crop_marks: true
+    include_playtest_watermark: true
+    watermark_text: "CUSTOM PLAYTEST — NOT FOR SALE"
+    paper: letter
+    cards_per_page: 9

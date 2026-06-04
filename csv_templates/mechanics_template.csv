@@ -1,0 +1,2 @@
+mechanic_id,name,kind,rules_text,reminder_text,colors,status,notes
+MECH-001,Example Mechanic,ability_word,"Example — Whenever you do the set thing, [effect].",,WUR,draft,Replace with set mechanic

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Homebrew Forge SetRecord",
+  "type": "object",
+  "required": [
+    "set_code",
+    "set_name",
+    "version"
+  ],
+  "properties": {
+    "set_code": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "set_type": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "default_language": {
+      "type": "string"
+    },
+    "default_asset_pack": {
+      "type": "string"
+    },
+    "default_export_profile": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "checkedAt": "2026-06-03T21:33:05.446Z",
+  "hasPendingUpdates": false,
+  "sources": [
+    {
+      "id": "scryfall-oracle-cards",
+      "label": "Scryfall Oracle Cards bulk data",
+      "current": "2026-06-03T21:05:01.158+00:00",
+      "upstream": "2026-06-03T21:05:01.158+00:00",
+      "changed": false
+    },
+    {
+      "id": "supertypes",
+      "label": "Scryfall supertypes",
+      "current": "2b78cce2b63a93f065165812d4e2b83437c8dc34df87f267e6a40bfd7bc05afa",
+      "upstream": "2b78cce2b63a93f065165812d4e2b83437c8dc34df87f267e6a40bfd7bc05afa",
+      "changed": false
+    },
+    {
+      "id": "card-types",
+      "label": "Scryfall card-types",
+      "current": "4935eaad0ce507f4b274a5da97d14925e272c8d94ee43b2ebaa084a1d80e7b3a",
+      "upstream": "4935eaad0ce507f4b274a5da97d14925e272c8d94ee43b2ebaa084a1d80e7b3a",
+      "changed": false
+    },
+    {
+      "id": "artifact-types",
+      "label": "Scryfall artifact-types",
+      "current": "03e1036d770b719bbfecb73b6f02b620400c0c21acf8a79b064d493d80780659",
+      "upstream": "03e1036d770b719bbfecb73b6f02b620400c0c21acf8a79b064d493d80780659",
+      "changed": false
+    },
+    {
+      "id": "battle-types",
+      "label": "Scryfall battle-types",
+      "current": "e05af0b842b6da67662b8588d2b264d42cb796065f6ca54cedb4db5b3aae3e8d",
+      "upstream": "e05af0b842b6da67662b8588d2b264d42cb796065f6ca54cedb4db5b3aae3e8d",
+      "changed": false
+    },
+    {
+      "id": "creature-types",
+      "label": "Scryfall creature-types",
+      "current": "53d3ae68d982f655e9b645d8013b9baeec627eace0d538733d1dd941a6721789",
+      "upstream": "53d3ae68d982f655e9b645d8013b9baeec627eace0d538733d1dd941a6721789",
+      "changed": false
+    },
+    {
+      "id": "enchantment-types",
+      "label": "Scryfall enchantment-types",
+      "current": "44d1fd92c3e33b2e78472aac5dc80bbc2940c80c103c3a96d70767815aaf6a4d",
+      "upstream": "44d1fd92c3e33b2e78472aac5dc80bbc2940c80c103c3a96d70767815aaf6a4d",
+      "changed": false
+    },
+    {
+      "id": "land-types",
+      "label": "Scryfall land-types",
+      "current": "68dbb80e9238775eb3b6a64d3f07854da37e3973f888af2e7a0c717bac6473d1",
+      "upstream": "68dbb80e9238775eb3b6a64d3f07854da37e3973f888af2e7a0c717bac6473d1",
+      "changed": false
+    },
+    {
+      "id": "planeswalker-types",
+      "label": "Scryfall planeswalker-types",
+      "current": "198d92af5ed75d0a0a062fb5eb1cbe941c0b87a76d7cd6377d601ac222624f27",
+      "upstream": "198d92af5ed75d0a0a062fb5eb1cbe941c0b87a76d7cd6377d601ac222624f27",
+      "changed": false
+    },
+    {
+      "id": "spell-types",
+      "label": "Scryfall spell-types",
+      "current": "e68dcc682f3497085cc35a1c8e4e5cf7c1981f67fa24d52fc8a3d7ff007c502e",
+      "upstream": "e68dcc682f3497085cc35a1c8e4e5cf7c1981f67fa24d52fc8a3d7ff007c502e",
+      "changed": false
+    },
+    {
+      "id": "keyword-abilities",
+      "label": "Scryfall keyword-abilities",
+      "current": "6ab1ddd39ff1049b7686faaf6548bd32208e310b276dd647baee3bfcf0b9c93a",
+      "upstream": "6ab1ddd39ff1049b7686faaf6548bd32208e310b276dd647baee3bfcf0b9c93a",
+      "changed": false
+    },
+    {
+      "id": "keyword-actions",
+      "label": "Scryfall keyword-actions",
+      "current": "9ba166b296aa1b884a04018cf7408428aa57ca25bb734b73b1beb79fcb676685",
+      "upstream": "9ba166b296aa1b884a04018cf7408428aa57ca25bb734b73b1beb79fcb676685",
+      "changed": false
+    },
+    {
+      "id": "ability-words",
+      "label": "Scryfall ability-words",
+      "current": "cd920ac1405288b97862e27f4b78bcd9dba1268ebc234ad90ebce2c7ed3b60e5",
+      "upstream": "cd920ac1405288b97862e27f4b78bcd9dba1268ebc234ad90ebce2c7ed3b60e5",
+      "changed": false
+    },
+    {
+      "id": "wizards-comprehensive-rules",
+      "label": "Wizards Comprehensive Rules",
+      "current": "58bda045cbb55cca77192ae29f081ba72babdc077b87ab2d57cbef5459c68677",
+      "upstream": "58bda045cbb55cca77192ae29f081ba72babdc077b87ab2d57cbef5459c68677",
+      "changed": false
+    }
+  ]
+}

@@ -1,0 +1,627 @@
+pack_id: basic-m15-local
+name: Basic M15 Local MSE Pack
+version: 0.1.0
+asset_base_path: "/Users/kyle/Documents/My Games/Magic The Gathering/Basic-M15-Magic-Pack-main"
+source_summary: Local MagicSetEditorPacks Basic-M15-Magic-Pack checkout supplied by Kyle, with DEMO set symbol sourced from the local mtg-vectors checkout.
+license_status: user_supplied_private_use
+redistribution_allowed: false
+commit_allowed: false
+render_hints:
+  source_profile: mse-basic-m15-375
+  overlay_art_over_frame: true
+  pt_box_uses_zone: true
+supported_layouts:
+  - normal
+  - token
+  - normal_creature
+  - normal_artifact
+  - normal_land
+  - normal_planeswalker
+  - normal_planeswalker_4
+  - token_creature
+  - token_full_art
+roles:
+  - id: basic-m15-frame-creature-w
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: W
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/wcard.jpg
+  - id: basic-m15-frame-creature-u
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: U
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/ucard.jpg
+  - id: basic-m15-frame-creature-b
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: B
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/bcard.jpg
+  - id: basic-m15-frame-creature-r
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: R
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/rcard.jpg
+  - id: basic-m15-frame-creature-g
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: G
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/gcard.jpg
+  - id: basic-m15-frame-creature-m
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: M
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/mcard.jpg
+  - id: basic-m15-frame-creature-c
+    role: frame.full_card
+    layout: normal_creature
+    color_variant: C
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/ccard.jpg
+  - id: basic-m15-frame-artifact-c
+    role: frame.full_card
+    layout: normal_artifact
+    color_variant: C
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/acard.jpg
+  - id: basic-m15-frame-land-w
+    role: frame.full_card
+    layout: normal_land
+    color_variant: W
+    required: false
+    path: data/magic-modules.mse-include/cards/375 m15 simple/wlcard.jpg
+  - id: basic-m15-frame-land-u
+    role: frame.full_card
+    layout: normal_land
+    color_variant: U
+    required: false
+    path: data/magic-modules.mse-include/cards/375 m15 simple/ulcard.jpg
+  - id: basic-m15-frame-land-b
+    role: frame.full_card
+    layout: normal_land
+    color_variant: B
+    required: false
+    path: data/magic-modules.mse-include/cards/375 m15 simple/blcard.jpg
+  - id: basic-m15-frame-land-r
+    role: frame.full_card
+    layout: normal_land
+    color_variant: R
+    required: false
+    path: data/magic-modules.mse-include/cards/375 m15 simple/rlcard.jpg
+  - id: basic-m15-frame-land-g
+    role: frame.full_card
+    layout: normal_land
+    color_variant: G
+    required: true
+    path: data/magic-modules.mse-include/cards/375 m15 simple/glcard.jpg
+  - id: basic-m15-frame-land-m
+    role: frame.full_card
+    layout: normal_land
+    color_variant: M
+    required: false
+    path: data/magic-modules.mse-include/cards/375 m15 simple/mlcard.jpg
+  - id: basic-m15-frame-land-c
+    role: frame.full_card
+    layout: normal_land
+    color_variant: C
+    required: false
+    path: data/magic-modules.mse-include/cards/375 m15 simple/clcard.jpg
+  - id: basic-m15-frame-token-w
+    role: frame.full_card
+    layout: token_creature
+    color_variant: W
+    required: true
+    path: data/magic-m15-mainframe-tokens.mse-style/wcard2.jpg
+  - id: basic-m15-frame-token-u
+    role: frame.full_card
+    layout: token_creature
+    color_variant: U
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/ucard2.jpg
+  - id: basic-m15-frame-token-b
+    role: frame.full_card
+    layout: token_creature
+    color_variant: B
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/bcard2.jpg
+  - id: basic-m15-frame-token-r
+    role: frame.full_card
+    layout: token_creature
+    color_variant: R
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/rcard2.jpg
+  - id: basic-m15-frame-token-g
+    role: frame.full_card
+    layout: token_creature
+    color_variant: G
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/gcard2.jpg
+  - id: basic-m15-frame-token-m
+    role: frame.full_card
+    layout: token_creature
+    color_variant: M
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/mcard2.jpg
+  - id: basic-m15-frame-token-c
+    role: frame.full_card
+    layout: token_creature
+    color_variant: C
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/ccard2.jpg
+  - id: basic-m15-frame-token-full-art-w
+    role: frame.full_card
+    layout: token_full_art
+    color_variant: W
+    required: true
+    path: data/magic-m15-mainframe-tokens.mse-style/m20/wcard.png
+  - id: basic-m15-frame-token-full-art-u
+    role: frame.full_card
+    layout: token_full_art
+    color_variant: U
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/m20/ucard.png
+  - id: basic-m15-frame-token-full-art-b
+    role: frame.full_card
+    layout: token_full_art
+    color_variant: B
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/m20/bcard.png
+  - id: basic-m15-frame-token-full-art-r
+    role: frame.full_card
+    layout: token_full_art
+    color_variant: R
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/m20/rcard.png
+  - id: basic-m15-frame-token-full-art-g
+    role: frame.full_card
+    layout: token_full_art
+    color_variant: G
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/m20/gcard.png
+  - id: basic-m15-frame-token-full-art-m
+    role: frame.full_card
+    layout: token_full_art
+    color_variant: M
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/m20/mcard.png
+  - id: basic-m15-frame-token-full-art-c
+    role: frame.full_card
+    layout: token_full_art
+    color_variant: C
+    required: false
+    path: data/magic-m15-mainframe-tokens.mse-style/m20/ccard.png
+  - id: basic-m15-frame-planeswalker-w
+    role: frame.full_card
+    layout: normal_planeswalker
+    color_variant: W
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/wcard.jpg
+  - id: basic-m15-frame-planeswalker-u
+    role: frame.full_card
+    layout: normal_planeswalker
+    color_variant: U
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/ucard.jpg
+  - id: basic-m15-frame-planeswalker-b
+    role: frame.full_card
+    layout: normal_planeswalker
+    color_variant: B
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/bcard.jpg
+  - id: basic-m15-frame-planeswalker-r
+    role: frame.full_card
+    layout: normal_planeswalker
+    color_variant: R
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/rcard.jpg
+  - id: basic-m15-frame-planeswalker-g
+    role: frame.full_card
+    layout: normal_planeswalker
+    color_variant: G
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/gcard.jpg
+  - id: basic-m15-frame-planeswalker-m
+    role: frame.full_card
+    layout: normal_planeswalker
+    color_variant: M
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/mcard.jpg
+  - id: basic-m15-frame-planeswalker-c
+    role: frame.full_card
+    layout: normal_planeswalker
+    color_variant: C
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/ccard.jpg
+  - id: basic-m15-frame-planeswalker4-w
+    role: frame.full_card
+    layout: normal_planeswalker_4
+    color_variant: W
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/wcard2.jpg
+  - id: basic-m15-frame-planeswalker4-u
+    role: frame.full_card
+    layout: normal_planeswalker_4
+    color_variant: U
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/ucard2.jpg
+  - id: basic-m15-frame-planeswalker4-b
+    role: frame.full_card
+    layout: normal_planeswalker_4
+    color_variant: B
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/bcard2.jpg
+  - id: basic-m15-frame-planeswalker4-r
+    role: frame.full_card
+    layout: normal_planeswalker_4
+    color_variant: R
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/rcard2.jpg
+  - id: basic-m15-frame-planeswalker4-g
+    role: frame.full_card
+    layout: normal_planeswalker_4
+    color_variant: G
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/gcard2.jpg
+  - id: basic-m15-frame-planeswalker4-m
+    role: frame.full_card
+    layout: normal_planeswalker_4
+    color_variant: M
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/mcard2.jpg
+  - id: basic-m15-frame-planeswalker4-c
+    role: frame.full_card
+    layout: normal_planeswalker_4
+    color_variant: C
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/ccard2.jpg
+  - id: basic-m15-planeswalker-art-mask
+    role: mask.art
+    layout: normal_planeswalker
+    color_variant: all
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/imagemask.png
+  - id: basic-m15-planeswalker-art-mask-rare
+    role: mask.art
+    layout: normal_planeswalker_rare
+    color_variant: all
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/imagemask_rare.png
+  - id: basic-m15-planeswalker4-art-mask
+    role: mask.art
+    layout: normal_planeswalker_4
+    color_variant: all
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/imagemask_4abil.png
+  - id: basic-m15-planeswalker4-art-mask-rare
+    role: mask.art
+    layout: normal_planeswalker_4_rare
+    color_variant: all
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/imagemask_4abil_rare.png
+  - id: basic-m15-planeswalker-loyalty-box
+    role: frame.loyalty_box
+    layout: normal_planeswalker
+    color_variant: all
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/loyalty.png
+  - id: basic-m15-planeswalker-loyalty-up
+    role: frame.loyalty_up
+    layout: normal_planeswalker
+    color_variant: all
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/loyaltyup.png
+  - id: basic-m15-planeswalker-loyalty-down
+    role: frame.loyalty_down
+    layout: normal_planeswalker
+    color_variant: all
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/loyaltydown.png
+  - id: basic-m15-planeswalker-loyalty-zero
+    role: frame.loyalty_zero
+    layout: normal_planeswalker
+    color_variant: all
+    required: true
+    path: Full-Magic-Pack-main/data/magic-m15-planeswalker.mse-style/loyaltynaught.png
+  - id: basic-m15-token-art-mask
+    role: mask.art
+    layout: token_creature
+    color_variant: all
+    required: true
+    path: data/magic-m15-mainframe-tokens.mse-style/imagemask2.png
+  - id: basic-m15-token-full-art-mask
+    role: mask.art
+    layout: token_full_art
+    color_variant: all
+    required: true
+    path: data/magic-m15-mainframe-tokens.mse-style/m20_imagemask.png
+  - id: basic-m15-font-title
+    role: font.title
+    required: true
+    path: "Magic - Fonts/beleren-bold_P1.01.ttf"
+  - id: basic-m15-font-body
+    role: font.body
+    required: true
+    path: "Magic - Fonts/mplantin.ttf"
+  - id: basic-m15-font-body-italic
+    role: font.body_italic
+    required: true
+    path: "Magic - Fonts/mplantinit.ttf"
+  - id: basic-m15-pt-w
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: W
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/wpt.png
+  - id: basic-m15-pt-u
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: U
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/upt.png
+  - id: basic-m15-pt-b
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: B
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/bpt.png
+  - id: basic-m15-pt-r
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: R
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/rpt.png
+  - id: basic-m15-pt-g
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: G
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/gpt.png
+  - id: basic-m15-pt-m
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: M
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/mpt.png
+  - id: basic-m15-pt-c
+    role: frame.pt_box
+    layout: normal_creature
+    color_variant: C
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/cpt.png
+  - id: basic-m15-pt-token-w
+    role: frame.pt_box
+    layout: token_creature
+    color_variant: W
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/wpt.png
+  - id: basic-m15-pt-token-full-art-w
+    role: frame.pt_box
+    layout: token_full_art
+    color_variant: W
+    required: true
+    path: data/magic-modules.mse-include/pts/375 m15/wpt.png
+  - id: basic-m15-pt-token-full-art-u
+    role: frame.pt_box
+    layout: token_full_art
+    color_variant: U
+    required: false
+    path: data/magic-modules.mse-include/pts/375 m15/upt.png
+  - id: basic-m15-pt-token-full-art-b
+    role: frame.pt_box
+    layout: token_full_art
+    color_variant: B
+    required: false
+    path: data/magic-modules.mse-include/pts/375 m15/bpt.png
+  - id: basic-m15-pt-token-full-art-r
+    role: frame.pt_box
+    layout: token_full_art
+    color_variant: R
+    required: false
+    path: data/magic-modules.mse-include/pts/375 m15/rpt.png
+  - id: basic-m15-pt-token-full-art-g
+    role: frame.pt_box
+    layout: token_full_art
+    color_variant: G
+    required: false
+    path: data/magic-modules.mse-include/pts/375 m15/gpt.png
+  - id: basic-m15-pt-token-full-art-m
+    role: frame.pt_box
+    layout: token_full_art
+    color_variant: M
+    required: false
+    path: data/magic-modules.mse-include/pts/375 m15/mpt.png
+  - id: basic-m15-pt-token-full-art-c
+    role: frame.pt_box
+    layout: token_full_art
+    color_variant: C
+    required: false
+    path: data/magic-modules.mse-include/pts/375 m15/cpt.png
+  - id: basic-m15-mana-w
+    role: symbol.mana
+    symbol: w
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/mana_w.png
+  - id: basic-m15-mana-u
+    role: symbol.mana
+    symbol: u
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/mana_u.png
+  - id: basic-m15-mana-b
+    role: symbol.mana
+    symbol: b
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/mana_b.png
+  - id: basic-m15-mana-r
+    role: symbol.mana
+    symbol: r
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/mana_r.png
+  - id: basic-m15-mana-g
+    role: symbol.mana
+    symbol: g
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/mana_g.png
+  - id: basic-m15-mana-c
+    role: symbol.mana
+    symbol: c
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/mana_c.png
+  - id: basic-m15-mana-t
+    role: symbol.mana
+    symbol: t
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/mana_t.png
+  - id: basic-m15-mana-q
+    role: symbol.mana
+    symbol: q
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/mana_q.png
+  - id: basic-m15-mana-x
+    role: symbol.mana
+    symbol: x
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/mana_x.png
+  - id: basic-m15-mana-0
+    role: symbol.mana
+    symbol: "0"
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/0.png
+  - id: basic-m15-mana-1
+    role: symbol.mana
+    symbol: "1"
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/1.png
+  - id: basic-m15-mana-2
+    role: symbol.mana
+    symbol: "2"
+    required: true
+    path: data/magic-mana-large.mse-symbol-font/2.png
+  - id: basic-m15-mana-3
+    role: symbol.mana
+    symbol: "3"
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/3.png
+  - id: basic-m15-mana-4
+    role: symbol.mana
+    symbol: "4"
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/4.png
+  - id: basic-m15-mana-5
+    role: symbol.mana
+    symbol: "5"
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/5.png
+  - id: basic-m15-mana-6
+    role: symbol.mana
+    symbol: "6"
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/6.png
+  - id: basic-m15-mana-7
+    role: symbol.mana
+    symbol: "7"
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/7.png
+  - id: basic-m15-mana-8
+    role: symbol.mana
+    symbol: "8"
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/8.png
+  - id: basic-m15-mana-9
+    role: symbol.mana
+    symbol: "9"
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/9.png
+  - id: basic-m15-mana-10
+    role: symbol.mana
+    symbol: "10"
+    required: false
+    path: data/magic-mana-large.mse-symbol-font/10.png
+  - id: basic-m15-set-demo
+    role: symbol.set
+    symbol: demo
+    required: false
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/set/M15/C.svg"
+  - id: basic-m15-set-demo-common
+    role: symbol.set
+    symbol: demo-c
+    required: false
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/set/M15/C.svg"
+  - id: basic-m15-set-demo-uncommon
+    role: symbol.set
+    symbol: demo-u
+    required: false
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/set/M15/U.svg"
+  - id: basic-m15-set-demo-rare
+    role: symbol.set
+    symbol: demo-r
+    required: false
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/set/M15/R.svg"
+  - id: basic-m15-set-demo-mythic
+    role: symbol.set
+    symbol: demo-m
+    required: false
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/set/M15/M.svg"
+  - id: basic-m15-set-demo-special
+    role: symbol.set
+    symbol: demo-s
+    required: false
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/set/M15/S.svg"
+  - id: basic-m15-set-demo-token
+    role: symbol.set
+    symbol: demo-t
+    required: false
+    path: "/Users/kyle/Documents/My Games/Magic The Gathering/mtg-vectors-main/svg/optimized/set/M15/T.svg"
+layout_maps:
+  - layout: normal
+    canvas:
+      width: 375
+      height: 523
+    zones:
+      name: { x: 32, y: 30, w: 228, h: 23 }
+      mana_cost: { x: 260, y: 29, w: 86, h: 23 }
+      art: { x: 29, y: 60, w: 316, h: 231 }
+      type_line: { x: 32, y: 296, w: 292, h: 20 }
+      rules_text: { x: 35, y: 327, w: 304, h: 154 }
+      pt: { x: 286, y: 469, w: 60, h: 28 }
+      footer: { x: 29, y: 490, w: 244, h: 22 }
+  - layout: token
+    canvas:
+      width: 375
+      height: 523
+    zones:
+      name: { x: 30, y: 26, w: 315, h: 28 }
+      mana_cost: { x: 260, y: 29, w: 84, h: 23 }
+      art: { x: 29, y: 62, w: 319, h: 290 }
+      type_line: { x: 32, y: 354, w: 292, h: 20 }
+      rules_text: { x: 35, y: 388, w: 304, h: 78 }
+      pt: { x: 286, y: 469, w: 60, h: 28 }
+      footer: { x: 29, y: 490, w: 244, h: 22 }
+  - layout: token_full_art
+    canvas:
+      width: 375
+      height: 523
+    zones:
+      name: { x: 30, y: 25, w: 315, h: 28 }
+      mana_cost: { x: 260, y: 29, w: 84, h: 23 }
+      art: { x: 0, y: 0, w: 375, h: 523 }
+      type_line: { x: 32, y: 429, w: 292, h: 20 }
+      rules_text: { x: 35, y: 456, w: 304, h: 26 }
+      pt: { x: 286, y: 466, w: 60, h: 28 }
+      footer: { x: 29, y: 490, w: 244, h: 22 }
+  - layout: planeswalker
+    canvas:
+      width: 375
+      height: 523
+    zones:
+      name: { x: 32, y: 23, w: 228, h: 23 }
+      mana_cost: { x: 260, y: 22, w: 86, h: 23 }
+      art: { x: 25, y: 52, w: 324, h: 427 }
+      type_line: { x: 33, y: 296, w: 304, h: 20 }
+      rules_text: { x: 63, y: 330, w: 282, h: 148 }
+      pt: { x: 326, y: 462, w: 48, h: 36 }
+      footer: { x: 29, y: 490, w: 244, h: 22 }

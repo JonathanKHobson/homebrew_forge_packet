@@ -1,0 +1,276 @@
+{
+  "packet": "homebrew_forge_packet",
+  "generated": "2026-06-01",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "e142ec80dddfc73a23e94b775d42574593863c059657c92f6ffe5443310a0cce",
+      "bytes": 4186
+    },
+    {
+      "path": "assets/README.md",
+      "sha256": "e89aa077220e18282ca906f2b21fe6575079e01ed2f4125bf23d55ca509c7a10",
+      "bytes": 465
+    },
+    {
+      "path": "config_examples/AGENTS.md",
+      "sha256": "a33be2c54660b5b11b4eb23d54c24a69324c3242847917407c6e473b9f6b1fa0",
+      "bytes": 1905
+    },
+    {
+      "path": "config_examples/asset_sources.example.yaml",
+      "sha256": "c0ddb77c51154dc5cbd7a5c485b07fc80907c98a172d8041bb2f60d1ebb581fe",
+      "bytes": 2115
+    },
+    {
+      "path": "config_examples/export_profiles.example.yaml",
+      "sha256": "08d9e678b05cd3449461da824c2d8ae6521ab01bac1eefcb4f0a7631ab8091bc",
+      "bytes": 981
+    },
+    {
+      "path": "config_examples/homebrew-forge.config.example.yaml",
+      "sha256": "c5e860380b489884b25fdeea74d92d84faf373da9a9b58758b4e3a2da219aea5",
+      "bytes": 553
+    },
+    {
+      "path": "config_examples/mcp_config_examples.md",
+      "sha256": "46dce58d491b1c943513ebcdba398c151885f114b05973b088692bdeb8982348",
+      "bytes": 759
+    },
+    {
+      "path": "csv_templates/art_manifest_template.csv",
+      "sha256": "2c9bce20323b468d637ce08367f3889d902093051c60eb6a4a09f4b4ede6893d",
+      "bytes": 661
+    },
+    {
+      "path": "csv_templates/asset_manifest_template.csv",
+      "sha256": "b43e23e5dbc97bfebeb446bfcbb0d04d4d4b6828426ce9338d4a0f1f42c98e44",
+      "bytes": 490
+    },
+    {
+      "path": "csv_templates/card_faces_template.csv",
+      "sha256": "cf8576332da33206541bae2415d627c36a12da69deb2e7671bc5e6f18edc05a1",
+      "bytes": 852
+    },
+    {
+      "path": "csv_templates/cards_template.csv",
+      "sha256": "926e9d34fbb4fe94d8a0b0985796ff4cfd98f49a37b7815ef9e2e38bb6ccef45",
+      "bytes": 571
+    },
+    {
+      "path": "csv_templates/export_profiles_template.csv",
+      "sha256": "d9be7f25e67f0529252d4c7d552b367fa69e5c89a203f2296c058ff4038a93de",
+      "bytes": 554
+    },
+    {
+      "path": "csv_templates/import_map_template.csv",
+      "sha256": "4d7908d54d37674335ac5d4b81e118b6936bb438f820c1c267977e148dbc84f3",
+      "bytes": 555
+    },
+    {
+      "path": "csv_templates/mechanics_template.csv",
+      "sha256": "42f0240d74b52ab1aa08f3a881543dba5d3be3b3fd443c58d89c595243bb6a6b",
+      "bytes": 198
+    },
+    {
+      "path": "csv_templates/sets_template.csv",
+      "sha256": "7753ec244847e2a0c7b98268ce6d2ae54b76d094872f4d84ea14c9f77e8f8356",
+      "bytes": 198
+    },
+    {
+      "path": "docs/00_decision_summary.md",
+      "sha256": "5295f003bc28abd6b86dedde3b75be09c4dc14a8a222bfd176c605f1cbfa04bf",
+      "bytes": 1925
+    },
+    {
+      "path": "docs/01_research_summary.md",
+      "sha256": "6c4e7829f59d0e71fdf142491f274086e24406661238cdc8e3b1dadd79f31e68",
+      "bytes": 4360
+    },
+    {
+      "path": "docs/02_architecture_overview.md",
+      "sha256": "9f8f0c45603231bf65512a6a9ecd2da676a273e0051e534dd9fc66f1e4c70703",
+      "bytes": 2602
+    },
+    {
+      "path": "docs/03_data_model_and_csv_schema.md",
+      "sha256": "5112e7f92268eabed40076aef20244117635b03336ee7df6b9bef6f97d9d5c24",
+      "bytes": 2935
+    },
+    {
+      "path": "docs/04_asset_pack_strategy.md",
+      "sha256": "43815a40995cb13f49005792b43c68e429703b5c731b763fd602168bc1a9a7a1",
+      "bytes": 2248
+    },
+    {
+      "path": "docs/05_asset_source_matrix.md",
+      "sha256": "05589af0f93dfc09e7e40480043c52553c952ffe6479825aadc69eeb20899b64",
+      "bytes": 2563
+    },
+    {
+      "path": "docs/06_scraping_and_asset_ingestion_policy.md",
+      "sha256": "545558c8599037bfe095de86089c6def8293f3455607fede2819bcae2bfda699",
+      "bytes": 2769
+    },
+    {
+      "path": "docs/07_renderer_engine_spec.md",
+      "sha256": "0f3e18d07d14ddd50a7db262866b70c3af7d4c70b5088a3d94c3727a3490dcec",
+      "bytes": 2364
+    },
+    {
+      "path": "docs/08_local_editor_spec.md",
+      "sha256": "e02d3a47e50a5c0072af4dbe1bdc0ee191766fc70d93aa4d747f8424fa39a867",
+      "bytes": 1868
+    },
+    {
+      "path": "docs/09_cli_spec.md",
+      "sha256": "eada4e3cb07906722f7d5de153ed90b32323ca353a1a6419b7a2b60ef281a9cc",
+      "bytes": 1866
+    },
+    {
+      "path": "docs/10_export_targets.md",
+      "sha256": "3b9d224b3908d70ac124f5232ab7fcabd0b307bf0acf4f73059bcf80b98b661f",
+      "bytes": 1549
+    },
+    {
+      "path": "docs/11_cockatrice_export_spec.md",
+      "sha256": "7d00f9086333b1aba5b3a95cfe2552aa34e8ddc6f59507388cbd1844feba557f",
+      "bytes": 1553
+    },
+    {
+      "path": "docs/12_importers_and_migration.md",
+      "sha256": "07dc4f29247cd0c9f509ad755537b517ec0d84370174cd1379bb11e49e49b212",
+      "bytes": 2210
+    },
+    {
+      "path": "docs/13_reference_data_layer.md",
+      "sha256": "3d98128b16f999706a139cf0044e5586aee453c48207211cc09d68233aa746d8",
+      "bytes": 1675
+    },
+    {
+      "path": "docs/14_validation_and_rules_linting.md",
+      "sha256": "d604a9e0c6034b6a4967de587ffe2e0de237b0a28c0320bcbb4b4a6ea3fd787c",
+      "bytes": 1771
+    },
+    {
+      "path": "docs/15_testing_quality_and_visual_regression.md",
+      "sha256": "96b739c96b2eaa656d723690c9a96aa52648066fa110209220c06c1a2e1a7686",
+      "bytes": 1506
+    },
+    {
+      "path": "docs/16_security_legal_and_private_use.md",
+      "sha256": "0630527ad1c903317086193e6a38e70975af19f9c0ed08ebc4b917a0768d9058",
+      "bytes": 2104
+    },
+    {
+      "path": "docs/17_implementation_roadmap.md",
+      "sha256": "52d4feb362ed26c8edb57f1b8e68d3800e50822d300d78bfc45ff741c9972ec9",
+      "bytes": 1672
+    },
+    {
+      "path": "docs/18_repo_issue_backlog.md",
+      "sha256": "696a596fdafb42ef85e2b6e228c548bb79d78af01e6a53be3a8c2a5274cc3be5",
+      "bytes": 1928
+    },
+    {
+      "path": "docs/19_glossary.md",
+      "sha256": "ebdcf9042618759fd9874e0ecc227694a343f820911887b96062bb4c853fe93a",
+      "bytes": 1042
+    },
+    {
+      "path": "examples/DEMO_set.yaml",
+      "sha256": "f4ea8d4545cd134545987897355f90a3d159d41852b31d74f5253142af40b62c",
+      "bytes": 241
+    },
+    {
+      "path": "prompts/codex_asset_pack_prompt.md",
+      "sha256": "f694993e0247c1214b6311654c2cced5f3af174e2ce8fcb9d33fce20c35bc3b7",
+      "bytes": 1543
+    },
+    {
+      "path": "prompts/codex_first_task_prompt.md",
+      "sha256": "544a278efba54c2aa76b4a25fb3c07db384c1fea64bce5cf1d7c2f36820277ac",
+      "bytes": 1055
+    },
+    {
+      "path": "prompts/codex_importer_prompt.md",
+      "sha256": "ea6834e44f7892130fdeea7c78a3255f63815c5f4ee53af0559d565e0beda33c",
+      "bytes": 925
+    },
+    {
+      "path": "prompts/codex_master_prompt.md",
+      "sha256": "f8c1be35a85f29c854c52a7413a2081792b742a799aaf34e05906c5995aa6b44",
+      "bytes": 4230
+    },
+    {
+      "path": "prompts/codex_phase_prompts.md",
+      "sha256": "be2ba7d1ba2403e8ded78f08a9d52dd30120b71373a0c742724ac1055c5c86ae",
+      "bytes": 3282
+    },
+    {
+      "path": "schemas/art_manifest.schema.json",
+      "sha256": "b44be1de06b7b77de1a0bbb983167ef0abb502bccb2921cf41c4ae0fb5dac538",
+      "bytes": 877
+    },
+    {
+      "path": "schemas/asset_pack.schema.json",
+      "sha256": "7cb81c95df8a1bac158ba8973c221e7d6234bbd4442e3560db43acc189a93b36",
+      "bytes": 1057
+    },
+    {
+      "path": "schemas/card.schema.json",
+      "sha256": "68229d5200827e40eb0117c87af0d18db28797ba200682e63da0fcd650f6e2d1",
+      "bytes": 1798
+    },
+    {
+      "path": "schemas/card_face.schema.json",
+      "sha256": "003d1469bafac2e310a63124ab444df3ca2f954c38e20c44aa9aef1ab57d8fb7",
+      "bytes": 1168
+    },
+    {
+      "path": "schemas/export_profile.schema.json",
+      "sha256": "4f36f574635e3a372433577460502e484877da72a63571c4da33179479fe434d",
+      "bytes": 1182
+    },
+    {
+      "path": "schemas/set.schema.json",
+      "sha256": "0aea062921cad3b5512ca777fd41bbe23c809df8cf5bc76e8237a7cd1ca3c57d",
+      "bytes": 715
+    },
+    {
+      "path": "skills/homebrew-forge/SKILL.md",
+      "sha256": "f9e5576c87155a2ac33175ca69d03d891b413f4a260de71bebe7e7b43a9d8290",
+      "bytes": 1225
+    },
+    {
+      "path": "src_contracts/AssetPack.ts",
+      "sha256": "a2f342cb847ce9efd7db0a17db7c27c6e2a8e56b3706f402faec7c56c20f6fc0",
+      "bytes": 875
+    },
+    {
+      "path": "src_contracts/AssetSourcePlugin.ts",
+      "sha256": "c074026ca4d72fd396efb7dc30f7d9aa0a068417246256da35b77e8131e05091",
+      "bytes": 912
+    },
+    {
+      "path": "src_contracts/CardRecord.ts",
+      "sha256": "d23bdfc0d1e1b5e9d3c3ce29f166c80309d2a149be044faf159b703b9d5a0676",
+      "bytes": 1227
+    },
+    {
+      "path": "src_contracts/Exporter.ts",
+      "sha256": "cae40ee0fba23418a61197f1d0b83b008cba4b147dd1471fffc0f53e39a22d0b",
+      "bytes": 371
+    },
+    {
+      "path": "src_contracts/Importer.ts",
+      "sha256": "4bbeef3af82987e3578732d22fb528960f94deacdeb7e14b5f77653975edccf7",
+      "bytes": 470
+    },
+    {
+      "path": "src_contracts/Renderer.ts",
+      "sha256": "80014eaca0777279030405148d001f79cbef71ff4a7f05e280d9cfff9664ff08",
+      "bytes": 957
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Homebrew Forge ArtManifestRecord",
+  "type": "object",
+  "required": [
+    "art_id",
+    "file_path",
+    "source_type",
+    "permission_status"
+  ],
+  "properties": {
+    "art_id": {
+      "type": "string"
+    },
+    "file_path": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string"
+    },
+    "artist": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "permission_status": {
+      "type": "string"
+    },
+    "checksum_sha256": {
+      "type": "string"
+    },
+    "position_x": {
+      "type": "number"
+    },
+    "position_y": {
+      "type": "number"
+    },
+    "scale": {
+      "type": "number"
+    },
+    "crop_x": {
+      "type": "number"
+    },
+    "crop_y": {
+      "type": "number"
+    },
+    "crop_w": {
+      "type": "number"
+    },
+    "crop_h": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

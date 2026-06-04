@@ -1,0 +1,20 @@
+card_id,face_index,face_name,mana_cost,type_line,oracle_text,flavor_text,power,toughness,loyalty,defense,colors,frame_type,art_id,artist_display,watermark,rules_text_size_hint,rules_text_padding_top,rules_text_padding_right,rules_text_padding_bottom,rules_text_padding_left,rules_text_reminder_mode,layout_variant
+DEMO-001,0,Example Vanguard,{1}{W},Creature - Human Soldier,"Vigilance
+Whenever Example Vanguard attacks, other attacking creatures you control get +1/+1 until end of turn.","We march not for glory alone, but for all who cannot.",2,2,,,W,normal_creature,ART-001,Homebrew Forge,,auto,,,,,auto,normal
+DEMO-002,0,Clockwork Relic,{2},Artifact,"{T}: Add {C}.
+{2}, {T}: Draw a card, then discard a card.",,,,,,C,normal_artifact,ART-002,Homebrew Forge,,auto,,,,,,normal
+DEMO-003,0,Hidden Orchard,,Land,"Hidden Orchard enters tapped.
+{T}: Add {G}.",,,,,,G,normal_land,ART-003,Homebrew Forge,,auto,,,,,,normal
+DEMO-004,0,Aegis of Dawn,{1}{W},Enchantment,"Creatures you control get +0/+1.
+Whenever you gain life, scry 1.",The first light teaches the shield where to stand.,,,,,W,normal_creature,ART-004,Homebrew Forge,,auto,,,,,,normal
+DEMO-005,0,Arcane Insight,{1}{U},Instant,"Draw two cards, then discard a card.",The answer arrives just before the question learns its shape.,,,,,U,normal_creature,ART-005,Homebrew Forge,,auto,,,,,,normal
+DEMO-006,0,Rally the Gate,{2}{R},Sorcery,Create two 1/1 white Soldier creature tokens. They gain haste until end of turn.,Every closed gate is a promise that someone can open it.,,,,,R,normal_creature,ART-006,Homebrew Forge,,auto,,,,,,normal
+DEMO-007,0,"Mira, Demo Seer",{2}{U},Planeswalker - Mira,"+1: Scry 1, then draw a card.
+-2: Return target nonland permanent to its owner's hand.
+-7: You get an emblem with ""Whenever you cast your first spell each turn, draw a card.""",,,,4,,U,normal_planeswalker,ART-007,Homebrew Forge,,auto,,,,,,normal
+DEMO-008,0,Fourfold Mentor,{2}{W}{U},Planeswalker - Mentor,"+1: Create a 1/1 white Soldier creature token.
+0: Until your next turn, one target creature gets +1/+1.
+-2: Draw a card.
+-8: You get an emblem with ""Creatures you control have vigilance.""",,,,5,,WU,normal_planeswalker,ART-008,Homebrew Forge,,auto,,,,,,normal
+DEMO-T01,0,Soldier Token,,Creature - Soldier,Vigilance,,1,1,,,W,token_creature,ART-T01,Homebrew Forge,,auto,,,,,,normal
+DEMO-T02,0,Full-Art Soldier,,Creature - Soldier,,,1,1,,,W,token_full_art,ART-T02,Homebrew Forge,,auto,,,,,,full_art

@@ -1,0 +1,13 @@
+pack_id: base
+name: Base Placeholder Pack
+version: 0.1.0
+source_summary: Placeholder pack reserved for user-supplied generic assets.
+license_status: user_supplied_private_use
+redistribution_allowed: false
+commit_allowed: false
+supported_layouts:
+  - normal
+  - token
+roles: []
+layout_maps: []
+

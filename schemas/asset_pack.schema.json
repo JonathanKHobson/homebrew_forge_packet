@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Homebrew Forge AssetPackManifest",
+  "type": "object",
+  "required": [
+    "pack_id",
+    "name",
+    "version",
+    "supported_layouts",
+    "roles"
+  ],
+  "properties": {
+    "pack_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "source_summary": {
+      "type": "string"
+    },
+    "redistribution_allowed": {
+      "type": "boolean"
+    },
+    "commit_allowed": {
+      "type": "boolean"
+    },
+    "supported_layouts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "fonts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "symbols": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "layout_maps": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

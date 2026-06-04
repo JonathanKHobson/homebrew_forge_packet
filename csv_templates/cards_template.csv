@@ -1,0 +1,5 @@
+card_id,set_code,collector_number,name,layout,mode,source_card_name,source_set_code,rarity,color_identity,tags,status,print_count,export_name_override,notes
+DEMO-001,DEMO,001,Example Vanguard,normal,custom,,,rare,WU,"creature;legendary",draft,1,,Generic sample creature
+DEMO-002,DEMO,002,Clockwork Relic,normal,custom,,,uncommon,C,"artifact",draft,1,,Generic sample artifact
+DEMO-003,DEMO,003,Hidden Orchard,normal,custom,,,common,G,"land",draft,1,,Generic sample land
+DEMO-T01,DEMO,T01,Example Token,token,token,,,common,W,"token;creature",draft,4,,Generic sample token

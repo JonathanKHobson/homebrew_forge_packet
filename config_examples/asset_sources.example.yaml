@@ -1,0 +1,74 @@
+# Homebrew Forge asset source configuration.
+# This file describes sources the app MAY import/sync from.
+# It does not grant rights. Review each source/license before enabling.
+
+sources:
+  - source_id: user-modern-frame-pack
+    type: local_directory
+    enabled: true
+    path: "~/HomebrewForgeAssets/modern-frame-pack"
+    intended_roles:
+      - frame
+      - layout_map
+      - font
+    license_review:
+      reviewed_by_user: true
+      redistribution_allowed: false
+      commit_allowed: false
+      notes: "User-supplied local frame pack. Do not include in public repo."
+
+  - source_id: mana-font
+    type: npm_package
+    enabled: true
+    package: "mana-font"
+    version: "latest"
+    intended_roles:
+      - mana_symbols
+      - tap_symbols
+      - card_type_symbols
+    license_review:
+      reviewed_by_user: true
+      redistribution_allowed: check_package_license
+      commit_allowed: false
+      notes: "Font/CSS licenses differ from underlying WotC symbol rights."
+
+  - source_id: keyrune
+    type: npm_package
+    enabled: true
+    package: "keyrune"
+    version: "latest"
+    intended_roles:
+      - set_symbols
+    license_review:
+      reviewed_by_user: true
+      redistribution_allowed: check_package_license
+      commit_allowed: false
+      notes: "Set symbols remain Wizards IP; use as unofficial fan-content support."
+
+  - source_id: mtg-vectors
+    type: github_release
+    enabled: false
+    repo: "Investigamer/mtg-vectors"
+    tag: "latest"
+    intended_roles:
+      - set_symbols
+      - watermarks
+      - miscellaneous_symbols
+    license_review:
+      reviewed_by_user: false
+      redistribution_allowed: check_repository_license
+      commit_allowed: false
+      notes: "Enable only after license/terms review."
+
+  - source_id: cardconjurer-local
+    type: local_directory
+    enabled: false
+    path: "~/external/cardconjurer"
+    intended_roles:
+      - frame
+      - template_reference
+    license_review:
+      reviewed_by_user: false
+      redistribution_allowed: false
+      commit_allowed: false
+      notes: "Local-only adapter. Do not fetch remotely or redistribute."

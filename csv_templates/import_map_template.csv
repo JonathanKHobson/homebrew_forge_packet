@@ -1,0 +1,11 @@
+old_column,new_table,new_column,default_value,transform,notes
+Name,card_faces,face_name,,,Old card name
+Name,cards,name,,,Card display name
+Cost,card_faces,mana_cost,,,Mana cost like {1}{W}
+Type,card_faces,type_line,,,Type line
+Rules,card_faces,oracle_text,,newline_normalize,Rules text
+Flavor,card_faces,flavor_text,,,Flavor text
+Power,card_faces,power,,,Creature power
+Toughness,card_faces,toughness,,,Creature toughness
+Rarity,cards,rarity,common,,Default to common if missing
+Art URL,art_manifest,source_url,,url_to_art_record,Create local art record

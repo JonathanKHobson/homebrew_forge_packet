@@ -1,0 +1,4 @@
+profile_id,target,image_format,width_px,height_px,quality,include_bleed,bleed_px,include_crop_marks,include_playtest_watermark,watermark_text,allow_placeholder_art,filename_template
+cockatrice,cockatrice,jpg,488,680,86,false,0,false,true,CUSTOM PLAYTEST — NOT FOR SALE,true,{{collector_number}}_{{slug_name}}.jpg
+review_png,images,png,744,1039,,false,0,false,true,CUSTOM PLAYTEST,true,{{card_id}}_{{slug_name}}.png
+print_letter_9up,print_pdf,png,744,1039,,true,36,true,true,CUSTOM PLAYTEST — NOT FOR SALE,false,{{collector_number}}_{{slug_name}}.png

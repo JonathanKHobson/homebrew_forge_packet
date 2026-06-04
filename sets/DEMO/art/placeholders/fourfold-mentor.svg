@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 768">
+  <defs>
+    <linearGradient id="dawn" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff1c0"/>
+      <stop offset="0.42" stop-color="#9cc8df"/>
+      <stop offset="1" stop-color="#263550"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.24" r="0.48">
+      <stop offset="0" stop-color="#fff9db"/>
+      <stop offset="0.42" stop-color="#e9c96c" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#e9c96c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="768" fill="url(#dawn)"/>
+  <rect width="1024" height="768" fill="url(#halo)"/>
+  <path d="M0 642 C170 560 326 574 506 658 C684 742 840 716 1024 590 L1024 768 L0 768 Z" fill="#1c2738"/>
+  <g transform="translate(512 384)">
+    <path d="M-72 330 L-58 120 C-52 34 -28 -34 0 -92 C28 -34 52 34 58 120 L72 330 Z" fill="#242b3e"/>
+    <circle cx="0" cy="-120" r="44" fill="#2d3448"/>
+    <g stroke="#f5e3a2" stroke-width="18" stroke-linecap="round" fill="none">
+      <path d="M-180 -6 C-82 -70 82 -70 180 -6"/>
+      <path d="M-174 88 C-72 46 72 46 174 88"/>
+      <path d="M-128 184 C-48 156 48 156 128 184"/>
+      <path d="M-66 268 C-22 252 22 252 66 268"/>
+    </g>
+  </g>
+  <path d="M128 178 C276 110 384 114 512 174 C654 240 786 226 920 136" fill="none" stroke="#ffffff" stroke-width="18" opacity="0.28"/>
+</svg>

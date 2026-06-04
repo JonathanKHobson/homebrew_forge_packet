@@ -1,0 +1,11 @@
+art_id,file_path,source_url,source_type,artist,license,permission_status,checksum_sha256,position_x,position_y,scale,crop_x,crop_y,crop_w,crop_h,notes
+ART-001,sets/DEMO/art/placeholders/example-vanguard.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Saved from the local editor.
+ART-002,sets/DEMO/art/placeholders/clockwork-relic.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo artifact art
+ART-003,sets/DEMO/art/placeholders/hidden-orchard.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo land art
+ART-004,sets/DEMO/art/placeholders/aegis-of-dawn.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo enchantment art
+ART-005,sets/DEMO/art/placeholders/arcane-insight.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo instant art
+ART-006,sets/DEMO/art/placeholders/rally-the-gate.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo sorcery art
+ART-007,sets/DEMO/art/placeholders/mira-demo-seer.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo three ability planeswalker art
+ART-008,sets/DEMO/art/placeholders/fourfold-mentor.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo four ability planeswalker art
+ART-T01,sets/DEMO/art/placeholders/example-token.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo token art
+ART-T02,sets/DEMO/art/placeholders/full-art-soldier.svg,,local,Homebrew Forge,private placeholder,owned,,,,,,,,,Demo full art token art

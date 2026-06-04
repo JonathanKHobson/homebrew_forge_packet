@@ -1,0 +1,11 @@
+{
+  "collectionId": "demo-reference",
+  "name": "Demo Reference Collection",
+  "description": "Sample collection for owned, inspiration, and review workflow checks.",
+  "linkedUniverseId": "demo",
+  "gameId": "mtg",
+  "purpose": "inspiration",
+  "source": "generic",
+  "createdAt": "2026-06-03T00:00:00.000Z",
+  "updatedAt": "2026-06-03T00:00:00.000Z"
+}

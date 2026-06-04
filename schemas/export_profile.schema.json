@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Homebrew Forge ExportProfile",
+  "type": "object",
+  "required": [
+    "profile_id",
+    "target",
+    "image_format",
+    "width_px",
+    "height_px"
+  ],
+  "properties": {
+    "profile_id": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string",
+      "enum": [
+        "images",
+        "cockatrice",
+        "print_pdf",
+        "gallery"
+      ]
+    },
+    "image_format": {
+      "type": "string",
+      "enum": [
+        "png",
+        "jpg",
+        "jpeg",
+        "webp"
+      ]
+    },
+    "width_px": {
+      "type": "integer"
+    },
+    "height_px": {
+      "type": "integer"
+    },
+    "quality": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "include_bleed": {
+      "type": "boolean"
+    },
+    "bleed_px": {
+      "type": "integer"
+    },
+    "include_crop_marks": {
+      "type": "boolean"
+    },
+    "include_playtest_watermark": {
+      "type": "boolean"
+    },
+    "watermark_text": {
+      "type": "string"
+    },
+    "allow_placeholder_art": {
+      "type": "boolean"
+    },
+    "filename_template": {
+      "type": "string"
+    }
+  }
+}

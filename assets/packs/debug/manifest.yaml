@@ -1,0 +1,64 @@
+pack_id: debug
+name: Debug Placeholder Pack
+version: 0.1.0
+source_summary: Built-in placeholder geometry only. No production frame assets.
+license_status: internal_debug_only
+redistribution_allowed: true
+commit_allowed: true
+supported_layouts:
+  - normal
+  - token
+  - token_full_art
+roles:
+  - id: debug-frame-normal
+    role: frame.background
+    layout: normal
+    color_variant: all
+    path: frames/debug-normal.svg
+  - id: debug-frame-token
+    role: frame.background
+    layout: token
+    color_variant: all
+    path: frames/debug-token.svg
+  - id: debug-frame-token-full-art
+    role: frame.background
+    layout: token_full_art
+    color_variant: all
+    path: frames/debug-token-full-art.svg
+layout_maps:
+  - layout: normal
+    canvas:
+      width: 744
+      height: 1039
+    zones:
+      name: { x: 62, y: 48, w: 470, h: 44 }
+      mana_cost: { x: 535, y: 48, w: 145, h: 44 }
+      art: { x: 67, y: 105, w: 610, h: 445 }
+      type_line: { x: 62, y: 562, w: 620, h: 42 }
+      rules_text: { x: 77, y: 630, w: 585, h: 245 }
+      pt: { x: 570, y: 882, w: 95, h: 45 }
+      footer: { x: 62, y: 943, w: 620, h: 42 }
+  - layout: token
+    canvas:
+      width: 744
+      height: 1039
+    zones:
+      name: { x: 62, y: 48, w: 470, h: 44 }
+      mana_cost: { x: 535, y: 48, w: 145, h: 44 }
+      art: { x: 67, y: 105, w: 610, h: 445 }
+      type_line: { x: 62, y: 562, w: 620, h: 42 }
+      rules_text: { x: 77, y: 630, w: 585, h: 245 }
+      pt: { x: 570, y: 882, w: 95, h: 45 }
+      footer: { x: 62, y: 943, w: 620, h: 42 }
+  - layout: token_full_art
+    canvas:
+      width: 744
+      height: 1039
+    zones:
+      name: { x: 62, y: 48, w: 610, h: 44 }
+      mana_cost: { x: 535, y: 48, w: 145, h: 44 }
+      art: { x: 48, y: 105, w: 648, h: 732 }
+      type_line: { x: 62, y: 842, w: 620, h: 42 }
+      rules_text: { x: 77, y: 892, w: 585, h: 44 }
+      pt: { x: 570, y: 882, w: 95, h: 45 }
+      footer: { x: 62, y: 943, w: 620, h: 42 }

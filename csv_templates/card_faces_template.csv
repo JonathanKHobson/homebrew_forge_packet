@@ -1,0 +1,8 @@
+card_id,face_index,face_name,mana_cost,type_line,oracle_text,flavor_text,power,toughness,loyalty,defense,colors,frame_type,art_id,artist_display,watermark,rules_text_size_hint,rules_text_padding_top,rules_text_padding_right,rules_text_padding_bottom,rules_text_padding_left,layout_variant
+DEMO-001,0,Example Vanguard,{1}{W}{U},Legendary Creature — Human Advisor,"Vigilance
+When Example Vanguard enters, scry 1.","A placeholder for testing the pipeline.",2,3,,,WU,normal_creature,ART-001,Placeholder Artist,,auto,,,,,normal
+DEMO-002,0,Clockwork Relic,{2},Artifact,"{T}: Add {C}.
+{2}, {T}: Draw a card, then discard a card.",,,,,,C,normal_artifact,ART-002,Placeholder Artist,,auto,,,,,normal
+DEMO-003,0,Hidden Orchard,,Land,"Hidden Orchard enters tapped.
+{T}: Add {G}.",,,,,,G,normal_land,ART-003,Placeholder Artist,,auto,normal
+DEMO-T01,0,Example Token,,Token Creature — Soldier,"Vigilance",,1,1,,,W,token_creature,ART-T01,Placeholder Artist,,auto,normal

@@ -1,0 +1,34 @@
+{
+  "universes": [
+    {
+      "id": "ungrouped",
+      "name": "Ungrouped",
+      "description": "Holding project for cards, sets, and assets that are not assigned to a production project yet",
+      "status": "active",
+      "tags": [
+        "holding"
+      ]
+    },
+    {
+      "id": "demo",
+      "name": "Demo Project",
+      "description": "Sample cards and renderer checks",
+      "status": "draft",
+      "tags": [
+        "demo"
+      ]
+    }
+  ],
+  "sets": [
+    {
+      "setCode": "UNGRP",
+      "universeId": "ungrouped",
+      "sortOrder": 0
+    },
+    {
+      "setCode": "DEMO",
+      "universeId": "demo",
+      "sortOrder": 1
+    }
+  ]
+}
