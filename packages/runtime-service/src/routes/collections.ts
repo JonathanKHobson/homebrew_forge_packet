@@ -4,10 +4,14 @@ import {
   exportCollectionCsv,
   exportCollectionPlainText,
   importCollectionCsv,
+  importCollectionPriceCsv,
   listCollections,
+  refreshCollectionMarketPrices,
   saveCollection,
   type CollectionExportTarget,
   type CollectionImportRequest,
+  type CollectionPriceImportRequest,
+  type CollectionPriceRefreshRequest,
   type CreateCollectionRequest,
   type SaveCollectionRequest
 } from '@homebrew-forge/forge';
@@ -41,4 +45,14 @@ export async function exportRuntimeCollection(repoRoot: string, request: { colle
     : request.target === 'text'
       ? exportCollectionPlainText(repoRoot, request.collectionId)
       : exportCollectionCsv(repoRoot, request.collectionId);
+}
+
+export async function refreshRuntimeCollectionPrices(repoRoot: string, request: CollectionPriceRefreshRequest) {
+  const result = await refreshCollectionMarketPrices(repoRoot, request);
+  return { collections: await listCollections(repoRoot), result };
+}
+
+export async function importRuntimeCollectionPrices(repoRoot: string, request: CollectionPriceImportRequest) {
+  const result = await importCollectionPriceCsv(repoRoot, request);
+  return { collections: await listCollections(repoRoot), result };
 }

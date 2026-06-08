@@ -35,8 +35,8 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 | `/api/create-collection` | POST | collection create service | Yes | High | temp collections | Extracted to runtime-service; creates collection folder and relists |
 | `/api/save-collection` | POST | collection save service | Yes | High | temp collection | Extracted to runtime-service; save/read round trip preserves row metadata |
 | `/api/import-collection` | POST | scanner/generic collection import | Yes | High | temp collections | Extracted to runtime-service; imports CSV fixture and reports summary |
-| `/api/collection-prices/refresh` | POST | local price refresh/snapshot | Yes | High | temp collection | Refresh writes only fixture snapshot |
-| `/api/collection-prices/import` | POST | price CSV import | Yes | High | temp collection | Imports fixture price rows and relists |
+| `/api/collection-prices/refresh` | POST | local price refresh/snapshot | Yes | High | temp collection | Extracted to runtime-service; refresh writes only fixture snapshot |
+| `/api/collection-prices/import` | POST | price CSV import | Yes | High | temp collection | Extracted to runtime-service; imports fixture price rows and relists |
 | `/api/export-collection` | POST | CSV/text/Cockatrice collection export | Yes | High | temp output | Extracted to runtime-service; returns expected export artifact |
 | `/api/mana-symbol` | GET | asset-pack mana symbol read | No | Medium | DEMO asset pack | Extracted to runtime-service; serves known symbol, 404s missing symbol |
 | `/api/asset` | GET | repo-root path guard and file serving | No | High | DEMO art | Extracted to runtime-service; serves inside-root asset, rejects outside-root traversal |

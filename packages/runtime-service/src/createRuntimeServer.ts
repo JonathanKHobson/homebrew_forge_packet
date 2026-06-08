@@ -11,7 +11,14 @@ import {
   type RuntimeDeliveryMode
 } from './runtimeHealth.js';
 import { RuntimeAssetError, readRuntimeAsset, readRuntimeManaSymbol } from './routes/assets.js';
-import { createRuntimeCollection, exportRuntimeCollection, importRuntimeCollection, saveRuntimeCollection } from './routes/collections.js';
+import {
+  createRuntimeCollection,
+  exportRuntimeCollection,
+  importRuntimeCollection,
+  importRuntimeCollectionPrices,
+  refreshRuntimeCollectionPrices,
+  saveRuntimeCollection
+} from './routes/collections.js';
 import { createRuntimeDeck, exportRuntimeDeck, importRuntimeDeck, saveRuntimeDeck } from './routes/decks.js';
 import { RuntimeRouteError } from './routes/errors.js';
 import { readRuntimeLibrary } from './routes/library.js';
@@ -409,6 +416,32 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
     }
     try {
       sendJson(res, 200, await importRuntimeCollection(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/collection-prices/refresh') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await refreshRuntimeCollectionPrices(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/collection-prices/import') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await importRuntimeCollectionPrices(state.repoRoot, await readJsonBody(req)));
     } catch (error) {
       sendRouteErrorJson(res, error);
     }

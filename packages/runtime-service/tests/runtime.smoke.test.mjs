@@ -7,6 +7,10 @@ import { tmpdir } from 'node:os';
 import { createCollection, createDeck, officialCardsCacheDir } from '@homebrew-forge/forge';
 import { startRuntimeServer } from '../dist/createRuntimeServer.js';
 
+const OFFICIAL_PRINT_ONE_ID = '00000000-0000-4000-8000-000000000001';
+const OFFICIAL_PRINT_TWO_ID = '00000000-0000-4000-8000-000000000002';
+const OFFICIAL_ORACLE_ID = '10000000-0000-4000-8000-000000000001';
+
 async function makeFixtureRepo() {
   const root = await mkdtemp(join(tmpdir(), 'homebrew forge runtime fixture '));
   await mkdir(join(root, 'packages/forge/src'), { recursive: true });
@@ -54,8 +58,8 @@ async function writeOfficialCardFixture(root) {
   const prints = [
     {
       view: 'prints',
-      id: 'runtime-print-001',
-      oracleId: 'runtime-oracle-001',
+      id: OFFICIAL_PRINT_ONE_ID,
+      oracleId: OFFICIAL_ORACLE_ID,
       name: 'Runtime Bolt',
       manaCost: '{R}',
       manaValue: 1,
@@ -75,8 +79,8 @@ async function writeOfficialCardFixture(root) {
     },
     {
       view: 'prints',
-      id: 'runtime-print-002',
-      oracleId: 'runtime-oracle-001',
+      id: OFFICIAL_PRINT_TWO_ID,
+      oracleId: OFFICIAL_ORACLE_ID,
       name: 'Runtime Bolt',
       manaCost: '{R}',
       manaValue: 1,
@@ -99,7 +103,7 @@ async function writeOfficialCardFixture(root) {
     {
       view: 'oracle',
       id: 'runtime-oracle-card-001',
-      oracleId: 'runtime-oracle-001',
+      oracleId: OFFICIAL_ORACLE_ID,
       name: 'Runtime Bolt',
       manaCost: '{R}',
       manaValue: 1,
@@ -317,6 +321,44 @@ test('runtime service writes collection routes against fixture data', async () =
   }
 });
 
+test('runtime service refreshes and imports collection prices against fixture data', async () => {
+  const repoRoot = await makeFixtureRepo();
+  await writeOfficialCardFixture(repoRoot);
+  const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
+  try {
+    const imported = await (await postJson(runtime.origin, '/api/import-collection', {
+      collectionId: 'runtime-price-binder',
+      name: 'Runtime Price Binder',
+      source: 'generic',
+      contentFormat: 'csv',
+      mode: 'replace',
+      content: `quantity,card_name,scryfall_id\n1,Runtime Bolt,${OFFICIAL_PRINT_ONE_ID}\n`
+    })).json();
+    assert.equal(imported.collection.entries[0].scryfallId, OFFICIAL_PRINT_ONE_ID);
+
+    const refreshed = await (await postJson(runtime.origin, '/api/collection-prices/refresh', {
+      collectionId: imported.collection.metadata.collectionId,
+      updatedAt: '2026-06-08T12:00:00.000Z'
+    })).json();
+    assert.equal(refreshed.result.summary.updatedRows, 1);
+    assert.equal(refreshed.result.collection.entries[0].estimatedMarketPrice, 0.1);
+    assert.equal(refreshed.result.collection.entries[0].estimatedMarketCurrency, 'USD');
+
+    const priceImport = await (await postJson(runtime.origin, '/api/collection-prices/import', {
+      collectionId: imported.collection.metadata.collectionId,
+      source: 'runtime_csv',
+      updatedAt: '2026-06-08T13:00:00.000Z',
+      content: 'card_name,price,currency\nRuntime Bolt,0.33,USD\n'
+    })).json();
+    assert.equal(priceImport.result.summary.updatedRows, 1);
+    assert.equal(priceImport.result.collection.entries[0].estimatedMarketPrice, 0.33);
+    assert.ok(priceImport.collections.some((summary) => summary.collectionId === imported.collection.metadata.collectionId));
+  } finally {
+    await runtime.close();
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
 test('runtime service serves reference and official-card read routes', async () => {
   const repoRoot = await makeFixtureRepo();
   await writeOfficialCardFixture(repoRoot);
@@ -345,11 +387,11 @@ test('runtime service serves reference and official-card read routes', async () 
     assert.equal(unique.total, 1);
     assert.equal(unique.cards[0].variantCount, 2);
 
-    const variants = await (await fetch(`${runtime.origin}/api/official-cards/variants?oracleId=runtime-oracle-001`)).json();
+    const variants = await (await fetch(`${runtime.origin}/api/official-cards/variants?oracleId=${OFFICIAL_ORACLE_ID}`)).json();
     assert.equal(variants.total, 2);
     assert.deepEqual(
       variants.cards.map((card) => card.id),
-      ['runtime-print-002', 'runtime-print-001']
+      [OFFICIAL_PRINT_TWO_ID, OFFICIAL_PRINT_ONE_ID]
     );
   } finally {
     await runtime.close();
@@ -368,7 +410,7 @@ test('runtime service adds official cards to collections and decks', async () =>
   const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
   try {
     const collectionResult = await (await postJson(runtime.origin, '/api/official-cards/add-to-collection', {
-      cardId: 'runtime-print-001',
+      cardId: OFFICIAL_PRINT_ONE_ID,
       collectionId: 'official-route-binder',
       collectionName: 'Official Route Binder',
       linkedUniverseId: 'demo',
@@ -382,7 +424,7 @@ test('runtime service adds official cards to collections and decks', async () =>
     assert.ok(collectionResult.collections.some((summary) => summary.collectionId === 'official-route-binder'));
 
     const deckResult = await (await postJson(runtime.origin, '/api/official-cards/add-to-deck', {
-      cardId: 'runtime-print-001',
+      cardId: OFFICIAL_PRINT_ONE_ID,
       deckId: deck.metadata.deckId,
       section: 'main',
       quantity: 1,
@@ -390,7 +432,7 @@ test('runtime service adds official cards to collections and decks', async () =>
     })).json();
     assert.equal(deckResult.deck.metadata.deckId, deck.metadata.deckId);
     assert.equal(deckResult.deck.entries.length, 1);
-    assert.equal(deckResult.deck.entries[0].cardId, 'runtime-print-001');
+    assert.equal(deckResult.deck.entries[0].cardId, OFFICIAL_PRINT_ONE_ID);
     assert.ok(deckResult.decks.some((summary) => summary.deckId === deck.metadata.deckId));
   } finally {
     await runtime.close();
