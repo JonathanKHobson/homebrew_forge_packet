@@ -38,10 +38,14 @@ const DECK_ID = 'signs-of-assassins';
 const OWNER_NAME = 'Kyle';
 const COMMANDER_NAME = "Altaïr Ibn-La'Ahad";
 const COMMANDER_SCRYFALL_ID = '358026de-ab7c-4a17-8cac-cfbee391b127';
+const KASSANDRA_NAME = 'Kassandra, Eagle Bearer';
+const SPEAR_NAME = 'The Spear of Leonidas';
 const BATCH_TAGS = ['batch-001', 'assassin', 'commander', 'mardu', 'manabox', 'signs-of-assassins'];
+const ORDERED_TAGS = ['batch-002', 'incoming', 'ordered', 'delivery-pending', 'partner-purchase', 'signs-of-assassins'];
 const COMMANDER_COLORS = new Set(['B', 'R', 'W']);
 const BASIC_LANDS = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']);
 const KNOWN_OFF_COLOR = new Set(['Chishiro, the Shattered Blade', 'Eivor, Wolf-Kissed', 'Bountiful Landscape', 'Forest']);
+const EXPECTED_DELIVERY = 'around June 15, 2026';
 
 const SET_HEADERS = ['set_code', 'set_name', 'set_type', 'version', 'default_language', 'default_asset_pack', 'default_export_profile', 'author', 'status', 'tags', 'notes'];
 const CARD_HEADERS = ['card_id', 'set_code', 'collector_number', 'name', 'layout', 'mode', 'source_card_name', 'source_set_code', 'rarity', 'color_identity', 'tags', 'status', 'print_count', 'export_name_override', 'notes'];
@@ -114,6 +118,31 @@ interface PickedCard {
   count: number;
 }
 
+interface MaybePickedCard extends PickedCard {
+  note: string;
+}
+
+interface VariantBuild {
+  main: PickedCard[];
+  maybe: MaybePickedCard[];
+}
+
+const ORDERED_CARDS: Array<{ name: string; quantity?: number; notes: string; tags?: string[] }> = [
+  { name: 'Apple of Eden, Isu Relic', notes: 'Incoming Assassin artifact payoff. Evaluate for exile/value and legend/artifact package slots.', tags: ['artifact', 'exile', 'payoff'] },
+  { name: 'Cathartic Reunion', notes: 'Incoming graveyard setup spell. Strong for loading Assassins into the graveyard without becoming hard reanimator.', tags: ['graveyard', 'draw', 'setup'] },
+  { name: 'Distract the Guards', notes: 'Incoming Assassin-flavor evasion/combat trick. Evaluate for puzzle-combat and cannot-block lines.', tags: ['evasion', 'combat', 'puzzle'] },
+  { name: 'Fall of the First Civilization', notes: 'Incoming saga/value card. Evaluate for board reset, graveyard, or long-game variants.', tags: ['saga', 'wipe', 'value'] },
+  { name: 'Hemlock Vial', notes: 'Incoming Assassin artifact. Evaluate as removal/protection support depending on exact rules text.', tags: ['artifact', 'removal', 'assassin'] },
+  { name: 'Mjolnir, Storm Hammer', notes: 'Incoming legendary Equipment. Evaluate for Brotherhood Arsenal and Voltron-style pressure.', tags: ['equipment', 'artifact', 'finisher'] },
+  { name: 'Mortify', notes: 'Incoming extra removal copy. Evaluate as an upgrade over narrower creature-only or sorcery-speed removal.', tags: ['removal', 'interaction'] },
+  { name: 'Roshan, Hidden Magister', notes: 'Incoming extra Assassin copy. Evaluate for freerunning, exile, and Assassin density.', tags: ['assassin', 'exile', 'evasion'] },
+  { name: "Staff of Eden, Vault's Key", notes: 'Incoming legendary artifact. Evaluate for artifact payoff, card flow, and top-end utility.', tags: ['artifact', 'draw', 'utility'] },
+  { name: 'The Animus', notes: 'Incoming Assassin engine piece. Evaluate for graveyard/exile play patterns and Memory Corridor.', tags: ['artifact', 'graveyard', 'exile'] },
+  { name: SPEAR_NAME, notes: 'Required partner engine with Kassandra, Eagle Bearer. Do not run Kassandra without the Spear package.', tags: ['equipment', 'artifact', 'kassandra-package', 'required-package'] },
+  { name: 'Towering Viewpoint', notes: 'Incoming land/evasion support. Evaluate for freerunning, fixing, and attack setup.', tags: ['land', 'evasion', 'setup'] },
+  { name: 'Yggdrasil, Rebirth Engine', notes: 'Incoming legendary artifact recursion/value engine. Evaluate carefully against the deck goal of using graveyard/exile without becoming generic reanimator.', tags: ['artifact', 'graveyard', 'recursion', 'engine'] }
+];
+
 const RECOMMENDATIONS: Array<{ name: string; roles: string[]; tags: string[]; notes: string; land?: boolean; basicCount?: number }> = [
   { name: 'Command Tower', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'gap-filler'], notes: 'Commander staple fixing for BRW variants.', land: true },
   { name: 'Nomad Outpost', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'mardu'], notes: 'Budget Mardu tri-land to stabilize colors.', land: true },
@@ -184,7 +213,7 @@ const VARIANTS: VariantDefinition[] = [
     landTarget: 36,
     includeRecommendations: [],
     roleWeights: { assassin: 4, evasion: 4, graveyard: 3, exile: 3, removal: 2, draw: 2, ramp: 2, protection: 2, combat: 2 },
-    notes: 'Baseline candidate build. If it falls below 36 lands, keep the land-light flag visible instead of hiding missing basics.'
+    notes: 'Baseline comparison build. If it falls below 36 lands, keep the land-light flag visible instead of hiding missing basics.'
   },
   {
     id: 'rooftop-evasion',
@@ -261,27 +290,37 @@ async function main(): Promise<void> {
   console.log(`Dry-run ok: ${dryRun.summary.importedRows} rows, ${dryRun.summary.scryfallIdMatches} Scryfall ID matches, ${dryRun.summary.unresolvedRows} unresolved.`);
 
   const importResult = await importCollectionCsv(REPO_ROOT, collectionImportRequest(sourceContent, false));
-  const importedIds = importResult.collection.entries.map((entry) => entry.scryfallId).filter((id): id is string => Boolean(id));
-  const ownedCardsById = await fetchScryfallCardsById(importedIds);
-  const duplicateCounts = countBy(importResult.collection.entries, (entry) => normalizedName(entry.cardName), (entry) => entry.quantity);
-  const enrichedOwnedEntries = importResult.collection.entries.map((entry) => enrichOwnedEntry(entry, ownedCardsById.get(clean(entry.scryfallId).toLowerCase()), sourceRowsById.get(clean(entry.scryfallId).toLowerCase()), duplicateCounts, now));
+  const orderedCardsByName = await fetchScryfallCardsByName(ORDERED_CARDS.map((card) => card.name));
+  for (const ordered of ORDERED_CARDS) {
+    const card = orderedCardsByName.get(normalizedName(ordered.name));
+    if (card) {
+      sourceRowsById.set(card.id.toLowerCase(), orderedSourceRow(ordered, now));
+    }
+  }
+  const baseOwnedEntries = upsertOrderedEntries(importResult.collection.entries, orderedCardsByName, now);
+  const ownedCardsById = await fetchScryfallCardsById(baseOwnedEntries.map((entry) => entry.scryfallId).filter((id): id is string => Boolean(id)));
+  for (const card of orderedCardsByName.values()) {
+    ownedCardsById.set(card.id.toLowerCase(), card);
+  }
+  const duplicateCounts = countBy(baseOwnedEntries, (entry) => normalizedName(entry.cardName), (entry) => entry.quantity);
+  const enrichedOwnedEntries = baseOwnedEntries.map((entry) => enrichOwnedEntry(entry, ownedCardsById.get(clean(entry.scryfallId).toLowerCase()), sourceRowsById.get(clean(entry.scryfallId).toLowerCase()), duplicateCounts, now));
   const binder = await saveCollection(REPO_ROOT, {
     metadata: collectionMetadataSchema.parse({
       ...importResult.collection.metadata,
       name: "Assassin's Ledger",
-      description: 'Kyle owned ManaBox batch for the Signs of Assassins Commander deck family.',
+      description: "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and delivery-pending online orders.",
       linkedUniverseId: PROJECT_ID,
       gameId: 'mtg',
       purpose: 'owned',
       source: 'manabox',
       kind: 'binder',
       listCategory: 'general',
-      tags: uniqueTags([...importResult.collection.metadata.tags, ...BATCH_TAGS]),
+      tags: uniqueTags([...importResult.collection.metadata.tags, ...BATCH_TAGS, 'batch-002', 'incoming', 'ordered', 'delivery-pending']),
       defaultEntryTags: BATCH_TAGS,
       defaultOwnershipStatus: 'owned',
       linkedSetCodes: uniqueTags([...(importResult.collection.metadata.linkedSetCodes ?? []), SET_CODE]),
       accentColor: '#9b2f3f',
-      acquisitionNotes: 'batch-001 import from Kyle\'s ManaBox Assassin deck CSV.',
+      acquisitionNotes: 'batch-001 import from Kyle\'s ManaBox Assassin deck CSV. batch-002 incoming partner-purchased online cards expected around June 15, 2026.',
       updatedAt: now
     }),
     entries: enrichedOwnedEntries
@@ -301,8 +340,9 @@ async function main(): Promise<void> {
       quantity: binder.entries.reduce((sum, entry) => sum + entry.quantity, 0),
       owners: [...new Set(binder.entries.map((entry) => entry.ownerName))],
       ownershipStatuses: [...new Set(binder.entries.map((entry) => entry.ownershipStatus))],
-	      offColorReviewRows: offColorCount
-	    },
+      incomingRows: binder.entries.filter((entry) => entry.tags.includes('batch-002')).length,
+      offColorReviewRows: offColorCount
+    },
     flagged: {
       rows: flagged.entries.filter((entry) => entry.tags.includes('signs-of-assassins')).length
     },
@@ -322,7 +362,7 @@ function collectionImportRequest(content: string, dryRun: boolean) {
   return {
 	    collectionId: BINDER_ID,
 	    name: "Assassin's Ledger",
-	    description: 'Kyle owned ManaBox batch for the Signs of Assassins Commander deck family.',
+	    description: "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and delivery-pending online orders.",
     linkedUniverseId: PROJECT_ID,
     gameId: 'mtg',
     purpose: 'owned' as const,
@@ -350,6 +390,78 @@ function assertImportSummary(summary: { importedRows: number; writtenRows: numbe
   }
 }
 
+function upsertOrderedEntries(entries: CollectionEntry[], cardsByName: Map<string, ScryfallCard>, now: string): CollectionEntry[] {
+  const next = entries.map((entry) => collectionEntrySchema.parse({ ...entry }));
+  for (const ordered of ORDERED_CARDS) {
+    const card = cardsByName.get(normalizedName(ordered.name));
+    if (!card) {
+      console.warn(`Ordered card skipped: ${ordered.name} was not found on Scryfall.`);
+      continue;
+    }
+    const quantity = Math.max(1, ordered.quantity ?? 1);
+    const exactIndex = next.findIndex((entry) => clean(entry.scryfallId).toLowerCase() === card.id.toLowerCase());
+    if (exactIndex >= 0) {
+      const existing = next[exactIndex];
+      next[exactIndex] = collectionEntrySchema.parse({
+        ...existing,
+        quantity: existing.quantity + quantity,
+        ownershipStatus: 'owned',
+        ownerName: OWNER_NAME,
+        tags: uniqueTags([...existing.tags, ...ORDERED_TAGS, ...(ordered.tags ?? [])]),
+        notes: uniqueSentences([existing.notes, orderedLedgerNote(ordered)]).join(' '),
+        reviewNotes: uniqueSentences([existing.reviewNotes, `Incoming batch-002 adds ${quantity} partner-purchased copy of ${card.name}; expected delivery ${EXPECTED_DELIVERY}.`]).join(' ')
+      });
+      continue;
+    }
+    next.push(collectionEntrySchema.parse({
+      collectionId: BINDER_ID,
+      entryId: `incoming-batch-002-${slugify(card.name)}-${card.id.slice(0, 8)}`,
+      quantity,
+      ownershipStatus: 'owned',
+      ownerName: OWNER_NAME,
+      cardName: card.name,
+      setCode: clean(card.set).toUpperCase(),
+      setName: clean(card.set_name),
+      collectorNumber: clean(card.collector_number),
+      scryfallId: card.id,
+      finish: 'normal',
+      condition: 'incoming',
+      language: languageLabel(card.lang),
+      location: 'Incoming delivery',
+      source: 'scryfall',
+      sourceRow: JSON.stringify({ source: 'partner-online-order', ordered, scryfall: card, expectedDelivery: EXPECTED_DELIVERY }),
+      matchKey: card.id,
+      matchStrategy: 'scryfall_id',
+      reviewStatus: 'matched',
+      reviewNotes: `Incoming batch-002 partner-purchased card; expected delivery ${EXPECTED_DELIVERY}.`,
+      previewArtSource: 'scryfall',
+      tags: uniqueTags([...ORDERED_TAGS, ...(ordered.tags ?? [])]),
+      notes: orderedLedgerNote(ordered),
+      flagged: false,
+      proxy: false,
+      homebrew: false
+    }));
+  }
+  return next;
+}
+
+function orderedSourceRow(ordered: { name: string; quantity?: number; notes: string; tags?: string[] }, now: string): CsvRow {
+  return {
+    Name: ordered.name,
+    Quantity: String(Math.max(1, ordered.quantity ?? 1)),
+    Source: 'partner-online-order',
+    Batch: 'batch-002',
+    'Order status': 'incoming delivery',
+    'Expected delivery': EXPECTED_DELIVERY,
+    Added: now,
+    Notes: ordered.notes
+  };
+}
+
+function orderedLedgerNote(ordered: { name: string; notes: string }): string {
+  return `${ordered.notes} Partner-purchased online for Kyle; expected delivery ${EXPECTED_DELIVERY}.`;
+}
+
 function enrichOwnedEntry(
   entry: CollectionEntry,
   card: ScryfallCard | undefined,
@@ -358,13 +470,15 @@ function enrichOwnedEntry(
   now: string
 ): CollectionEntry {
   const roles = inferRoles(card, entry.cardName);
-  const tags = uniqueTags([...BATCH_TAGS, ...roles, ...entry.tags]);
+  const isIncomingOrder = entry.tags.includes('batch-002') || entry.tags.includes('incoming') || entry.source === 'scryfall';
+  const importTags = isIncomingOrder ? ['assassin', 'commander', 'mardu', 'signs-of-assassins'] : BATCH_TAGS;
+  const tags = uniqueTags([...importTags, ...roles, ...entry.tags]);
   const duplicateCount = duplicateCounts.get(normalizedName(entry.cardName)) ?? entry.quantity;
   const reviewNotes: string[] = [];
   let needsImportReview = false;
   if (duplicateCount > 1) {
     tags.push('duplicate-name-review', 'flagged', 'review-queue');
-    reviewNotes.push(`Duplicate name review: ${entry.cardName} appears as ${duplicateCount} owned copies/prints in batch-001. Commander variants should use only one nonbasic copy; the binder preserves every owned print.`);
+    reviewNotes.push(`Duplicate name review: ${entry.cardName} appears as ${duplicateCount} owned copies/prints across Assassin's Ledger. Commander variants should use only one nonbasic copy; the binder preserves every owned print.`);
     needsImportReview = true;
   }
   const colorIdentity = colorIdentityForCard(card);
@@ -378,7 +492,7 @@ function enrichOwnedEntry(
     reviewNotes.push('Commander and cover card for the Signs of Assassins deck family.');
   }
   const sourcePayload = {
-    source: 'manabox',
+    source: isIncomingOrder ? 'partner-online-order' : 'manabox',
     row: sourceRow ?? {},
     enrichment: card
   };
@@ -588,8 +702,9 @@ async function buildDeck(ownedEntries: CollectionEntry[], recommendationEntries:
   );
   const allEntries: DeckEntry[] = [];
   for (const definition of VARIANTS) {
-    const picks = buildVariantPicks(definition, ownedCandidates, recommendationCandidates, commanderCandidate);
-    allEntries.push(...picks.map((pick, index) => deckEntryFromPick(definition, pick, index)));
+    const build = buildVariantBuild(definition, ownedCandidates, recommendationCandidates, commanderCandidate);
+    allEntries.push(...build.main.map((pick, index) => deckEntryFromPick(definition, pick, index, 'main')));
+    allEntries.push(...build.maybe.map((pick, index) => deckEntryFromPick(definition, pick, index, 'maybe', pick.note)));
   }
   const metadata = deckMetadataSchema.parse({
     deckId: DECK_ID,
@@ -613,7 +728,16 @@ async function buildDeck(ownedEntries: CollectionEntry[], recommendationEntries:
   return saveDeck(REPO_ROOT, { metadata, entries: allEntries });
 }
 
-function buildVariantPicks(definition: VariantDefinition, ownedCandidates: Candidate[], recommendationCandidates: Candidate[], commanderCandidate: Candidate): PickedCard[] {
+function buildVariantBuild(definition: VariantDefinition, ownedCandidates: Candidate[], recommendationCandidates: Candidate[], commanderCandidate: Candidate): VariantBuild {
+  const removedForPackage: MaybePickedCard[] = [];
+  const main = buildVariantPicks(definition, ownedCandidates, recommendationCandidates, commanderCandidate, removedForPackage);
+  return {
+    main,
+    maybe: buildMaybeBoardPicks(definition, main, removedForPackage, ownedCandidates, recommendationCandidates, commanderCandidate)
+  };
+}
+
+function buildVariantPicks(definition: VariantDefinition, ownedCandidates: Candidate[], recommendationCandidates: Candidate[], commanderCandidate: Candidate, removedForPackage: MaybePickedCard[]): PickedCard[] {
   const allowedOwned = ownedCandidates.filter((candidate) => candidate.cardId !== commanderCandidate.cardId && !KNOWN_OFF_COLOR.has(candidate.name) && isCommanderLegal(candidate.colorIdentity));
   const allowedRecommendations = definition.ownedOnly ? [] : recommendationCandidates.filter((candidate) => isCommanderLegal(candidate.colorIdentity));
   const selected: PickedCard[] = [];
@@ -686,6 +810,7 @@ function buildVariantPicks(definition: VariantDefinition, ownedCandidates: Candi
     }
     add(candidate);
   }
+  enforceKassandraSpearPackage(selected, allowedOwned, definition, removedForPackage);
 
   if (totalCount(selected) !== 99) {
     throw new Error(`${definition.name} generated ${totalCount(selected)} main-deck cards instead of 99.`);
@@ -693,33 +818,118 @@ function buildVariantPicks(definition: VariantDefinition, ownedCandidates: Candi
   return selected;
 }
 
-function deckEntryFromPick(definition: VariantDefinition, pick: PickedCard, index: number): DeckEntry {
+function enforceKassandraSpearPackage(selected: PickedCard[], allowedOwned: Candidate[], definition: VariantDefinition, removedForPackage: MaybePickedCard[]): void {
+  const hasKassandra = selected.some((pick) => pick.candidate.name === KASSANDRA_NAME);
+  const hasSpear = selected.some((pick) => pick.candidate.name === SPEAR_NAME);
+  if (!hasKassandra || hasSpear) {
+    return;
+  }
+  const spear = allowedOwned.find((candidate) => candidate.name === SPEAR_NAME);
+  if (!spear) {
+    return;
+  }
+  if (totalCount(selected) >= 99) {
+    const removable = selected
+      .map((pick, index) => ({ pick, index, score: scoreCandidate(pick.candidate, definition) }))
+      .filter(({ pick }) => pick.candidate.name !== KASSANDRA_NAME && pick.candidate.name !== SPEAR_NAME && !pick.candidate.roles.includes('land'))
+      .sort((left, right) => left.score - right.score || right.pick.candidate.manaValue - left.pick.candidate.manaValue);
+    const fallback = selected
+      .map((pick, index) => ({ pick, index, score: scoreCandidate(pick.candidate, definition) }))
+      .filter(({ pick }) => pick.candidate.name !== KASSANDRA_NAME && pick.candidate.name !== SPEAR_NAME)
+      .sort((left, right) => left.score - right.score);
+    const removal = removable[0] ?? fallback[0];
+    if (!removal) {
+      return;
+    }
+    selected.splice(removal.index, 1);
+    removedForPackage.push({
+      ...removal.pick,
+      note: `${removal.pick.candidate.name} moved to Maybeboard so ${definition.name} can keep Kassandra paired with The Spear of Leonidas. Re-test this as a replacement if the Kassandra package underperforms.`
+    });
+  }
+  selected.push({ candidate: spear, count: 1 });
+}
+
+function buildMaybeBoardPicks(
+  definition: VariantDefinition,
+  main: PickedCard[],
+  removedForPackage: MaybePickedCard[],
+  ownedCandidates: Candidate[],
+  recommendationCandidates: Candidate[],
+  commanderCandidate: Candidate
+): MaybePickedCard[] {
+  const mainNames = new Set(main.map((pick) => pick.candidate.keyName));
+  const maybeNames = new Set<string>();
+  const maybe: MaybePickedCard[] = [];
+  const addMaybe = (candidate: Candidate, note: string): void => {
+    if (candidate.cardId === commanderCandidate.cardId || KNOWN_OFF_COLOR.has(candidate.name) || !isCommanderLegal(candidate.colorIdentity)) {
+      return;
+    }
+    if (mainNames.has(candidate.keyName) || maybeNames.has(candidate.keyName)) {
+      return;
+    }
+    maybeNames.add(candidate.keyName);
+    maybe.push({ candidate, count: 1, note });
+  };
+  for (const removed of removedForPackage) {
+    addMaybe(removed.candidate, removed.note);
+  }
+  const incomingOwned = ownedCandidates
+    .filter((candidate) => candidate.tags.includes('batch-002') || candidate.tags.includes('incoming'))
+    .sort((left, right) => scoreCandidate(right, definition) - scoreCandidate(left, definition) || left.name.localeCompare(right.name));
+  for (const candidate of incomingOwned) {
+    addMaybe(candidate, incomingMaybeNote(candidate, definition));
+  }
+  const recommendationMaybes = recommendationCandidates
+    .filter((candidate) => !definition.ownedOnly && isCommanderLegal(candidate.colorIdentity) && !candidate.roles.includes('land'))
+    .sort((left, right) => scoreCandidate(right, definition) - scoreCandidate(left, definition) || left.name.localeCompare(right.name))
+    .slice(0, 8);
+  for (const candidate of recommendationMaybes) {
+    addMaybe(candidate, `Recommended Maybeboard upgrade for ${definition.name}. Test as a replacement for a lower-impact ${candidate.roles[0] ?? 'utility'} slot before moving it into the 99.`);
+  }
+  return maybe.slice(0, 18);
+}
+
+function incomingMaybeNote(candidate: Candidate, definition: VariantDefinition): string {
+  const replacementRole = candidate.roles.find((role) => role !== 'artifact' && role !== 'assassin') ?? candidate.roles[0] ?? 'utility';
+  if (candidate.name === SPEAR_NAME) {
+    return `Incoming batch-002 package card. Keep this paired with ${KASSANDRA_NAME}; move it from Maybeboard to Main whenever Kassandra is in the 99.`;
+  }
+  return `Incoming batch-002 option for ${definition.name}. Test as a replacement or role upgrade for a ${replacementRole} slot; delivery is expected ${EXPECTED_DELIVERY}.`;
+}
+
+function deckEntryFromPick(definition: VariantDefinition, pick: PickedCard, index: number, section: DeckEntry['section'], noteOverride?: string): DeckEntry {
   const roles = uniqueTags(pick.candidate.roles);
   const tags = uniqueTags([
     ...pick.candidate.tags,
-    definition.id,
-    pick.candidate.owned ? 'owned' : 'recommended',
+	    definition.id,
+    section === 'maybe' ? 'maybe-board' : '',
+    section === 'maybe' ? 'replacement-candidate' : '',
+    pick.candidate.tags.includes('batch-002') ? 'incoming-option' : '',
+	    pick.candidate.owned ? 'owned' : 'recommended',
     pick.candidate.owned ? '' : 'ghost-slot',
     pick.candidate.owned ? '' : 'unowned',
     pick.candidate.owned ? '' : 'gap-filler'
   ]);
   const flags = uniqueTags([
     definition.ownedOnly && pick.candidate.roles.includes('land') ? 'owned-only-land-pool' : '',
-    !pick.candidate.owned ? 'ghost-slot' : '',
-    !pick.candidate.owned ? 'unowned' : '',
-    definition.ownedOnly && roles.includes('land') ? landLightFlag(definition.id) : ''
-  ]);
+	    !pick.candidate.owned ? 'ghost-slot' : '',
+	    !pick.candidate.owned ? 'unowned' : '',
+    pick.candidate.tags.includes('batch-002') ? 'incoming-delivery' : '',
+    section === 'maybe' ? 'maybe-board' : '',
+	    definition.ownedOnly && roles.includes('land') ? landLightFlag(definition.id) : ''
+	  ]);
   return deckEntrySchema.parse({
     deckId: DECK_ID,
-    entryId: `${definition.id}-${String(index + 1).padStart(3, '0')}-${slugify(pick.candidate.name)}`,
-    deckVariantId: definition.id,
-    section: 'main',
+	    entryId: `${definition.id}-${section}-${String(index + 1).padStart(3, '0')}-${slugify(pick.candidate.name)}`,
+	    deckVariantId: definition.id,
+	    section,
     count: pick.count,
     setCode: pick.candidate.setCode,
     cardId: pick.candidate.cardId,
     variantId: 'official-print',
     nameSnapshot: pick.candidate.name,
-    candidateStatus: 'active',
+	    candidateStatus: section === 'main' ? 'active' : 'candidate',
     roles,
     roleSource: 'heuristic',
     roleConfidence: pick.candidate.owned ? 0.78 : 0.86,
@@ -727,7 +937,7 @@ function deckEntryFromPick(definition: VariantDefinition, pick: PickedCard, inde
     synergyRating: ratingFor(pick.candidate, definition, 'synergy'),
     qualityRating: ratingFor(pick.candidate, definition, 'quality'),
     entryTags: tags,
-    entryNotes: entryNotesFor(pick.candidate, definition),
+	    entryNotes: noteOverride ?? entryNotesFor(pick.candidate, definition),
     flags,
     starred: !pick.candidate.owned && pick.candidate.roles.some((role) => ['fixing', 'graveyard', 'evasion', 'protection'].includes(role)),
     markedForDeletion: false
@@ -833,7 +1043,11 @@ function ratingFor(candidate: Candidate, definition: VariantDefinition, kind: 'i
 }
 
 function entryNotesFor(candidate: Candidate, definition: VariantDefinition): string {
-  const source = candidate.owned ? 'Owned batch-001 card' : 'Recommended ghost slot';
+  const source = candidate.owned
+    ? candidate.tags.includes('batch-002') || candidate.tags.includes('incoming')
+      ? 'Owned incoming batch-002 card'
+      : 'Owned batch-001 card'
+    : 'Recommended ghost slot';
   const roleText = candidate.roles.join(', ');
   return `${source} for ${definition.name}. Roles: ${roleText}. ${candidate.entry.notes ?? ''}`.trim();
 }
@@ -928,10 +1142,14 @@ async function fetchScryfallCardsById(ids: string[]): Promise<Map<string, Scryfa
 }
 
 async function fetchRecommendedCards(): Promise<Map<string, ScryfallCard>> {
+  return fetchScryfallCardsByName(RECOMMENDATIONS.map((recommendation) => recommendation.name));
+}
+
+async function fetchScryfallCardsByName(names: string[]): Promise<Map<string, ScryfallCard>> {
   const cards = new Map<string, ScryfallCard>();
-  const names = [...new Set(RECOMMENDATIONS.map((recommendation) => recommendation.name))];
-  for (let index = 0; index < names.length; index += 75) {
-    const chunk = names.slice(index, index + 75);
+  const uniqueNames = [...new Set(names.map(normalizeScryfallLookupName).filter(Boolean))];
+  for (let index = 0; index < uniqueNames.length; index += 75) {
+    const chunk = uniqueNames.slice(index, index + 75);
     const response = await scryfallJson<{ data?: ScryfallCard[]; not_found?: Array<Record<string, unknown>> }>('https://api.scryfall.com/cards/collection', {
       method: 'POST',
       body: JSON.stringify({ identifiers: chunk.map((name) => ({ name })) })
@@ -948,6 +1166,7 @@ async function fetchRecommendedCards(): Promise<Map<string, ScryfallCard>> {
       try {
         const card = await scryfallJson<ScryfallCard>(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name.replace(/\s*\/\/\s*/g, ' '))}`);
         cards.set(normalizedName(card.name), card);
+        cards.set(normalizedName(name), card);
       } catch (error) {
         console.warn(`Recommendation lookup missing: ${JSON.stringify(missing)} (${error instanceof Error ? error.message : String(error)})`);
       }
@@ -1099,7 +1318,11 @@ function uniqueSentences(values: Array<string | undefined>): string[] {
 }
 
 function normalizedName(value: string | undefined): string {
-  return clean(value).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return clean(value).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[‘’`]/g, "'").toLowerCase();
+}
+
+function normalizeScryfallLookupName(value: string | undefined): string {
+  return clean(value).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[‘’`]/g, "'");
 }
 
 function slugify(value: string): string {

@@ -54,7 +54,6 @@ interface EditorToolbarProps {
   isFocusedCardMode: boolean;
   isCardBrowserMode: boolean;
   isDashboardMode: boolean;
-  canEnterFocusedCardMode: boolean;
   onThemeChange: (theme: EditorTheme) => void;
   onWorkModeChange: (mode: WorkModeId) => void;
   onPreviewModeChange: (mode: PreviewMode) => void;
@@ -130,7 +129,6 @@ export function EditorToolbar({
   isFocusedCardMode,
   isCardBrowserMode,
   isDashboardMode,
-  canEnterFocusedCardMode,
   onThemeChange,
   onWorkModeChange,
   onPreviewModeChange,
@@ -451,17 +449,17 @@ export function EditorToolbar({
                       Exit Focused Maker
                     </button>
                   ) : (
-                    <button type="button" role="menuitem" onClick={() => runMenuAction(onEnterFocusedCardMode)} disabled={!canEnterFocusedCardMode}>
+                    <button type="button" role="menuitem" onClick={() => runMenuAction(onEnterFocusedCardMode)}>
                       Focus Maker
                     </button>
                   )}
                   {isCardBrowserMode ? (
                     <button type="button" role="menuitem" className="active" onClick={() => runMenuAction(onExitCardBrowserMode)}>
-                      Exit Card List Browser
+                      Exit Card Browser
                     </button>
                   ) : (
                     <button type="button" role="menuitem" onClick={() => runMenuAction(onEnterCardBrowserMode)}>
-                      Card List Browser
+                      Card Browser
                     </button>
                   )}
                   {isDashboardMode ? (
@@ -473,8 +471,8 @@ export function EditorToolbar({
                       Card Dashboard
                     </button>
                   )}
-                  <button type="button" role="menuitem" className={previewMode === 'expanded' ? 'active' : ''} onClick={() => runMenuAction(() => onPreviewModeChange('expanded'))} disabled={!canExpandPreview}>
-                    Card Only Preview
+                  <button type="button" role="menuitem" className={previewMode === 'expanded' ? 'active' : ''} onClick={() => runMenuAction(() => onPreviewModeChange('expanded'))}>
+                    Card Preview
                   </button>
                 </div>
               </div>
@@ -561,7 +559,19 @@ export function EditorToolbar({
             </div>
           </details>
         </nav>
-        <WorkModeChip mode={activeWorkMode} onChange={onWorkModeChange} />
+        <div className="toolbar-context-controls">
+          <ProjectQuickSwitch
+            library={library}
+            selectedUniverseId={selectedUniverseId}
+            defaultProjectId={defaultProjectId}
+            activeProjectName={activeProjectName}
+            activeSetCode={activeSetCode}
+            onSelectProject={onSelectProject}
+            onSetDefaultProject={onSetDefaultProject}
+            onClearDefaultProject={onClearDefaultProject}
+          />
+          <WorkModeChip mode={activeWorkMode} onChange={onWorkModeChange} />
+        </div>
       </div>
       {showCommandBar ? (
         <>
@@ -636,16 +646,6 @@ export function EditorToolbar({
                 <option value="1.5">150%</option>
               </select>
             </label>
-            <ProjectQuickSwitch
-              library={library}
-              selectedUniverseId={selectedUniverseId}
-              defaultProjectId={defaultProjectId}
-              activeProjectName={activeProjectName}
-              activeSetCode={activeSetCode}
-              onSelectProject={onSelectProject}
-              onSetDefaultProject={onSetDefaultProject}
-              onClearDefaultProject={onClearDefaultProject}
-            />
             <div className="toolbar-spacer" />
           </div>
           <PanelResizeHandle label="Resize top toolbar" orientation="horizontal" onResize={onCommandBarResize} />

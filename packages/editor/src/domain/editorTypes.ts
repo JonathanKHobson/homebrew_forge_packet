@@ -46,9 +46,14 @@ import type {
   AddOfficialCardToSetRequest,
   OfficialCardCatalogStatus,
   OfficialCardCatalogView,
+  OfficialCardCategoryFilter,
+  OfficialCardImageFilter,
+  OfficialCardPriceCurrency,
   OfficialCardSearchCard,
   OfficialCardSearchFilters,
-  OfficialCardSearchResult
+  OfficialCardSearchResult,
+  OfficialCardSortDirection,
+  OfficialCardSortKey
 } from '@homebrew-forge/forge';
 import type { FrameBorderColor, FrameSupportState } from './frameSupportTypes.js';
 
@@ -104,9 +109,14 @@ export type {
   AddOfficialCardToSetRequest,
   OfficialCardCatalogStatus,
   OfficialCardCatalogView,
+  OfficialCardCategoryFilter,
+  OfficialCardImageFilter,
+  OfficialCardPriceCurrency,
   OfficialCardSearchCard,
   OfficialCardSearchFilters,
-  OfficialCardSearchResult
+  OfficialCardSearchResult,
+  OfficialCardSortDirection,
+  OfficialCardSortKey
 };
 
 export interface AddOfficialCardToSetResult {

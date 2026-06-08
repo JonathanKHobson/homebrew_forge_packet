@@ -30,6 +30,8 @@ Status values: `planned`, `in_progress`, `verified`, `blocked`.
 | 7 | Advanced Workspace Health rail | verified | shell/status | typecheck/build/UX gate/screenshots | `WorkspaceHealthPanel`; status strip Health button; `output/playwright/forge-ui-phase-7/dark-shell-workspace-health.png` |
 | 8 | CSS consolidation | verified | styles | build + visual QA | `styles/forge-ui-shell.css` split from craft layer; `docs/51_forge_ui_global_css_exceptions.md` documents remaining legacy exceptions |
 | 8 | Final North Star acceptance | verified | all editor surfaces | typecheck/build/UX gate/full visual QA | `output/playwright/forge-ui-phase-8/qa-results.json`; 14 screenshots passed with 0 contrast failures, 0 dark light-surface leaks, and no horizontal overflow |
+| 9 | List controls and focused layout cleanup | in_progress | Maker/Card Browser/Decks/Collections/Binders/Lists | typecheck/build/UX gate/visual QA | `docs/49_list_controls_focus_layout_backlog.md`; evidence target `output/playwright/forge-ui-phase-list-controls-focus-layouts/` |
+| 9 | References official-card browser | verified | References / Settings / toolbar | forge unit tests + typecheck/build + browser QA | `output/playwright/references-official-cards/qa-results.json`; `output/playwright/references-official-cards/keyboard-navigation-results.json` |
 
 ## Required Verification Per Slice
 

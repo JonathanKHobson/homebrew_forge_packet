@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   addOfficialCardToCollection,
+  addOfficialCardToDeck,
+  addOfficialCardToSet,
   exportSource,
   fetchCollection,
   fetchCollections,
@@ -58,6 +60,7 @@ import {
 } from '../domain/filterTypes.js';
 import { COMMANDER_BRACKET_OPTIONS, DECK_FORMAT_OPTIONS, DECK_PLAY_STYLE_SUGGESTIONS } from '../domain/deckTaxonomy.js';
 import { COLOR_IDENTITY_OPTIONS } from '../domain/magicTerms.js';
+import { basicLandGroupKey, sortItemsByState, type ListSortOption, type ListSortState } from '../domain/listControls.js';
 import {
   CONDITION_OPTIONS,
   FINISH_OPTIONS,
@@ -68,6 +71,28 @@ import {
   metadataFromDeckCard,
   printLabelForMetadata
 } from '../domain/officialCardMetadata.js';
+import {
+  DEFAULT_OFFICIAL_CARD_FILTERS,
+  OFFICIAL_CARD_DETAIL_MODE_OPTIONS,
+  OFFICIAL_CARD_SORT_OPTIONS,
+  OFFICIAL_CARD_VIEW_MODE_OPTIONS,
+  officialCardActiveFilterCount,
+  officialCardSearchFiltersFromBrowser,
+  officialCardSortOption,
+  type OfficialCardActionTarget,
+  type OfficialCardBrowserFilters,
+  type OfficialCardBrowserViewMode,
+  type OfficialCardDetailMode,
+  type OfficialCardSortOptionId
+} from '../domain/officialCardBrowser.js';
+import {
+  officialCardSyncCadenceLabel,
+  readOfficialCardSyncSettings,
+  shouldAutoSyncOfficialCards,
+  writeOfficialCardSyncSettings,
+  type OfficialCardSyncCadence,
+  type OfficialCardSyncSettings
+} from '../domain/officialCardSyncSettings.js';
 import {
   activeReferenceRuleFilterCount,
   activeReferenceTermFilterCount,
@@ -87,7 +112,7 @@ import { Field } from './Field.js';
 import { BrowseFilterOverlay } from './filters/BrowseFilterOverlay.js';
 import { FilterButton } from './filters/FilterButton.js';
 import { FilteredEmptyState } from './filters/FilteredEmptyState.js';
-import { StatusPill, type StatusPillTone } from './forge-ui/index.js';
+import { AdvancedFiltersButton, GroupedBasicLandToggle, ListControlsBar, ListResultsSummary, SortMenu, StatusPill, type StatusPillTone } from './forge-ui/index.js';
 import { Icon, type IconName } from './Icon.js';
 import { ImageLightbox } from './ImageLightbox.js';
 import { ColorIdentitySymbols, ManaCostSymbols } from './ManaSymbols.js';
@@ -103,6 +128,7 @@ import { CollectionPriceToolsOverlay } from './overlays/CollectionPriceToolsOver
 import { DeckAddCardsOverlay } from './overlays/DeckAddCardsOverlay.js';
 import { DeckCardPreviewOverlay } from './overlays/DeckCardPreviewOverlay.js';
 import { ReferenceCreateOverlay } from './overlays/ReferenceCreateOverlay.js';
+import { OfficialCardFilterControls } from './reference/OfficialCardFilterControls.js';
 import { ReferenceFilterControls } from './reference/ReferenceFilterControls.js';
 import { RulesGuide } from './reference/RulesGuide.js';
 import { TagEditor } from './TagEditor.js';
@@ -213,21 +239,90 @@ const COLLECTION_VIEW_MODE_OPTIONS: Array<{ mode: CollectionViewMode; label: str
   { mode: 'single', label: 'Single card', icon: 'single' }
 ];
 
+type CollectionEntrySortOptionId = 'default' | 'name' | 'set' | 'quantity' | 'owner' | 'condition' | 'finish' | 'language' | 'value' | 'review' | 'source';
+
+const COLLECTION_ENTRY_SORT_OPTIONS: Array<ListSortOption<CollectionEntrySortOptionId>> = [
+  { id: 'default', label: 'Import order' },
+  { id: 'name', label: 'Name' },
+  { id: 'set', label: 'Set / #' },
+  { id: 'quantity', label: 'Quantity', defaultDirection: 'desc' },
+  { id: 'owner', label: 'Owner' },
+  { id: 'condition', label: 'Condition' },
+  { id: 'finish', label: 'Finish' },
+  { id: 'language', label: 'Language' },
+  { id: 'value', label: 'Value', defaultDirection: 'desc' },
+  { id: 'review', label: 'Review' },
+  { id: 'source', label: 'Source' }
+];
+
 const DECK_VIEW_MODE_OPTIONS: Array<{ mode: DeckViewMode; label: string; icon: IconName }> = [
   { mode: 'board', label: 'Board', icon: 'decks' },
   { mode: 'grid', label: 'Grid', icon: 'grid' },
   { mode: 'list', label: 'List', icon: 'list' },
   { mode: 'single', label: 'Single card', icon: 'single' },
-  { mode: 'candidates', label: 'Candidates', icon: 'filter' },
+  { mode: 'candidates', label: 'Candidates', icon: 'star' },
   { mode: 'roles', label: 'Roles', icon: 'flag' },
   { mode: 'mana', label: 'Mana', icon: 'settings' }
 ];
+
+type DeckEntrySortOptionId = 'default' | 'name' | 'quantity' | 'mana' | 'color' | 'type' | 'role' | 'status' | 'section' | 'unresolved';
+
+interface DeckEntryFilters {
+  section: DeckEntry['section'] | 'all';
+  candidateStatus: NonNullable<DeckEntry['candidateStatus']> | 'active' | 'all';
+  role: string;
+  color: string;
+  manaValue: string;
+  cardType: string;
+  tag: string;
+  unresolved: 'all' | 'has' | 'none';
+}
+
+const DEFAULT_DECK_ENTRY_FILTERS: DeckEntryFilters = {
+  section: 'all',
+  candidateStatus: 'all',
+  role: '',
+  color: 'all',
+  manaValue: '',
+  cardType: 'all',
+  tag: '',
+  unresolved: 'all'
+};
+
+const DECK_ENTRY_SORT_OPTIONS: Array<ListSortOption<DeckEntrySortOptionId>> = [
+  { id: 'default', label: 'Board order' },
+  { id: 'name', label: 'Name' },
+  { id: 'quantity', label: 'Quantity', defaultDirection: 'desc' },
+  { id: 'mana', label: 'Mana value' },
+  { id: 'color', label: 'Color' },
+  { id: 'type', label: 'Type' },
+  { id: 'role', label: 'Role' },
+  { id: 'status', label: 'Status' },
+  { id: 'section', label: 'Board' },
+  { id: 'unresolved', label: 'Unresolved' }
+];
+
+const DECK_GROUP_BASICS_STORAGE_KEY = 'homebrew-forge.deck.groupBasics';
 
 function defaultDeckFiltersForProject(projectId: string) {
   return {
     ...DEFAULT_DECK_FILTERS,
     linkedUniverseId: projectId || 'all'
   };
+}
+
+function readDeckGroupBasicsPreference(): boolean {
+  if (typeof window === 'undefined') {
+    return true;
+  }
+  return window.localStorage.getItem(DECK_GROUP_BASICS_STORAGE_KEY) !== 'false';
+}
+
+function writeDeckGroupBasicsPreference(value: boolean) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.localStorage.setItem(DECK_GROUP_BASICS_STORAGE_KEY, value ? 'true' : 'false');
 }
 
 export function WorkspaceView({
@@ -388,7 +483,10 @@ export function WorkspaceView({
           onResizeRightPanel={onResizeRightPanel}
           onShowLeftPanelChange={onShowLeftPanelChange}
           onShowRightPanelChange={onShowRightPanelChange}
+          onProjectLoaded={onProjectLoaded}
           onReferenceCatalogUpdated={onReferenceCatalogUpdated}
+          onOpenCard={onOpenCard}
+          onOpenCardBrowser={onOpenCardBrowser}
           onStatus={onStatus}
         />
       ) : (
@@ -398,6 +496,7 @@ export function WorkspaceView({
           onShowCardsRailItemChange={onShowCardsRailItemChange}
           showCollectionsRailItem={showCollectionsRailItem}
           onShowCollectionsRailItemChange={onShowCollectionsRailItemChange}
+          onStatus={onStatus}
         />
       )}
     </section>
@@ -424,7 +523,30 @@ const REFERENCE_OFFICIAL_PAGE_SIZE = 120;
 const referenceModes: Array<{ id: ReferenceMode; label: string }> = [
   { id: 'terms', label: 'Terms' },
   { id: 'rules', label: 'Rules' },
-  { id: 'official-cards', label: 'Official Cards' }
+  { id: 'official-cards', label: 'Cards' }
+];
+
+type ReferenceTermSort = 'auto' | 'name-asc' | 'name-desc' | 'category-asc' | 'source-asc' | 'status-asc' | 'workflow-asc';
+type ReferenceRuleSort = 'auto' | 'number-asc' | 'number-desc' | 'title-asc' | 'kind-asc' | 'effective-desc' | 'effective-asc';
+
+const referenceTermSortOptions: Array<{ id: ReferenceTermSort; label: string }> = [
+  { id: 'auto', label: 'Best match' },
+  { id: 'name-asc', label: 'Name A-Z' },
+  { id: 'name-desc', label: 'Name Z-A' },
+  { id: 'category-asc', label: 'Category' },
+  { id: 'source-asc', label: 'Source' },
+  { id: 'status-asc', label: 'Status' },
+  { id: 'workflow-asc', label: 'Workflow' }
+];
+
+const referenceRuleSortOptions: Array<{ id: ReferenceRuleSort; label: string }> = [
+  { id: 'auto', label: 'Best match' },
+  { id: 'number-asc', label: 'Rule number' },
+  { id: 'number-desc', label: 'Rule number desc' },
+  { id: 'title-asc', label: 'Title A-Z' },
+  { id: 'kind-asc', label: 'Kind' },
+  { id: 'effective-desc', label: 'Effective newest' },
+  { id: 'effective-asc', label: 'Effective oldest' }
 ];
 
 const ruleKinds: Array<{ id: ReferenceRuleKind | 'all'; label: string }> = [
@@ -500,6 +622,7 @@ function CollectionsWorkspace({
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(() => new Set());
   const [collectionViewMode, setCollectionViewMode] = useState<CollectionViewMode>('table');
+  const [collectionEntrySortState, setCollectionEntrySortState] = useState<ListSortState<CollectionEntrySortOptionId>>({ option: 'default', direction: 'asc' });
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [previewEntryId, setPreviewEntryId] = useState('');
   const [expandedImageEntryId, setExpandedImageEntryId] = useState('');
@@ -670,7 +793,7 @@ function CollectionsWorkspace({
   }
 
   function selectFilteredEntries() {
-    setSelectedEntryIds(new Set(filteredEntries.map((entry) => entry.entryId)));
+    setSelectedEntryIds(new Set(sortedEntries.map((entry) => entry.entryId)));
   }
 
   function selectAllEntries() {
@@ -792,10 +915,32 @@ function CollectionsWorkspace({
       return matchesStatus && matchesStrategy && matchesOwnershipStatus && matchesOwner && matchesTags && matchesMarker && matchesPurchaseValue && matchesMarketValue && matchesFinish && matchesCondition && matchesLanguage && matchesQuery;
     });
   }, [collection?.entries, conditionFilter, entryQuery, finishFilter, languageFilter, markerFilter, marketValueFilter, matchStrategyFilter, ownerFilter, ownershipStatusFilter, purchaseValueFilter, reviewFilter, tagFilter]);
-  const filteredEntryIds = filteredEntries.map((entry) => entry.entryId);
+  const sortedEntries = useMemo(
+    () =>
+      sortItemsByState(
+        filteredEntries,
+        collectionEntrySortState,
+        {
+          default: (entry) => collection?.entries.findIndex((candidate) => candidate.entryId === entry.entryId) ?? 0,
+          name: (entry) => entry.cardName,
+          set: (entry) => `${entry.setCode ?? ''}:${entry.collectorNumber ?? ''}`,
+          quantity: (entry) => entry.quantity,
+          owner: (entry) => entry.ownerName,
+          condition: (entry) => entry.condition,
+          finish: (entry) => entry.finish,
+          language: (entry) => entry.language,
+          value: (entry) => collectionValueEstimateFromEntry(entry)?.amount,
+          review: (entry) => entry.reviewStatus,
+          source: (entry) => entry.source
+        },
+        (entry) => entry.cardName
+      ),
+    [collection?.entries, collectionEntrySortState, filteredEntries]
+  );
+  const filteredEntryIds = sortedEntries.map((entry) => entry.entryId);
   const allFilteredSelected = filteredEntryIds.length > 0 && filteredEntryIds.every((entryId) => selectedEntryIds.has(entryId));
   const selectedEntries = (collection?.entries ?? []).filter((entry) => selectedEntryIds.has(entry.entryId));
-  const selectedEntry = collection?.entries.find((entry) => entry.entryId === selectedEntryId) ?? filteredEntries[0] ?? collection?.entries[0];
+  const selectedEntry = collection?.entries.find((entry) => entry.entryId === selectedEntryId) ?? sortedEntries[0] ?? collection?.entries[0];
   const previewEntry = collection?.entries.find((entry) => entry.entryId === previewEntryId);
   const expandedImageEntry = collection?.entries.find((entry) => entry.entryId === expandedImageEntryId);
   const expandedImageSrc = expandedImageEntry ? imageUrlForMetadata(metadataFromCollectionEntry(expandedImageEntry), 'large') : '';
@@ -922,26 +1067,33 @@ function CollectionsWorkspace({
             </div>
 
             <div className="collection-table-toolbar">
-              <label className="search-field">
-                <Icon name="search" />
-                <input value={entryQuery} placeholder="Search cards..." onChange={(event) => setEntryQuery(event.target.value)} />
-              </label>
-              <span className="filter-count-note">{activeCollectionFilterCount ? `${activeCollectionFilterCount} active filters` : 'No filters active'}</span>
-              <div className="segmented-control collection-view-mode segmented-icon-control" role="group" aria-label={`${surfaceTitle} view mode`}>
-                {COLLECTION_VIEW_MODE_OPTIONS.map(({ mode, label, icon }) => (
-                  <button key={mode} type="button" className={collectionViewMode === mode ? 'active' : ''} title={`${label} view`} aria-label={`${label} view`} onClick={() => setCollectionViewMode(mode)}>
-                    <Icon name={icon} />
-                  </button>
-                ))}
-              </div>
+              <ListControlsBar
+                searchLabel={`Search ${surfaceTitle} rows`}
+                searchValue={entryQuery}
+                searchPlaceholder="Search cards..."
+                onSearchChange={setEntryQuery}
+                sortControl={<SortMenu options={COLLECTION_ENTRY_SORT_OPTIONS} state={collectionEntrySortState} onChange={setCollectionEntrySortState} />}
+                filterControl={<AdvancedFiltersButton activeCount={activeCollectionFilterCount} onClick={() => setFiltersOpen(true)} />}
+                resetControl={entryQuery.trim() || activeCollectionFilterCount ? <button type="button" className="secondary-button compact" onClick={() => { setEntryQuery(''); resetCollectionFilters(); }}>Reset</button> : null}
+                results={<ListResultsSummary shown={sortedEntries.length} total={collection.entries.length} label="row" />}
+                viewControl={
+                  <div className="segmented-control collection-view-mode segmented-icon-control" role="group" aria-label={`${surfaceTitle} view mode`}>
+                    {COLLECTION_VIEW_MODE_OPTIONS.map(({ mode, label, icon }) => (
+                      <button key={mode} type="button" className={collectionViewMode === mode ? 'active' : ''} title={`${label} view`} aria-label={`${label} view`} onClick={() => setCollectionViewMode(mode)}>
+                        <Icon name={icon} />
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
             </div>
 
             <div className={`collection-selection-toolbar ${selectedEntryIds.size ? 'has-selection' : 'is-idle'}`}>
               <label className="checkbox-row">
-                <input type="checkbox" checked={allFilteredSelected} disabled={!filteredEntries.length} onChange={(event) => event.target.checked ? selectFilteredEntries() : clearSelectedEntries()} />
+                <input type="checkbox" checked={allFilteredSelected} disabled={!sortedEntries.length} onChange={(event) => event.target.checked ? selectFilteredEntries() : clearSelectedEntries()} />
                 <span>{selectedEntryIds.size ? `${formatCount(selectedEntryIds.size, 'row')} selected` : 'No rows selected'}</span>
               </label>
-              <button type="button" className="secondary-button" disabled={!filteredEntries.length} onClick={selectFilteredEntries}>Select filtered</button>
+              <button type="button" className="secondary-button" disabled={!sortedEntries.length} onClick={selectFilteredEntries}>Select shown</button>
               <button type="button" className="secondary-button" disabled={!collection.entries.length} onClick={selectAllEntries}>Select all</button>
               {selectedEntryIds.size ? (
                 <>
@@ -971,7 +1123,7 @@ function CollectionsWorkspace({
                     <span className="collection-status-cell">Status</span>
                     <span className="collection-view-cell">View</span>
                   </div>
-                  {filteredEntries.map((entry) => {
+                  {sortedEntries.map((entry) => {
                     const cardMetadata = metadataFromCollectionEntry(entry);
                     return (
                       <div
@@ -1033,12 +1185,12 @@ function CollectionsWorkspace({
                       </div>
                     );
                   })}
-                  {filteredEntries.length === 0 ? <p className="workspace-copy">No collection rows match the current filter.</p> : null}
+                  {sortedEntries.length === 0 ? <p className="workspace-copy">No collection rows match the current filter.</p> : null}
                 </div>
               ) : (
                 <CollectionEntryViews
                   mode={collectionViewMode}
-                  entries={filteredEntries}
+                  entries={sortedEntries}
                   selectedEntry={selectedEntry}
                   selectedEntryIds={selectedEntryIds}
                   onSelect={setSelectedEntryId}
@@ -1764,6 +1916,11 @@ function DecksWorkspace({
   const [deckViewMode, setDeckViewMode] = useState<DeckViewMode>('board');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [deckFilters, setDeckFilters] = useState(() => defaultDeckFiltersForProject(selectedUniverseId));
+  const [deckEntryQuery, setDeckEntryQuery] = useState('');
+  const [deckEntryFiltersOpen, setDeckEntryFiltersOpen] = useState(false);
+  const [deckEntryFilters, setDeckEntryFilters] = useState<DeckEntryFilters>(DEFAULT_DECK_ENTRY_FILTERS);
+  const [deckEntrySortState, setDeckEntrySortState] = useState<ListSortState<DeckEntrySortOptionId>>({ option: 'default', direction: 'asc' });
+  const [groupBasicLands, setGroupBasicLands] = useState(() => readDeckGroupBasicsPreference());
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const activeDeckFilterCount = countActiveFilters([
@@ -1780,6 +1937,16 @@ function DecksWorkspace({
     { value: deckFilters.mainCount, defaultValue: '' },
     { value: deckFilters.sideCount, defaultValue: '' },
     { value: deckFilters.maybeCount, defaultValue: '' }
+  ]);
+  const activeDeckEntryFilterCount = countActiveFilters([
+    { value: deckEntryFilters.section, defaultValue: DEFAULT_DECK_ENTRY_FILTERS.section },
+    { value: deckEntryFilters.candidateStatus, defaultValue: DEFAULT_DECK_ENTRY_FILTERS.candidateStatus },
+    { value: deckEntryFilters.role, defaultValue: DEFAULT_DECK_ENTRY_FILTERS.role },
+    { value: deckEntryFilters.color, defaultValue: DEFAULT_DECK_ENTRY_FILTERS.color },
+    { value: deckEntryFilters.manaValue, defaultValue: DEFAULT_DECK_ENTRY_FILTERS.manaValue },
+    { value: deckEntryFilters.cardType, defaultValue: DEFAULT_DECK_ENTRY_FILTERS.cardType },
+    { value: deckEntryFilters.tag, defaultValue: DEFAULT_DECK_ENTRY_FILTERS.tag },
+    { value: deckEntryFilters.unresolved, defaultValue: DEFAULT_DECK_ENTRY_FILTERS.unresolved }
   ]);
 
   useEffect(() => {
@@ -1808,6 +1975,10 @@ function DecksWorkspace({
   useEffect(() => {
     setDeckFilters((current) => ({ ...current, linkedUniverseId: selectedUniverseId || 'all' }));
   }, [selectedUniverseId]);
+
+  useEffect(() => {
+    writeDeckGroupBasicsPreference(groupBasicLands);
+  }, [groupBasicLands]);
 
   async function loadDecks(nextDeckId?: string) {
     try {
@@ -2147,9 +2318,38 @@ function DecksWorkspace({
     () => (deck?.entries ?? []).map((entry, index) => ({ entry, index })).filter(({ entry }) => (!entry.deckVariantId || entry.deckVariantId === activeVariantId) && !entry.markedForDeletion),
     [activeVariantId, deck?.entries]
   );
-  const visibleDeckRows = useMemo(
+  const baseVisibleDeckRows = useMemo(
     () => (deckViewMode === 'candidates' ? candidatePoolEntries : deckViewMode === 'roles' || deckViewMode === 'mana' ? activeVariantRows : activeDeckSectionEntries),
     [activeDeckSectionEntries, activeVariantRows, candidatePoolEntries, deckViewMode]
+  );
+  const filteredDeckRows = useMemo(
+    () => filterDeckEntryRows(baseVisibleDeckRows, deckEntryQuery, deckEntryFilters),
+    [baseVisibleDeckRows, deckEntryFilters, deckEntryQuery]
+  );
+  const sortedDeckRows = useMemo(
+    () =>
+      sortItemsByState(
+        filteredDeckRows,
+        deckEntrySortState,
+        {
+          default: (row) => row.index,
+          name: (row) => row.entry.card?.name ?? row.entry.nameSnapshot ?? row.entry.cardId,
+          quantity: (row) => row.entry.count,
+          mana: (row) => deckEntryManaValue(row.entry),
+          color: (row) => row.entry.card?.colorIdentity ?? row.entry.card?.colors ?? '',
+          type: (row) => row.entry.card?.typeLine ?? '',
+          role: (row) => (row.entry.roles ?? [])[0] ?? '',
+          status: (row) => row.entry.candidateStatus ?? 'active',
+          section: (row) => row.entry.section,
+          unresolved: (row) => Boolean(row.entry.warning || !row.entry.card)
+        },
+        (row) => row.entry.card?.name ?? row.entry.nameSnapshot ?? row.entry.cardId
+      ),
+    [deckEntrySortState, filteredDeckRows]
+  );
+  const visibleDeckRows = useMemo(
+    () => (groupBasicLands ? groupBasicLandDeckRows(sortedDeckRows) : sortedDeckRows),
+    [groupBasicLands, sortedDeckRows]
   );
   const deckRoleSummary = useMemo(() => buildDeckRoleSummary(activeDeckEntries), [activeDeckEntries]);
   const deckMetricItems = useMemo(() => {
@@ -2167,7 +2367,7 @@ function DecksWorkspace({
       items.push({ label: 'Variants', value: deck?.metadata.variants.length ?? 0, icon: 'grid' });
     }
     if (candidatePoolEntries.length > 0) {
-      items.push({ label: 'Candidates', value: candidatePoolEntries.length, icon: 'filter' });
+      items.push({ label: 'Candidates', value: candidatePoolEntries.length, icon: 'star' });
     }
     items.push({ label: 'Ready', value: deckMetrics.resolvedCards, icon: 'save' });
     if (deckMetrics.unresolvedCards > 0) {
@@ -2327,21 +2527,32 @@ function DecksWorkspace({
             </div>
 
             <div className="collection-table-toolbar deck-view-toolbar">
-              <span className="filter-count-note">{deckSectionLabel(activeDeckSection)} view</span>
-              <div className="segmented-control collection-view-mode segmented-icon-control deck-view-mode" role="group" aria-label="Deck view mode">
-                {DECK_VIEW_MODE_OPTIONS.map(({ mode, label, icon }) => (
-                  <button key={mode} type="button" className={deckViewMode === mode ? 'active' : ''} title={`${label} view`} aria-label={`${label} view`} onClick={() => setDeckViewMode(mode)}>
-                    <Icon name={icon} />
-                  </button>
-                ))}
-              </div>
+              <ListControlsBar
+                searchLabel="Search deck cards"
+                searchValue={deckEntryQuery}
+                searchPlaceholder="Search deck cards..."
+                onSearchChange={setDeckEntryQuery}
+                sortControl={<SortMenu options={DECK_ENTRY_SORT_OPTIONS} state={deckEntrySortState} onChange={setDeckEntrySortState} />}
+                filterControl={<AdvancedFiltersButton activeCount={activeDeckEntryFilterCount} onClick={() => setDeckEntryFiltersOpen(true)} />}
+                resetControl={deckEntryQuery.trim() || activeDeckEntryFilterCount ? <button type="button" className="secondary-button compact" onClick={() => { setDeckEntryQuery(''); setDeckEntryFilters(DEFAULT_DECK_ENTRY_FILTERS); }}>Reset</button> : null}
+                extraControls={<GroupedBasicLandToggle checked={groupBasicLands} onChange={setGroupBasicLands} />}
+                results={<ListResultsSummary shown={visibleDeckRows.length} total={baseVisibleDeckRows.length} label="card row" />}
+                viewControl={
+                  <div className="segmented-control collection-view-mode segmented-icon-control deck-view-mode" role="group" aria-label="Deck view mode">
+                    {DECK_VIEW_MODE_OPTIONS.map(({ mode, label, icon }) => (
+                      <button key={mode} type="button" className={deckViewMode === mode ? 'active' : ''} title={`${label} view`} aria-label={`${label} view`} onClick={() => setDeckViewMode(mode)}>
+                        <Icon name={icon} />
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
             </div>
 
             {deckViewMode === 'board' ? (
               <DeckSectionList
                 section={activeDeckSection}
-                entries={deck.entries}
-                activeVariantId={activeVariantId}
+                rows={visibleDeckRows}
                 selectedIndex={selectedDeckEntryIndex}
                 onSelectEntry={setSelectedDeckEntryIndex}
                 onPreviewEntry={setPreviewDeckEntryIndex}
@@ -2517,6 +2728,35 @@ function DecksWorkspace({
           </div>
         </BrowseFilterOverlay>
       ) : null}
+      {deckEntryFiltersOpen ? (
+        <BrowseFilterOverlay
+          title="Browse Deck Cards"
+          subtitle="Filter cards in the selected deck without changing deck metadata filters."
+          resultsLabel={`${visibleDeckRows.length} matching deck rows`}
+          activeFilterCount={activeDeckEntryFilterCount}
+          onClose={() => setDeckEntryFiltersOpen(false)}
+          onResetFilters={() => setDeckEntryFilters(DEFAULT_DECK_ENTRY_FILTERS)}
+          results={
+            <div className="filter-result-list">
+              {visibleDeckRows.length ? (
+                visibleDeckRows.slice(0, 80).map(({ entry, index }) => (
+                  <button key={`${entry.entryId ?? ''}-${entry.setCode}-${entry.cardId}-${index}`} type="button" className={`entity-row clickable ${index === selectedDeckEntryIndex ? 'selected' : ''}`} onClick={() => { setSelectedDeckEntryIndex(index); setDeckEntryFiltersOpen(false); }}>
+                    <Icon name={entry.warning || !entry.card ? 'flag' : 'cards'} />
+                    <span>
+                      <strong>{entry.count} {entry.card?.name ?? entry.nameSnapshot ?? entry.cardId}</strong>
+                      <small>{deckSectionLabel(entry.section)} - {entry.card?.typeLine ?? entry.warning ?? entry.setCode}</small>
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <FilteredEmptyState title="No deck cards match" detail="Reset filters or clear the deck-card search." showClearSearch={Boolean(deckEntryQuery.trim())} showResetFilters={activeDeckEntryFilterCount > 0} onClearSearch={() => setDeckEntryQuery('')} onResetFilters={() => setDeckEntryFilters(DEFAULT_DECK_ENTRY_FILTERS)} />
+              )}
+            </div>
+          }
+        >
+          <DeckEntryFilterControls filters={deckEntryFilters} onChange={(patch) => setDeckEntryFilters((current) => ({ ...current, ...patch }))} />
+        </BrowseFilterOverlay>
+      ) : null}
       {addCardsOpen && deck ? (
         <DeckAddCardsOverlay
           deck={deck}
@@ -2544,20 +2784,18 @@ function DecksWorkspace({
 
 function DeckSectionList({
   section,
-  entries,
-  activeVariantId,
+  rows,
   selectedIndex,
   onSelectEntry,
   onPreviewEntry
 }: {
   section: DeckEntry['section'];
-  entries: DeckState['entries'];
-  activeVariantId: string;
+  rows: Array<{ entry: DeckState['entries'][number]; index: number }>;
   selectedIndex: number | null;
   onSelectEntry: (index: number) => void;
   onPreviewEntry: (index: number) => void;
 }) {
-  const sectionEntries = entries.map((entry, index) => ({ entry, index })).filter(({ entry }) => (!entry.deckVariantId || entry.deckVariantId === activeVariantId) && !entry.markedForDeletion && entry.section === section);
+  const sectionEntries = rows.filter(({ entry }) => entry.section === section);
   const total = sectionEntries.reduce((sum, { entry }) => sum + entry.count, 0);
   return (
     <section className="deck-section">
@@ -2596,6 +2834,179 @@ function DeckEntryThumb({ entry }: { entry: DeckState['entries'][number] }) {
       {imageSrc ? <img src={imageSrc} alt="" loading="lazy" /> : <span>{fallback.slice(0, 2).toUpperCase()}</span>}
     </span>
   );
+}
+
+function DeckEntryFilterControls({ filters, onChange }: { filters: DeckEntryFilters; onChange: (patch: Partial<DeckEntryFilters>) => void }) {
+  return (
+    <div className="filter-panel">
+      <label className="filter-field">
+        <span>Board</span>
+        <select value={filters.section} onChange={(event) => onChange({ section: event.target.value as DeckEntryFilters['section'] })}>
+          <option value="all">All boards</option>
+          <option value="main">Main board</option>
+          <option value="side">Sideboard</option>
+          <option value="maybe">Maybeboard</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Status</span>
+        <select value={filters.candidateStatus} onChange={(event) => onChange({ candidateStatus: event.target.value as DeckEntryFilters['candidateStatus'] })}>
+          <option value="all">All statuses</option>
+          <option value="active">Active</option>
+          <option value="candidate">Candidate</option>
+          <option value="testing">Testing</option>
+          <option value="locked">Locked</option>
+          <option value="cut">Cut</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Role</span>
+        <input value={filters.role} placeholder="Ramp, Draw, Removal..." onChange={(event) => onChange({ role: event.target.value })} />
+      </label>
+      <label className="filter-field">
+        <span>Color</span>
+        <select value={filters.color} onChange={(event) => onChange({ color: event.target.value })}>
+          <option value="all">All colors</option>
+          <option value="W">White</option>
+          <option value="U">Blue</option>
+          <option value="B">Black</option>
+          <option value="R">Red</option>
+          <option value="G">Green</option>
+          <option value="multicolor">Multicolor</option>
+          <option value="colorless">Colorless</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Mana value</span>
+        <input value={filters.manaValue} placeholder="2, >=4, <3..." onChange={(event) => onChange({ manaValue: event.target.value })} />
+      </label>
+      <label className="filter-field">
+        <span>Card type</span>
+        <select value={filters.cardType} onChange={(event) => onChange({ cardType: event.target.value })}>
+          <option value="all">All card types</option>
+          <option value="Artifact">Artifact</option>
+          <option value="Creature">Creature</option>
+          <option value="Enchantment">Enchantment</option>
+          <option value="Instant">Instant</option>
+          <option value="Land">Land</option>
+          <option value="Planeswalker">Planeswalker</option>
+          <option value="Sorcery">Sorcery</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Tags / flags</span>
+        <input value={filters.tag} placeholder="combo, meta call..." onChange={(event) => onChange({ tag: event.target.value })} />
+      </label>
+      <label className="filter-field">
+        <span>Unresolved</span>
+        <select value={filters.unresolved} onChange={(event) => onChange({ unresolved: event.target.value as DeckEntryFilters['unresolved'] })}>
+          <option value="all">Any state</option>
+          <option value="has">Unresolved only</option>
+          <option value="none">Resolved only</option>
+        </select>
+      </label>
+    </div>
+  );
+}
+
+function filterDeckEntryRows(rows: Array<{ entry: DeckState['entries'][number]; index: number }>, query: string, filters: DeckEntryFilters): Array<{ entry: DeckState['entries'][number]; index: number }> {
+  const needle = query.trim().toLowerCase();
+  return rows.filter(({ entry }) => {
+    const searchable = [
+      entry.card?.name,
+      entry.nameSnapshot,
+      entry.cardId,
+      entry.setCode,
+      entry.card?.typeLine,
+      entry.card?.oracleText,
+      entry.entryNotes,
+      ...(entry.roles ?? []),
+      ...(entry.entryTags ?? []),
+      ...(entry.flags ?? []),
+      ...(entry.card?.tags ?? [])
+    ].filter(Boolean).join(' ').toLowerCase();
+    const status = entry.candidateStatus ?? 'active';
+    const unresolved = Boolean(entry.warning || !entry.card);
+    const color = entry.card?.colorIdentity ?? entry.card?.colors ?? '';
+    const typeLine = entry.card?.typeLine ?? '';
+    return (
+      (!needle || searchable.includes(needle)) &&
+      (filters.section === 'all' || entry.section === filters.section) &&
+      (filters.candidateStatus === 'all' || status === filters.candidateStatus) &&
+      matchesTagFilter(entry.roles, filters.role) &&
+      (filters.color === 'all' || deckColorMatches(color, filters.color)) &&
+      matchesNumberQuery(deckEntryManaValue(entry), filters.manaValue) &&
+      (filters.cardType === 'all' || typeLine.toLowerCase().includes(filters.cardType.toLowerCase())) &&
+      matchesTagFilter([...(entry.entryTags ?? []), ...(entry.flags ?? []), ...(entry.card?.tags ?? [])], filters.tag) &&
+      (filters.unresolved === 'all' || (filters.unresolved === 'has' ? unresolved : !unresolved))
+    );
+  });
+}
+
+function groupBasicLandDeckRows(rows: Array<{ entry: DeckState['entries'][number]; index: number }>): Array<{ entry: DeckState['entries'][number]; index: number }> {
+  const grouped = new Map<string, { entry: DeckState['entries'][number]; index: number }>();
+  const output: Array<{ entry: DeckState['entries'][number]; index: number }> = [];
+  for (const row of rows) {
+    const name = row.entry.card?.name ?? row.entry.nameSnapshot;
+    const typeLine = row.entry.card?.typeLine;
+    const key = basicLandGroupKey(name, typeLine);
+    if (!key) {
+      output.push(row);
+      continue;
+    }
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.entry = { ...existing.entry, count: existing.entry.count + row.entry.count };
+      continue;
+    }
+    const copy = { entry: { ...row.entry }, index: row.index };
+    grouped.set(key, copy);
+    output.push(copy);
+  }
+  return output;
+}
+
+function deckEntryManaValue(entry: DeckState['entries'][number]): number {
+  return entry.card?.manaValue ?? parseManaValue(entry.card?.manaCost ?? '') ?? 0;
+}
+
+function deckColorMatches(colors: string, filter: string): boolean {
+  const normalized = String(colors ?? '').toUpperCase();
+  if (filter === 'colorless') {
+    return !normalized || normalized === 'C';
+  }
+  if (filter === 'multicolor') {
+    return normalized.replace(/[^WUBRG]/g, '').length > 1;
+  }
+  return normalized.includes(filter.toUpperCase());
+}
+
+function parseManaValue(manaCost: string): number | undefined {
+  if (!manaCost.trim()) {
+    return undefined;
+  }
+  const symbols = manaCost.match(/\{[^}]+\}/g);
+  if (symbols?.length) {
+    return symbols.reduce((total, symbol) => total + manaSymbolValue(symbol.replace(/[{}]/g, '')), 0);
+  }
+  const numbers = manaCost.match(/\d+/g) ?? [];
+  const numeric = numbers.reduce((total, value) => total + (Number(value) || 0), 0);
+  const pips = manaCost
+    .replace(/\d+/g, '')
+    .toUpperCase()
+    .split('')
+    .filter((character) => 'WUBRGC'.includes(character)).length;
+  return numeric + pips;
+}
+
+function manaSymbolValue(symbol: string): number {
+  if (/^\d+$/.test(symbol)) {
+    return Number(symbol);
+  }
+  if (symbol.includes('/')) {
+    return 1;
+  }
+  return symbol.trim().toUpperCase() === 'X' ? 0 : 1;
 }
 
 function deckSectionLabel(section: DeckEntry['section']): string {
@@ -3088,7 +3499,10 @@ function ReferenceWorkspace({
   onResizeRightPanel,
   onShowLeftPanelChange,
   onShowRightPanelChange,
+  onProjectLoaded,
   onReferenceCatalogUpdated,
+  onOpenCard,
+  onOpenCardBrowser,
   onStatus
 }: Pick<
   WorkspaceViewProps,
@@ -3105,7 +3519,10 @@ function ReferenceWorkspace({
   | 'onResizeRightPanel'
   | 'onShowLeftPanelChange'
   | 'onShowRightPanelChange'
+  | 'onProjectLoaded'
   | 'onReferenceCatalogUpdated'
+  | 'onOpenCard'
+  | 'onOpenCardBrowser'
   | 'onStatus'
 >) {
   const [query, setQuery] = useState('');
@@ -3117,8 +3534,14 @@ function ReferenceWorkspace({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [termFilters, setTermFilters] = useState<ReferenceTermFilters>(defaultReferenceTermFilters);
   const [ruleFilters, setRuleFilters] = useState<ReferenceRuleFilters>(defaultReferenceRuleFilters);
+  const [termSort, setTermSort] = useState<ReferenceTermSort>('auto');
+  const [ruleSort, setRuleSort] = useState<ReferenceRuleSort>('auto');
   const [createOpen, setCreateOpen] = useState(false);
   const [officialView, setOfficialView] = useState<OfficialCardCatalogView>('prints');
+  const [officialBrowserView, setOfficialBrowserView] = useState<OfficialCardBrowserViewMode>('single');
+  const [officialDetailMode, setOfficialDetailMode] = useState<OfficialCardDetailMode>('full');
+  const [officialFilters, setOfficialFilters] = useState<OfficialCardBrowserFilters>(DEFAULT_OFFICIAL_CARD_FILTERS);
+  const [officialSort, setOfficialSort] = useState<OfficialCardSortOptionId>('auto');
   const [officialStatus, setOfficialStatus] = useState<OfficialCardCatalogStatus | null>(null);
   const [officialResult, setOfficialResult] = useState<OfficialCardSearchResult | null>(null);
   const [officialOffset, setOfficialOffset] = useState(0);
@@ -3126,12 +3549,17 @@ function ReferenceWorkspace({
   const [officialLoading, setOfficialLoading] = useState(false);
   const [officialSyncing, setOfficialSyncing] = useState(false);
   const [officialAutoSyncStarted, setOfficialAutoSyncStarted] = useState(false);
-  const [officialAdding, setOfficialAdding] = useState(false);
+  const [officialAction, setOfficialAction] = useState<OfficialCardActionTarget>('');
   const [collections, setCollections] = useState<CollectionSummary[]>([]);
+  const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [officialCollectionId, setOfficialCollectionId] = useState('');
   const [officialCollectionName, setOfficialCollectionName] = useState('Official Cards');
   const [officialOwnerName, setOfficialOwnerName] = useState('Kyle');
+  const [officialDeckId, setOfficialDeckId] = useState('');
+  const [officialDeckSection, setOfficialDeckSection] = useState<'main' | 'side' | 'maybe'>('main');
+  const [officialSetCode, setOfficialSetCode] = useState(project?.setCode ?? library?.sets[0]?.setCode ?? '');
   const [officialQuantity, setOfficialQuantity] = useState(1);
+  const officialSyncSettings = useMemo(() => readOfficialCardSyncSettings(), []);
   const terms = referenceCatalog?.terms ?? [];
   const rules = referenceCatalog?.rules?.entries ?? [];
   const termById = useMemo(() => new Map(terms.map((term) => [term.id, term])), [terms]);
@@ -3145,8 +3573,22 @@ function ReferenceWorkspace({
     };
   }, [sourceLabelById, terms, usageIndex]);
   const ruleFilterOptions = useMemo(() => buildReferenceRuleFilterOptions(rules), [rules]);
-  const activeReferenceFilterCount = mode === 'terms' ? activeReferenceTermFilterCount(category, termFilters) : mode === 'rules' ? activeReferenceRuleFilterCount(ruleKind, ruleFilters) : 0;
+  const activeOfficialFilterCount = officialCardActiveFilterCount(officialFilters);
+  const activeReferenceFilterCount = mode === 'terms' ? activeReferenceTermFilterCount(category, termFilters) : mode === 'rules' ? activeReferenceRuleFilterCount(ruleKind, ruleFilters) : activeOfficialFilterCount;
   const activeCardLabel = usageIndex.cardOptions.find((card) => card.value === activeCardId)?.label ?? '';
+  const officialSortOption = officialCardSortOption(officialSort);
+  const officialSearchFilters = useMemo(
+    () =>
+      officialCardSearchFiltersFromBrowser({
+        view: officialView,
+        query,
+        filters: officialFilters,
+        sortOptionId: officialSort,
+        limit: REFERENCE_OFFICIAL_PAGE_SIZE,
+        offset: officialOffset
+      }),
+    [officialFilters, officialOffset, officialSort, officialView, query]
+  );
   const categoryCounts = useMemo(() => {
     const counts = new Map<ReferenceCategory | 'all', number>([['all', terms.length]]);
     for (const term of terms) {
@@ -3162,11 +3604,11 @@ function ReferenceWorkspace({
     return counts;
   }, [rules]);
   const filteredTerms = useMemo(() => {
-    return filterReferenceTerms({ terms, category, query, filters: termFilters, usageIndex });
-  }, [category, query, termFilters, terms, usageIndex]);
+    return sortReferenceTerms(filterReferenceTerms({ terms, category, query, filters: termFilters, usageIndex }), termSort, query);
+  }, [category, query, termFilters, termSort, terms, usageIndex]);
   const filteredRules = useMemo(() => {
-    return filterReferenceRules({ rules, ruleKind, query, filters: ruleFilters, termById });
-  }, [query, ruleFilters, ruleKind, rules, termById]);
+    return sortReferenceRules(filterReferenceRules({ rules, ruleKind, query, filters: ruleFilters, termById }), ruleSort, query);
+  }, [query, ruleFilters, ruleKind, ruleSort, rules, termById]);
   const displayedTerms = filteredTerms.slice(0, 240);
   const displayedRules = filteredRules.slice(0, 240);
   const officialCards = officialResult?.cards ?? [];
@@ -3188,12 +3630,18 @@ function ReferenceWorkspace({
       fetchCollections().catch((error: unknown) => {
         onStatus(error instanceof Error ? error.message : String(error));
         return [] as CollectionSummary[];
+      }),
+      fetchDecks().catch((error: unknown) => {
+        onStatus(error instanceof Error ? error.message : String(error));
+        return [] as DeckSummary[];
       })
-    ]).then(([status, loadedCollections]) => {
+    ]).then(([status, loadedCollections, loadedDecks]) => {
       if (!cancelled) {
         setOfficialStatus(status);
         setCollections(loadedCollections);
+        setDecks(loadedDecks);
         setOfficialCollectionId(loadedCollections[0]?.collectionId ?? '');
+        setOfficialDeckId(loadedDecks[0]?.deckId ?? '');
       }
     });
     return () => {
@@ -3203,7 +3651,13 @@ function ReferenceWorkspace({
 
   useEffect(() => {
     setOfficialOffset(0);
-  }, [officialView, query]);
+  }, [officialFilters, officialSort, officialView, query]);
+
+  useEffect(() => {
+    if (!officialSetCode) {
+      setOfficialSetCode(project?.setCode ?? library?.sets[0]?.setCode ?? '');
+    }
+  }, [library?.sets, officialSetCode, project?.setCode]);
 
   useEffect(() => {
     if (mode !== 'official-cards') {
@@ -3211,7 +3665,7 @@ function ReferenceWorkspace({
     }
     let cancelled = false;
     setOfficialLoading(true);
-    void searchOfficialCardCatalog({ view: officialView, query, limit: REFERENCE_OFFICIAL_PAGE_SIZE, offset: officialOffset })
+    void searchOfficialCardCatalog(officialSearchFilters)
       .then((result) => {
         if (!cancelled) {
           setOfficialResult(result);
@@ -3233,20 +3687,19 @@ function ReferenceWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [mode, officialOffset, officialView, onStatus, query]);
+  }, [mode, officialSearchFilters, onStatus]);
 
   useEffect(() => {
     if (mode !== 'official-cards' || officialAutoSyncStarted || officialSyncing || !officialStatus) {
       return;
     }
-    const source = officialStatusForView(officialStatus, officialView);
-    if (source.available) {
+    if (!shouldAutoSyncOfficialCards(officialStatus, officialSyncSettings)) {
       return;
     }
     setOfficialAutoSyncStarted(true);
     onStatus('Official card catalog is missing; syncing live in the background. This can take a few minutes the first time.');
     void syncOfficialCards();
-  }, [mode, officialAutoSyncStarted, officialStatus, officialSyncing, officialView, onStatus]);
+  }, [mode, officialAutoSyncStarted, officialStatus, officialSyncSettings, officialSyncing, onStatus]);
 
   const resetTermFilters = () => {
     setCategory('all');
@@ -3256,13 +3709,18 @@ function ReferenceWorkspace({
     setRuleKind('all');
     setRuleFilters(defaultReferenceRuleFilters);
   };
+  const resetOfficialFilters = () => {
+    setOfficialFilters(DEFAULT_OFFICIAL_CARD_FILTERS);
+    setOfficialSort('auto');
+    setQuery('');
+  };
   const resetCurrentFilters = () => {
     if (mode === 'terms') {
       resetTermFilters();
     } else if (mode === 'rules') {
       resetRuleFilters();
     } else {
-      setQuery('');
+      resetOfficialFilters();
     }
   };
 
@@ -3274,7 +3732,7 @@ function ReferenceWorkspace({
     try {
       const status = await syncOfficialCardCatalog('both');
       setOfficialStatus(status);
-      const result = await searchOfficialCardCatalog({ view: officialView, query, limit: REFERENCE_OFFICIAL_PAGE_SIZE, offset: officialOffset });
+      const result = await searchOfficialCardCatalog(officialSearchFilters);
       setOfficialResult(result);
       onStatus(`Synced official card catalog. ${formatCount(status.prints.count + status.oracle.count, 'card record')} cached.`);
     } catch (error) {
@@ -3284,15 +3742,15 @@ function ReferenceWorkspace({
     }
   }
 
-  async function addSelectedOfficialToCollection() {
-    if (!selectedOfficial || selectedOfficial.view !== 'prints') {
+  async function addSelectedOfficialToCollection(card = selectedOfficial) {
+    if (!card || card.view !== 'prints') {
       onStatus('Switch to Prints before adding an official card to a collection.');
       return;
     }
-    setOfficialAdding(true);
+    setOfficialAction('collection');
     try {
       const result = await addOfficialCardToCollection({
-        cardId: selectedOfficial.id,
+        cardId: card.id,
         collectionId: officialCollectionId || undefined,
         collectionName: officialCollectionId ? undefined : officialCollectionName,
         linkedUniverseId: selectedUniverseId,
@@ -3301,12 +3759,73 @@ function ReferenceWorkspace({
       });
       setCollections(result.collections);
       setOfficialCollectionId(result.collection.metadata.collectionId);
-      onStatus(`Added ${selectedOfficial.name} to ${result.collection.metadata.name}.`);
+      onStatus(`Added ${card.name} to ${result.collection.metadata.name}.`);
     } catch (error) {
       onStatus(error instanceof Error ? error.message : String(error));
     } finally {
-      setOfficialAdding(false);
+      setOfficialAction('');
     }
+  }
+
+  async function addSelectedOfficialToDeck(card = selectedOfficial) {
+    if (!card || card.view !== 'prints') {
+      onStatus('Switch to Prints before adding an official card to a deck.');
+      return;
+    }
+    if (!officialDeckId) {
+      onStatus('Choose or create a deck before adding an official card.');
+      return;
+    }
+    setOfficialAction('deck');
+    try {
+      const result = await addOfficialCardToDeck({
+        cardId: card.id,
+        deckId: officialDeckId,
+        section: officialDeckSection,
+        quantity: officialQuantity,
+        collectionId: officialCollectionId || 'official-cards',
+        collectionName: officialCollectionId ? undefined : officialCollectionName || 'Official Cards',
+        linkedUniverseId: selectedUniverseId
+      });
+      setDecks(result.decks);
+      const loadedCollections = await fetchCollections();
+      setCollections(loadedCollections);
+      onStatus(`Added ${card.name} to ${result.deck.metadata.name}.`);
+    } catch (error) {
+      onStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setOfficialAction('');
+    }
+  }
+
+  async function addSelectedOfficialToSet(card = selectedOfficial) {
+    if (!card || card.view !== 'prints') {
+      onStatus('Switch to Prints before copying an official card into a set.');
+      return;
+    }
+    if (!officialSetCode) {
+      onStatus('Choose a set before copying an official card.');
+      return;
+    }
+    setOfficialAction('set');
+    try {
+      const result = await addOfficialCardToSet({
+        cardId: card.id,
+        setCode: officialSetCode
+      });
+      onProjectLoaded(result.project);
+      await onOpenCard(result.summary.setCode, result.summary.cardId);
+      onStatus(`Copied ${result.summary.name} to ${result.project.setName}.`);
+    } catch (error) {
+      onStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setOfficialAction('');
+    }
+  }
+
+  function openOfficialCompareBrowser() {
+    onOpenCardBrowser();
+    onStatus('Opened Card Browser. Select two rows in compare mode to inspect cards side by side.');
   }
 
   return (
@@ -3316,16 +3835,27 @@ function ReferenceWorkspace({
         <EntityListPanel
           title="References"
           subtitle={mode === 'terms' ? `${terms.length} terms` : mode === 'rules' ? `${rules.length} rules` : officialResult ? officialPageSubtitle(officialResult, officialView) : officialCatalogSubtitle(officialStatus, officialView)}
-          newLabel={mode === 'official-cards' ? (officialSyncing ? 'Syncing official cards' : 'Sync official cards') : 'New reference'}
+          newLabel="New reference"
           activeFilterCount={activeReferenceFilterCount}
-          onOpenFilters={mode === 'official-cards' ? undefined : () => setFiltersOpen(true)}
-          onNew={mode === 'official-cards' ? () => void syncOfficialCards() : () => setCreateOpen(true)}
+          onOpenFilters={() => setFiltersOpen(true)}
+          onNew={mode === 'official-cards' ? undefined : () => setCreateOpen(true)}
           onCollapse={() => onShowLeftPanelChange(false)}
           searchControl={
-            <label className="search-field">
-              <Icon name="search" />
-              <input value={query} placeholder={mode === 'terms' ? 'Search terms...' : mode === 'rules' ? 'Search rules...' : 'Search official cards...'} onChange={(event) => setQuery(event.target.value)} />
-            </label>
+            <>
+              <label className="search-field">
+                <Icon name="search" />
+                <input value={query} placeholder={mode === 'terms' ? 'Search terms...' : mode === 'rules' ? 'Search rules...' : 'Search official cards or use name:, t:, set:, mv&gt;=...'} onChange={(event) => setQuery(event.target.value)} />
+              </label>
+              <ReferenceSortControl
+                mode={mode}
+                termSort={termSort}
+                ruleSort={ruleSort}
+                officialSort={officialSort}
+                onTermSortChange={setTermSort}
+                onRuleSortChange={setRuleSort}
+                onOfficialSortChange={setOfficialSort}
+              />
+            </>
           }
         >
           <div className="reference-mode-switch">
@@ -3360,6 +3890,8 @@ function ReferenceWorkspace({
                   cards={officialCards}
                   selectedId={selectedOfficial?.id ?? ''}
                   view={officialView}
+                  browserView={officialBrowserView}
+                  sortLabel={officialSortOption.label}
                   status={officialStatus}
                   result={officialResult}
                   loading={officialLoading}
@@ -3368,11 +3900,12 @@ function ReferenceWorkspace({
                   showingEnd={officialShowingEnd}
                   query={query}
                   onViewChange={setOfficialView}
+                  onBrowserViewChange={setOfficialBrowserView}
                   onSelect={setSelectedOfficialId}
-                  onSync={() => void syncOfficialCards()}
                   onPreviousPage={() => setOfficialOffset((offset) => Math.max(0, offset - REFERENCE_OFFICIAL_PAGE_SIZE))}
                   onNextPage={() => setOfficialOffset((offset) => offset + REFERENCE_OFFICIAL_PAGE_SIZE)}
                   onClearSearch={() => setQuery('')}
+                  onResetFilters={resetOfficialFilters}
                 />
               )}
         </EntityListPanel>
@@ -3401,13 +3934,27 @@ function ReferenceWorkspace({
                     : officialCatalogSubtitle(officialStatus, officialView)}
             </p>
           </div>
-          <div className="segmented-control reference-header-mode">
-            {referenceModes.map((item) => (
-              <button key={item.id} type="button" className={mode === item.id ? 'active' : ''} onClick={() => setMode(item.id)}>
-                {item.label}
-              </button>
-            ))}
-          </div>
+          {!showLeftPanel ? (
+            <div className="reference-header-compact-controls">
+              <div className="segmented-control reference-header-mode" aria-label="Reference mode">
+                {referenceModes.map((item) => (
+                  <button key={item.id} type="button" className={mode === item.id ? 'active' : ''} onClick={() => setMode(item.id)}>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <ReferenceSortControl
+                mode={mode}
+                termSort={termSort}
+                ruleSort={ruleSort}
+                officialSort={officialSort}
+                onTermSortChange={setTermSort}
+                onRuleSortChange={setRuleSort}
+                onOfficialSortChange={setOfficialSort}
+              />
+              <FilterButton label="Filter references" activeCount={activeReferenceFilterCount} onClick={() => setFiltersOpen(true)} />
+            </div>
+          ) : null}
         </div>
         {mode === 'rules' ? (
           <RulesGuide
@@ -3422,7 +3969,29 @@ function ReferenceWorkspace({
           />
         ) : null}
         {mode === 'official-cards' ? (
-          <OfficialCardReferenceCanvas card={selectedOfficial} view={officialView} status={officialStatus} loading={officialLoading} syncing={officialSyncing} query={query} onSync={() => void syncOfficialCards()} onClearSearch={() => setQuery('')} />
+          <OfficialCardReferenceCanvas
+            cards={officialCards}
+            selectedId={selectedOfficial?.id ?? ''}
+            selectedCard={selectedOfficial}
+            browserView={officialBrowserView}
+            catalogView={officialView}
+            status={officialStatus}
+            loading={officialLoading}
+            syncing={officialSyncing}
+            query={query}
+            result={officialResult}
+            action={officialAction}
+            onSelect={setSelectedOfficialId}
+            onBrowserViewChange={setOfficialBrowserView}
+            onPreviousCard={() => selectAdjacentOfficialCard(officialCards, selectedOfficial?.id ?? '', -1, setSelectedOfficialId)}
+            onNextCard={() => selectAdjacentOfficialCard(officialCards, selectedOfficial?.id ?? '', 1, setSelectedOfficialId)}
+            onAddToCollection={(card) => void addSelectedOfficialToCollection(card)}
+            onAddToDeck={(card) => void addSelectedOfficialToDeck(card)}
+            onAddToSet={(card) => void addSelectedOfficialToSet(card)}
+            onOpenCompare={openOfficialCompareBrowser}
+            onClearSearch={() => setQuery('')}
+            onResetFilters={resetOfficialFilters}
+          />
         ) : mode === 'terms' ? (
           <div className="reference-term-grid">
             {displayedTerms.map((term) => (
@@ -3472,18 +4041,31 @@ function ReferenceWorkspace({
           {mode === 'official-cards' ? (
             <OfficialCardDetail
               card={selectedOfficial}
+              mode={officialDetailMode}
               collections={collections}
+              decks={decks}
+              sets={library?.sets ?? []}
               collectionId={officialCollectionId}
               collectionName={officialCollectionName}
               ownerName={officialOwnerName}
               ownerSuggestions={ownerSuggestions}
+              deckId={officialDeckId}
+              deckSection={officialDeckSection}
+              setCode={officialSetCode}
               quantity={officialQuantity}
-              adding={officialAdding}
+              action={officialAction}
+              onModeChange={setOfficialDetailMode}
               onCollectionIdChange={setOfficialCollectionId}
               onCollectionNameChange={setOfficialCollectionName}
               onOwnerNameChange={setOfficialOwnerName}
+              onDeckIdChange={setOfficialDeckId}
+              onDeckSectionChange={setOfficialDeckSection}
+              onSetCodeChange={setOfficialSetCode}
               onQuantityChange={setOfficialQuantity}
-              onAdd={() => void addSelectedOfficialToCollection()}
+              onAddToCollection={() => void addSelectedOfficialToCollection()}
+              onAddToDeck={() => void addSelectedOfficialToDeck()}
+              onAddToSet={() => void addSelectedOfficialToSet()}
+              onOpenCompare={openOfficialCompareBrowser}
             />
           ) : mode === 'terms' ? (
             <ReferenceTermDetail term={selected} catalog={referenceCatalog} usage={selectedUsage} />
@@ -3516,13 +4098,50 @@ function ReferenceWorkspace({
         <BrowseFilterOverlay
           title="Browse References"
           subtitle="Filter the current reference mode without hiding the reference search."
-          resultsLabel={mode === 'terms' ? resultCountLabel(filteredTerms.length, displayedTerms.length, 'terms') : resultCountLabel(filteredRules.length, displayedRules.length, 'rules')}
+          resultsLabel={
+            mode === 'terms'
+              ? resultCountLabel(filteredTerms.length, displayedTerms.length, 'terms')
+              : mode === 'rules'
+                ? resultCountLabel(filteredRules.length, displayedRules.length, 'rules')
+                : officialResult
+                  ? officialPageSubtitle(officialResult, officialView)
+                  : officialCatalogSubtitle(officialStatus, officialView)
+          }
           activeFilterCount={activeReferenceFilterCount}
           onClose={() => setFiltersOpen(false)}
           onResetFilters={resetCurrentFilters}
           results={
             <div className="filter-result-list">
-              {mode === 'terms' ? (
+              {mode === 'official-cards' ? (
+                officialCards.length ? (
+                  officialCards.map((card) => (
+                    <button
+                      key={card.id}
+                      type="button"
+                      className={`entity-row clickable ${card.id === selectedOfficial?.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedOfficialId(card.id);
+                        setFiltersOpen(false);
+                      }}
+                    >
+                      <Icon name={card.view === 'prints' ? 'collections' : 'guide'} />
+                      <span>
+                        <strong>{card.name}</strong>
+                        <small>{officialCardListLine(card)}</small>
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <FilteredEmptyState
+                    title="No official cards match"
+                    detail="Reset filters, clear search, or switch between Prints and Oracle."
+                    showClearSearch={Boolean(query.trim())}
+                    showResetFilters={activeReferenceFilterCount > 0}
+                    onClearSearch={() => setQuery('')}
+                    onResetFilters={resetOfficialFilters}
+                  />
+                )
+              ) : mode === 'terms' ? (
                 displayedTerms.length ? (
                   displayedTerms.map((term) => (
                     <button
@@ -3585,25 +4204,88 @@ function ReferenceWorkspace({
             </div>
           }
         >
-          <ReferenceFilterControls
-            mode={mode === 'terms' ? 'terms' : 'rules'}
-            category={category}
-            ruleKind={ruleKind}
-            categories={referenceCategories}
-            ruleKinds={ruleKinds}
-            termFilters={termFilters}
-            ruleFilters={ruleFilters}
-            termOptions={termFilterOptions}
-            ruleOptions={ruleFilterOptions}
-            activeCardLabel={activeCardLabel}
-            onCategoryChange={setCategory}
-            onRuleKindChange={setRuleKind}
-            onTermFiltersChange={(patch) => setTermFilters((current) => ({ ...current, ...patch }))}
-            onRuleFiltersChange={(patch) => setRuleFilters((current) => ({ ...current, ...patch }))}
-          />
+          {mode === 'official-cards' ? (
+            <OfficialCardFilterControls filters={officialFilters} onFiltersChange={(patch) => setOfficialFilters((current) => ({ ...current, ...patch }))} />
+          ) : (
+            <ReferenceFilterControls
+              mode={mode === 'terms' ? 'terms' : 'rules'}
+              category={category}
+              ruleKind={ruleKind}
+              categories={referenceCategories}
+              ruleKinds={ruleKinds}
+              termFilters={termFilters}
+              ruleFilters={ruleFilters}
+              termOptions={termFilterOptions}
+              ruleOptions={ruleFilterOptions}
+              activeCardLabel={activeCardLabel}
+              onCategoryChange={setCategory}
+              onRuleKindChange={setRuleKind}
+              onTermFiltersChange={(patch) => setTermFilters((current) => ({ ...current, ...patch }))}
+              onRuleFiltersChange={(patch) => setRuleFilters((current) => ({ ...current, ...patch }))}
+            />
+          )}
         </BrowseFilterOverlay>
       ) : null}
     </>
+  );
+}
+
+function ReferenceSortControl({
+  mode,
+  termSort,
+  ruleSort,
+  officialSort,
+  onTermSortChange,
+  onRuleSortChange,
+  onOfficialSortChange
+}: {
+  mode: ReferenceMode;
+  termSort: ReferenceTermSort;
+  ruleSort: ReferenceRuleSort;
+  officialSort: OfficialCardSortOptionId;
+  onTermSortChange: (value: ReferenceTermSort) => void;
+  onRuleSortChange: (value: ReferenceRuleSort) => void;
+  onOfficialSortChange: (value: OfficialCardSortOptionId) => void;
+}) {
+  if (mode === 'rules') {
+    return (
+      <label className="reference-sort-control">
+        <span>Sort</span>
+        <select value={ruleSort} onChange={(event) => onRuleSortChange(event.target.value as ReferenceRuleSort)}>
+          {referenceRuleSortOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+  if (mode === 'official-cards') {
+    return (
+      <label className="reference-sort-control">
+        <span>Sort</span>
+        <select value={officialSort} onChange={(event) => onOfficialSortChange(event.target.value as OfficialCardSortOptionId)}>
+          {OFFICIAL_CARD_SORT_OPTIONS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+  return (
+    <label className="reference-sort-control">
+      <span>Sort</span>
+      <select value={termSort} onChange={(event) => onTermSortChange(event.target.value as ReferenceTermSort)}>
+        {referenceTermSortOptions.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -3611,6 +4293,8 @@ function OfficialCardReferenceList({
   cards,
   selectedId,
   view,
+  browserView,
+  sortLabel,
   status,
   result,
   loading,
@@ -3619,15 +4303,18 @@ function OfficialCardReferenceList({
   showingEnd,
   query,
   onViewChange,
+  onBrowserViewChange,
   onSelect,
-  onSync,
   onPreviousPage,
   onNextPage,
-  onClearSearch
+  onClearSearch,
+  onResetFilters
 }: {
   cards: OfficialCardSearchCard[];
   selectedId: string;
   view: OfficialCardCatalogView;
+  browserView: OfficialCardBrowserViewMode;
+  sortLabel: string;
   status: OfficialCardCatalogStatus | null;
   result: OfficialCardSearchResult | null;
   loading: boolean;
@@ -3636,11 +4323,12 @@ function OfficialCardReferenceList({
   showingEnd: number;
   query: string;
   onViewChange: (view: OfficialCardCatalogView) => void;
+  onBrowserViewChange: (view: OfficialCardBrowserViewMode) => void;
   onSelect: (id: string) => void;
-  onSync: () => void;
   onPreviousPage: () => void;
   onNextPage: () => void;
   onClearSearch: () => void;
+  onResetFilters: () => void;
 }) {
   const source = officialStatusForView(status, view);
   const pageLabel = result && result.total ? `${showingStart.toLocaleString()}-${showingEnd.toLocaleString()} of ${formatCount(result.total, view === 'prints' ? 'print' : 'card')}` : source.available ? `0 of ${formatCount(0, view === 'prints' ? 'print' : 'card')}` : 'Catalog not synced';
@@ -3657,9 +4345,18 @@ function OfficialCardReferenceList({
             Oracle
           </button>
         </div>
-        <button type="button" className="secondary-button compact" disabled={syncing} onClick={onSync}>
-          {syncing ? 'Syncing catalog...' : 'Sync Catalog'}
-        </button>
+        <div className="segmented-actions official-view-mode-actions" role="group" aria-label="Official card result view">
+          {OFFICIAL_CARD_VIEW_MODE_OPTIONS.map((option) => (
+            <button key={option.id} type="button" className={`secondary-button compact ${browserView === option.id ? 'active' : ''}`} title={`${option.label} view`} onClick={() => onBrowserViewChange(option.id)}>
+              <Icon name={option.icon} />
+              <span>{option.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="official-sort-summary">
+          <span>Sort</span>
+          <strong>{sortLabel}</strong>
+        </div>
         <div className="official-pagination reference-official-pagination" aria-live="polite">
           <span>{loading ? 'Loading...' : pageLabel}</span>
           <button type="button" className="secondary-button compact" disabled={loading || !hasPrevious} onClick={onPreviousPage}>
@@ -3670,17 +4367,29 @@ function OfficialCardReferenceList({
           </button>
         </div>
       </div>
-      <div className="reference-official-card-list" aria-label="Official Magic cards">
-        {cards.map((card) => (
-          <button key={card.id} type="button" className={`entity-row clickable official-card-entity ${selectedId === card.id ? 'selected' : ''}`} onClick={() => onSelect(card.id)}>
-            <Icon name={card.view === 'prints' ? 'collections' : 'guide'} />
-            <span>
-              <strong>{card.name}</strong>
-              <small>{officialCardListLine(card)}</small>
-            </span>
-          </button>
-        ))}
-      </div>
+      {result?.unsupportedQueryTerms.length ? (
+        <div className="official-query-warning" role="status">
+          Unsupported query: {result.unsupportedQueryTerms.join(', ')}
+        </div>
+      ) : null}
+      {browserView === 'single' ? (
+        <div className="reference-official-card-list" aria-label="Official Magic cards">
+          {cards.map((card) => (
+            <button key={card.id} type="button" className={`entity-row clickable official-card-entity ${selectedId === card.id ? 'selected' : ''}`} onClick={() => onSelect(card.id)}>
+              <Icon name={card.view === 'prints' ? 'collections' : 'guide'} />
+              <span>
+                <strong>{card.name}</strong>
+                <small>{officialCardListLine(card)}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="preview-empty compact-empty official-left-hint">
+          <strong>{browserViewLabel(browserView)} view in center</strong>
+          <span>Use filters, sort, and pagination here; choose cards in the main pane.</span>
+        </div>
+      )}
       {loading && !cards.length ? (
         <div className="preview-empty compact-empty">
           <strong>Loading official cards</strong>
@@ -3690,11 +4399,11 @@ function OfficialCardReferenceList({
       {!loading && !cards.length ? (
         <FilteredEmptyState
           title={syncing && !source.available ? 'Syncing official cards' : source.available ? 'No official cards match' : 'Official cards not synced'}
-          detail={syncing && !source.available ? 'Downloading the local Scryfall cache in the background.' : source.available ? 'Clear search or switch catalog view.' : 'Sync the catalog to search official Magic cards locally.'}
+          detail={syncing && !source.available ? 'Downloading the local Scryfall cache in the background.' : source.available ? 'Clear search, reset filters, or switch catalog view.' : 'Open Settings to sync official Magic cards into the local cache.'}
           showClearSearch={Boolean(query.trim())}
-          showResetFilters={false}
+          showResetFilters={source.available}
           onClearSearch={onClearSearch}
-          onResetFilters={() => undefined}
+          onResetFilters={onResetFilters}
         />
       ) : null}
     </>
@@ -3702,108 +4411,410 @@ function OfficialCardReferenceList({
 }
 
 function OfficialCardReferenceCanvas({
-  card,
-  view,
+  cards,
+  selectedId,
+  selectedCard,
+  browserView,
+  catalogView,
   status,
   loading,
   syncing,
   query,
-  onSync,
-  onClearSearch
+  result,
+  action,
+  onSelect,
+  onBrowserViewChange,
+  onPreviousCard,
+  onNextCard,
+  onAddToCollection,
+  onAddToDeck,
+  onAddToSet,
+  onOpenCompare,
+  onClearSearch,
+  onResetFilters
 }: {
-  card: OfficialCardSearchCard | undefined;
-  view: OfficialCardCatalogView;
+  cards: OfficialCardSearchCard[];
+  selectedId: string;
+  selectedCard: OfficialCardSearchCard | undefined;
+  browserView: OfficialCardBrowserViewMode;
+  catalogView: OfficialCardCatalogView;
   status: OfficialCardCatalogStatus | null;
   loading: boolean;
   syncing: boolean;
   query: string;
-  onSync: () => void;
+  result: OfficialCardSearchResult | null;
+  action: OfficialCardActionTarget;
+  onSelect: (id: string) => void;
+  onBrowserViewChange: (view: OfficialCardBrowserViewMode) => void;
+  onPreviousCard: () => void;
+  onNextCard: () => void;
+  onAddToCollection: (card: OfficialCardSearchCard) => void;
+  onAddToDeck: (card: OfficialCardSearchCard) => void;
+  onAddToSet: (card: OfficialCardSearchCard) => void;
+  onOpenCompare: () => void;
   onClearSearch: () => void;
+  onResetFilters: () => void;
 }) {
-  const source = officialStatusForView(status, view);
-  if (!card) {
+  useEffect(() => {
+    if (browserView !== 'single') {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) {
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        onPreviousCard();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        onNextCard();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [browserView, onNextCard, onPreviousCard]);
+
+  const source = officialStatusForView(status, catalogView);
+  if (!selectedCard && !cards.length) {
     return (
       <div className="preview-empty official-reference-empty">
         <strong>{syncing && !source.available ? 'Syncing official cards' : loading ? 'Loading official cards' : source.available ? 'No official card selected' : 'Official catalog not synced'}</strong>
-        <span>{syncing && !source.available ? 'Downloading the local Scryfall cache in the background.' : source.available ? 'Use the left panel to search and page through cached Magic cards.' : 'Sync the official catalog to browse Magic cards from the local cache.'}</span>
+        <span>{syncing && !source.available ? 'Downloading the local Scryfall cache in the background.' : source.available ? 'Use search, filters, and sort to browse cached Magic cards.' : 'Open Settings to sync the official catalog into the local cache.'}</span>
         <div className="preview-empty-actions">
           {query.trim() ? (
             <button type="button" className="secondary-button compact" onClick={onClearSearch}>
               Clear Search
             </button>
           ) : null}
-          {!source.available ? (
-            <button type="button" className="primary-button" disabled={syncing} onClick={onSync}>
-              {syncing ? 'Syncing catalog...' : 'Sync Catalog'}
+          {source.available ? (
+            <button type="button" className="secondary-button compact" onClick={onResetFilters}>
+              Reset Filters
             </button>
           ) : null}
         </div>
       </div>
     );
   }
-  const imageUrl = officialCardImageUrl(card);
+
+  if (browserView === 'list') {
+    return (
+      <div className="official-reference-results official-reference-results-list">
+        {cards.map((card) => (
+          <OfficialCardResultRow key={card.id} card={card} selected={selectedId === card.id} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+        ))}
+      </div>
+    );
+  }
+
+  if (browserView === 'grid') {
+    return (
+      <div className="official-reference-results official-reference-results-grid">
+        {cards.map((card) => (
+          <OfficialCardGridTile key={card.id} card={card} selected={selectedId === card.id} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+        ))}
+      </div>
+    );
+  }
+
+  if (browserView === 'table') {
+    return <OfficialCardTable cards={cards} selectedId={selectedId} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />;
+  }
+
+  const card = selectedCard ?? cards[0];
+  const imageUrl = card ? officialCardImageUrl(card) : '';
   return (
     <div className="workspace-card official-reference-card-view">
       <div className="reference-detail-heading">
-        <span>{card.view === 'prints' ? 'Official print' : 'Oracle card'}</span>
-        <strong>{officialCardLine(card)}</strong>
+        <span>{card?.view === 'prints' ? 'Official print' : 'Oracle card'}</span>
+        <strong>{result ? `${(result.offset + cards.findIndex((item) => item.id === card?.id) + 1).toLocaleString()} of ${formatCount(result.total, card?.view === 'prints' ? 'print' : 'card')}` : card ? officialCardLine(card) : 'Official Cards'}</strong>
       </div>
       <div className="official-reference-heading">
         <div>
-          <h2>{card.name}</h2>
-          <p className="workspace-copy">{card.typeLine || 'Official Magic card'}</p>
+          <h2>{card?.name ?? 'Official Cards'}</h2>
+          <p className="workspace-copy">{card?.typeLine || 'Official Magic card'}</p>
         </div>
         <div className="official-reference-symbols">
-          {card.manaCost ? <ManaCostSymbols value={card.manaCost} /> : null}
-          {card.colorIdentity.length ? <ColorIdentitySymbols value={card.colorIdentity.join('')} /> : <span>Colorless</span>}
+          {card?.manaCost ? <ManaCostSymbols value={card.manaCost} /> : null}
+          {card?.colorIdentity.length ? <ColorIdentitySymbols value={card.colorIdentity.join('')} /> : <span>Colorless</span>}
         </div>
+      </div>
+      <div className="official-reference-nav">
+        <button type="button" className="secondary-button compact" disabled={cards.length < 2} onClick={onPreviousCard}>
+          Previous
+        </button>
+        <div className="segmented-actions official-view-mode-actions" role="group" aria-label="Official card view mode">
+          {OFFICIAL_CARD_VIEW_MODE_OPTIONS.map((option) => (
+            <button key={option.id} type="button" className={`secondary-button compact ${browserView === option.id ? 'active' : ''}`} onClick={() => onBrowserViewChange(option.id)}>
+              <Icon name={option.icon} />
+              <span>{option.label}</span>
+            </button>
+          ))}
+        </div>
+        <button type="button" className="secondary-button compact" disabled={cards.length < 2} onClick={onNextCard}>
+          Next
+        </button>
       </div>
       <div className="official-reference-body">
         <div className="official-reference-image-frame">
           {imageUrl ? (
-            <img src={imageUrl} alt={`${card.name} official card image`} />
+            <img src={imageUrl} alt={`${card?.name ?? 'Official card'} official card image`} />
           ) : (
             <div className="preview-empty compact-empty">
               <strong>No image cached</strong>
-              <span>{card.name}</span>
+              <span>{card?.name ?? 'Official Cards'}</span>
             </div>
           )}
         </div>
-        <div className="official-reference-rules">
-          <p className="official-card-text">{card.oracleText || 'Oracle text is not available in the local cache for this card.'}</p>
-          {card.flavorText ? <p className="official-card-text flavor">{card.flavorText}</p> : null}
-          {card.cardFaces?.length ? (
-            <div className="official-face-list">
-              {card.cardFaces.map((face, index) => (
-                <div key={`${face.name ?? card.name}:${index}`} className="official-face-row">
-                  <strong>{face.name ?? `Face ${index + 1}`}</strong>
-                  <span>{face.typeLine ?? card.typeLine ?? 'Card face'}</span>
-                  {face.oracleText ? <p>{face.oracleText}</p> : null}
-                </div>
-              ))}
-            </div>
-          ) : null}
-          <dl className="reference-meta official-reference-meta">
-            <dt>Mana value</dt>
-            <dd>{typeof card.manaValue === 'number' ? card.manaValue : '-'}</dd>
-            <dt>Layout</dt>
-            <dd>{card.layout || '-'}</dd>
-            {card.view === 'prints' ? (
-              <>
-                <dt>Print</dt>
-                <dd>{[card.setCode, card.collectorNumber].filter(Boolean).join(' ') || '-'}</dd>
-                <dt>Set</dt>
-                <dd>{card.setName || '-'}</dd>
-                <dt>Released</dt>
-                <dd>{card.releasedAt || '-'}</dd>
-              </>
-            ) : null}
-            <dt>Source</dt>
-            <dd>{card.scryfallUri ? <a href={card.scryfallUri} target="_blank" rel="noreferrer">Scryfall</a> : 'Scryfall cache'}</dd>
-          </dl>
-        </div>
+        {card ? <OfficialCardRulesAndMeta card={card} /> : null}
       </div>
+      {card ? (
+        <OfficialCardQuickActions
+          card={card}
+          action={action}
+          onAddToCollection={onAddToCollection}
+          onAddToDeck={onAddToDeck}
+          onAddToSet={onAddToSet}
+          onOpenCompare={onOpenCompare}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function OfficialCardResultRow({
+  card,
+  selected,
+  action,
+  onSelect,
+  onAddToCollection,
+  onAddToDeck,
+  onAddToSet
+}: {
+  card: OfficialCardSearchCard;
+  selected: boolean;
+  action: OfficialCardActionTarget;
+  onSelect: (id: string) => void;
+  onAddToCollection: (card: OfficialCardSearchCard) => void;
+  onAddToDeck: (card: OfficialCardSearchCard) => void;
+  onAddToSet: (card: OfficialCardSearchCard) => void;
+}) {
+  return (
+    <article className={`official-reference-result-row ${selected ? 'selected' : ''}`}>
+      <button type="button" className="official-reference-result-main" onClick={() => onSelect(card.id)}>
+        <OfficialCardThumb card={card} />
+        <span>
+          <strong>{card.name}</strong>
+          <small>{officialCardListLine(card)}</small>
+        </span>
+      </button>
+      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+    </article>
+  );
+}
+
+function OfficialCardGridTile({
+  card,
+  selected,
+  action,
+  onSelect,
+  onAddToCollection,
+  onAddToDeck,
+  onAddToSet
+}: {
+  card: OfficialCardSearchCard;
+  selected: boolean;
+  action: OfficialCardActionTarget;
+  onSelect: (id: string) => void;
+  onAddToCollection: (card: OfficialCardSearchCard) => void;
+  onAddToDeck: (card: OfficialCardSearchCard) => void;
+  onAddToSet: (card: OfficialCardSearchCard) => void;
+}) {
+  const imageUrl = officialCardImageUrl(card);
+  return (
+    <article className={`official-reference-grid-tile ${selected ? 'selected' : ''}`}>
+      <button type="button" className="official-reference-grid-image" onClick={() => onSelect(card.id)}>
+        {imageUrl ? <img src={imageUrl} alt={`${card.name} official card image`} /> : <OfficialCardThumb card={card} />}
+      </button>
+      <button type="button" className="official-reference-grid-copy" onClick={() => onSelect(card.id)}>
+        <strong>{card.name}</strong>
+        <span>{officialCardListLine(card)}</span>
+        <small>{officialCardPriceLabel(card)}</small>
+      </button>
+      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+    </article>
+  );
+}
+
+function OfficialCardTable({
+  cards,
+  selectedId,
+  action,
+  onSelect,
+  onAddToCollection,
+  onAddToDeck,
+  onAddToSet
+}: {
+  cards: OfficialCardSearchCard[];
+  selectedId: string;
+  action: OfficialCardActionTarget;
+  onSelect: (id: string) => void;
+  onAddToCollection: (card: OfficialCardSearchCard) => void;
+  onAddToDeck: (card: OfficialCardSearchCard) => void;
+  onAddToSet: (card: OfficialCardSearchCard) => void;
+}) {
+  return (
+    <div className="official-reference-table-wrap">
+      <table className="official-reference-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Mana</th>
+            <th>Type</th>
+            <th>Set</th>
+            <th>Rarity</th>
+            <th>Price</th>
+            <th>Released</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cards.map((card) => (
+            <tr key={card.id} className={selectedId === card.id ? 'selected' : ''}>
+              <td>
+                <button type="button" className="table-link-button" onClick={() => onSelect(card.id)}>
+                  {card.name}
+                </button>
+              </td>
+              <td>{card.manaCost ? <ManaCostSymbols value={card.manaCost} /> : '-'}</td>
+              <td>{card.typeLine || '-'}</td>
+              <td>{card.view === 'prints' ? [card.setCode, card.collectorNumber].filter(Boolean).join(' ') || '-' : 'Oracle'}</td>
+              <td>{card.view === 'prints' ? card.rarity || '-' : '-'}</td>
+              <td>{officialCardPriceLabel(card)}</td>
+              <td>{card.view === 'prints' ? card.releasedAt || '-' : '-'}</td>
+              <td>
+                <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function OfficialCardInlineActions({
+  card,
+  action,
+  onAddToCollection,
+  onAddToDeck,
+  onAddToSet
+}: {
+  card: OfficialCardSearchCard;
+  action: OfficialCardActionTarget;
+  onAddToCollection: (card: OfficialCardSearchCard) => void;
+  onAddToDeck: (card: OfficialCardSearchCard) => void;
+  onAddToSet: (card: OfficialCardSearchCard) => void;
+}) {
+  const disabled = card.view !== 'prints' || Boolean(action);
+  return (
+    <div className="official-inline-actions" aria-label={`Quick actions for ${card.name}`}>
+      <button type="button" className="secondary-button compact" disabled={disabled} onClick={() => onAddToCollection(card)}>
+        {action === 'collection' ? 'Adding...' : 'Collect'}
+      </button>
+      <button type="button" className="secondary-button compact" disabled={disabled} onClick={() => onAddToDeck(card)}>
+        {action === 'deck' ? 'Adding...' : 'Deck'}
+      </button>
+      <button type="button" className="secondary-button compact" disabled={disabled} onClick={() => onAddToSet(card)}>
+        {action === 'set' ? 'Copying...' : 'Set'}
+      </button>
+    </div>
+  );
+}
+
+function OfficialCardQuickActions({
+  card,
+  action,
+  onAddToCollection,
+  onAddToDeck,
+  onAddToSet,
+  onOpenCompare
+}: {
+  card: OfficialCardSearchCard;
+  action: OfficialCardActionTarget;
+  onAddToCollection: (card: OfficialCardSearchCard) => void;
+  onAddToDeck: (card: OfficialCardSearchCard) => void;
+  onAddToSet: (card: OfficialCardSearchCard) => void;
+  onOpenCompare: () => void;
+}) {
+  return (
+    <div className="official-reference-quick-actions">
+      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+      <button type="button" className="secondary-button compact" onClick={onOpenCompare}>
+        Compare
+      </button>
+    </div>
+  );
+}
+
+function OfficialCardThumb({ card }: { card: OfficialCardSearchCard }) {
+  const imageUrl = officialCardImageUrl(card);
+  return imageUrl ? (
+    <img className="official-card-thumb" src={imageUrl} alt="" />
+  ) : (
+    <span className="official-card-thumb placeholder" aria-hidden="true">
+      {card.name.slice(0, 1)}
+    </span>
+  );
+}
+
+function OfficialCardRulesAndMeta({ card }: { card: OfficialCardSearchCard }) {
+  return (
+    <div className="official-reference-rules">
+      <p className="official-card-text">{card.oracleText || 'Oracle text is not available in the local cache for this card.'}</p>
+      {card.flavorText ? <p className="official-card-text flavor">{card.flavorText}</p> : null}
+      {card.cardFaces?.length ? (
+        <div className="official-face-list">
+          {card.cardFaces.map((face, index) => (
+            <div key={`${face.name ?? card.name}:${index}`} className="official-face-row">
+              <strong>{face.name ?? `Face ${index + 1}`}</strong>
+              <span>{face.typeLine ?? card.typeLine ?? 'Card face'}</span>
+              {face.oracleText ? <p>{face.oracleText}</p> : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <OfficialCardMetadata card={card} />
+    </div>
+  );
+}
+
+function OfficialCardMetadata({ card }: { card: OfficialCardSearchCard }) {
+  return (
+    <dl className="reference-meta official-reference-meta">
+      <dt>Mana value</dt>
+      <dd>{typeof card.manaValue === 'number' ? card.manaValue : '-'}</dd>
+      <dt>Layout</dt>
+      <dd>{card.layout || '-'}</dd>
+      {card.view === 'prints' ? (
+        <>
+          <dt>Print</dt>
+          <dd>{[card.setCode, card.collectorNumber].filter(Boolean).join(' ') || '-'}</dd>
+          <dt>Set</dt>
+          <dd>{card.setName || '-'}</dd>
+          <dt>Rarity</dt>
+          <dd>{card.rarity || '-'}</dd>
+          <dt>Released</dt>
+          <dd>{card.releasedAt || '-'}</dd>
+          <dt>Finishes</dt>
+          <dd>{card.finishes.length ? card.finishes.join(', ') : '-'}</dd>
+          <dt>Price</dt>
+          <dd>{officialCardPriceLabel(card)}</dd>
+        </>
+      ) : null}
+      <dt>Source</dt>
+      <dd>{card.scryfallUri ? <a href={card.scryfallUri} target="_blank" rel="noreferrer">Scryfall</a> : 'Scryfall cache'}</dd>
+    </dl>
   );
 }
 
@@ -3896,32 +4907,58 @@ function ReferenceRuleDetail({ rule, catalog }: { rule: ReferenceRuleEntry | und
 
 function OfficialCardDetail({
   card,
+  mode,
   collections,
+  decks,
+  sets,
   collectionId,
   collectionName,
   ownerName,
   ownerSuggestions,
+  deckId,
+  deckSection,
+  setCode,
   quantity,
-  adding,
+  action,
+  onModeChange,
   onCollectionIdChange,
   onCollectionNameChange,
   onOwnerNameChange,
+  onDeckIdChange,
+  onDeckSectionChange,
+  onSetCodeChange,
   onQuantityChange,
-  onAdd
+  onAddToCollection,
+  onAddToDeck,
+  onAddToSet,
+  onOpenCompare
 }: {
   card: OfficialCardSearchCard | undefined;
+  mode: OfficialCardDetailMode;
   collections: CollectionSummary[];
+  decks: DeckSummary[];
+  sets: LibraryState['sets'];
   collectionId: string;
   collectionName: string;
   ownerName: string;
   ownerSuggestions: string[];
+  deckId: string;
+  deckSection: 'main' | 'side' | 'maybe';
+  setCode: string;
   quantity: number;
-  adding: boolean;
+  action: OfficialCardActionTarget;
+  onModeChange: (mode: OfficialCardDetailMode) => void;
   onCollectionIdChange: (value: string) => void;
   onCollectionNameChange: (value: string) => void;
   onOwnerNameChange: (value: string) => void;
+  onDeckIdChange: (value: string) => void;
+  onDeckSectionChange: (value: 'main' | 'side' | 'maybe') => void;
+  onSetCodeChange: (value: string) => void;
   onQuantityChange: (value: number) => void;
-  onAdd: () => void;
+  onAddToCollection: () => void;
+  onAddToDeck: () => void;
+  onAddToSet: () => void;
+  onOpenCompare: () => void;
 }) {
   if (!card) {
     return (
@@ -3939,30 +4976,56 @@ function OfficialCardDetail({
         <span>{card.view === 'prints' ? 'Official print' : 'Oracle card'}</span>
         <strong>{officialCardLine(card)}</strong>
       </div>
-      <h2>{card.name}</h2>
-      {imageUrl ? <img className="official-card-detail-image" src={imageUrl} alt={`${card.name} official card image`} /> : null}
-      <p className="official-card-text">{card.oracleText || 'Oracle text is not available in the local cache for this card.'}</p>
-      {card.flavorText ? <p className="official-card-text flavor">{card.flavorText}</p> : null}
-      <dl className="reference-meta">
-        <dt>Type</dt>
-        <dd>{card.typeLine || '-'}</dd>
-        <dt>Mana cost</dt>
-        <dd>{card.manaCost ? <ManaCostSymbols value={card.manaCost} /> : '-'}</dd>
-        <dt>Colors</dt>
-        <dd>{card.colorIdentity.length ? <ColorIdentitySymbols value={card.colorIdentity.join('')} /> : 'Colorless'}</dd>
-        {card.view === 'prints' ? (
-          <>
-            <dt>Print</dt>
-            <dd>{[card.setCode, card.collectorNumber].filter(Boolean).join(' ') || '-'}</dd>
-            <dt>Set</dt>
-            <dd>{card.setName || '-'}</dd>
-            <dt>Rarity</dt>
-            <dd>{card.rarity || '-'}</dd>
-          </>
-        ) : null}
-        <dt>Source</dt>
-        <dd>{card.scryfallUri ? <a href={card.scryfallUri} target="_blank" rel="noreferrer">Scryfall</a> : 'Scryfall cache'}</dd>
-      </dl>
+      <div className="official-detail-title-row">
+        <h2>{card.name}</h2>
+        <div className="segmented-actions" role="group" aria-label="Official card detail mode">
+          {OFFICIAL_CARD_DETAIL_MODE_OPTIONS.map((option) => (
+            <button key={option.id} type="button" className={`secondary-button compact ${mode === option.id ? 'active' : ''}`} onClick={() => onModeChange(option.id)}>
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {mode === 'full' || mode === 'image' ? (
+        imageUrl ? (
+          <img className={`official-card-detail-image ${mode === 'image' ? 'image-only' : ''}`} src={imageUrl} alt={`${card.name} official card image`} />
+        ) : (
+          <div className="preview-empty compact-empty">
+            <strong>No image cached</strong>
+            <span>{card.name}</span>
+          </div>
+        )
+      ) : null}
+      {mode === 'full' || mode === 'rules' ? (
+        <>
+          <p className="official-card-text">{card.oracleText || 'Oracle text is not available in the local cache for this card.'}</p>
+          {card.flavorText ? <p className="official-card-text flavor">{card.flavorText}</p> : null}
+          {card.cardFaces?.length ? (
+            <div className="official-face-list">
+              {card.cardFaces.map((face, index) => (
+                <div key={`${face.name ?? card.name}:${index}`} className="official-face-row">
+                  <strong>{face.name ?? `Face ${index + 1}`}</strong>
+                  <span>{face.typeLine ?? card.typeLine ?? 'Card face'}</span>
+                  {face.oracleText ? <p>{face.oracleText}</p> : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </>
+      ) : null}
+      {mode === 'full' || mode === 'metadata' ? (
+        <>
+          <dl className="reference-meta">
+            <dt>Type</dt>
+            <dd>{card.typeLine || '-'}</dd>
+            <dt>Mana cost</dt>
+            <dd>{card.manaCost ? <ManaCostSymbols value={card.manaCost} /> : '-'}</dd>
+            <dt>Colors</dt>
+            <dd>{card.colorIdentity.length ? <ColorIdentitySymbols value={card.colorIdentity.join('')} /> : 'Colorless'}</dd>
+          </dl>
+          <OfficialCardMetadata card={card} />
+        </>
+      ) : null}
       <div className="collection-official-panel">
         <strong>Add to Collection</strong>
         {canAddToCollection ? (
@@ -3993,14 +5056,73 @@ function OfficialCardDetail({
             <Field label="Quantity">
               <input type="number" min="1" value={quantity} onChange={(event) => onQuantityChange(Math.max(1, Number(event.target.value) || 1))} />
             </Field>
-            <button type="button" className="primary-button" disabled={adding || (!collectionId && !collectionName.trim())} onClick={onAdd}>
-              {adding ? 'Adding...' : 'Add to Collection'}
+            <button type="button" className="primary-button" disabled={Boolean(action) || (!collectionId && !collectionName.trim())} onClick={onAddToCollection}>
+              {action === 'collection' ? 'Adding...' : 'Add to Collection'}
             </button>
           </>
         ) : (
           <p className="workspace-copy">Switch to Prints to add an exact set and collector-number identity to a collection.</p>
         )}
       </div>
+      <div className="collection-official-panel">
+        <strong>Add to Deck</strong>
+        {canAddToCollection ? (
+          <>
+            <Field label="Deck">
+              <select value={deckId} onChange={(event) => onDeckIdChange(event.target.value)}>
+                <option value="">Choose deck</option>
+                {decks.map((deck) => (
+                  <option key={deck.deckId} value={deck.deckId}>
+                    {deck.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <div className="grid-2 compact-filter-grid">
+              <Field label="Section">
+                <select value={deckSection} onChange={(event) => onDeckSectionChange(event.target.value as 'main' | 'side' | 'maybe')}>
+                  <option value="main">Main deck</option>
+                  <option value="side">Sideboard</option>
+                  <option value="maybe">Maybeboard</option>
+                </select>
+              </Field>
+              <Field label="Quantity">
+                <input type="number" min="1" value={quantity} onChange={(event) => onQuantityChange(Math.max(1, Number(event.target.value) || 1))} />
+              </Field>
+            </div>
+            <button type="button" className="primary-button" disabled={Boolean(action) || !deckId} onClick={onAddToDeck}>
+              {action === 'deck' ? 'Adding...' : 'Add to Deck'}
+            </button>
+          </>
+        ) : (
+          <p className="workspace-copy">Switch to Prints before adding an exact official print to a deck.</p>
+        )}
+      </div>
+      <div className="collection-official-panel">
+        <strong>Copy to Set</strong>
+        {canAddToCollection ? (
+          <>
+            <Field label="Set">
+              <select value={setCode} onChange={(event) => onSetCodeChange(event.target.value)}>
+                <option value="">Choose set</option>
+                {sets.map((set) => (
+                  <option key={set.setCode} value={set.setCode}>
+                    {set.setCode} - {set.setName}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <button type="button" className="primary-button" disabled={Boolean(action) || !setCode} onClick={onAddToSet}>
+              {action === 'set' ? 'Copying...' : 'Copy to Set'}
+            </button>
+          </>
+        ) : (
+          <p className="workspace-copy">Switch to Prints before copying a concrete print into a set.</p>
+        )}
+      </div>
+      <button type="button" className="secondary-button compact" onClick={onOpenCompare}>
+        Compare in Card Browser
+      </button>
     </div>
   );
 }
@@ -4054,6 +5176,138 @@ function officialCardListLine(card: OfficialCardSearchCard): string {
 function officialCardImageUrl(card: OfficialCardSearchCard): string {
   const images = card.imageUris ?? card.cardFaces?.find((face) => face.imageUris)?.imageUris;
   return images?.normal ?? images?.large ?? images?.png ?? images?.small ?? images?.artCrop ?? images?.borderCrop ?? '';
+}
+
+function officialCardPriceLabel(card: OfficialCardSearchCard): string {
+  if (card.view !== 'prints' || !card.prices) {
+    return '-';
+  }
+  const price = card.prices.usd ?? card.prices.usdFoil ?? card.prices.eur ?? card.prices.tix;
+  if (!price) {
+    return '-';
+  }
+  if (card.prices.usd === price || card.prices.usdFoil === price) {
+    return `$${price}`;
+  }
+  if (card.prices.eur === price || card.prices.eurFoil === price) {
+    return `EUR ${price}`;
+  }
+  return `${price} tix`;
+}
+
+function browserViewLabel(view: OfficialCardBrowserViewMode): string {
+  return OFFICIAL_CARD_VIEW_MODE_OPTIONS.find((option) => option.id === view)?.label ?? 'Results';
+}
+
+function selectAdjacentOfficialCard(cards: OfficialCardSearchCard[], selectedId: string, direction: -1 | 1, onSelect: (id: string) => void): void {
+  if (!cards.length) {
+    return;
+  }
+  const currentIndex = Math.max(0, cards.findIndex((card) => card.id === selectedId));
+  const nextIndex = (currentIndex + direction + cards.length) % cards.length;
+  onSelect(cards[nextIndex]?.id ?? cards[0]!.id);
+}
+
+function sortReferenceTerms(terms: ReferenceTerm[], sort: ReferenceTermSort, query: string): ReferenceTerm[] {
+  const next = [...terms];
+  const activeSort = sort === 'auto' ? (query.trim() ? 'auto' : 'name-asc') : sort;
+  return next.sort((left, right) => {
+    if (activeSort === 'auto') {
+      return referenceTermRank(left, query) - referenceTermRank(right, query) || left.name.localeCompare(right.name);
+    }
+    if (activeSort === 'name-desc') {
+      return right.name.localeCompare(left.name);
+    }
+    if (activeSort === 'category-asc') {
+      return left.category.localeCompare(right.category) || left.name.localeCompare(right.name);
+    }
+    if (activeSort === 'source-asc') {
+      return left.source.localeCompare(right.source) || left.name.localeCompare(right.name);
+    }
+    if (activeSort === 'status-asc') {
+      return left.status.localeCompare(right.status) || left.name.localeCompare(right.name);
+    }
+    if (activeSort === 'workflow-asc') {
+      return left.workflowStatus.localeCompare(right.workflowStatus) || left.name.localeCompare(right.name);
+    }
+    return left.name.localeCompare(right.name);
+  });
+}
+
+function sortReferenceRules(rules: ReferenceRuleEntry[], sort: ReferenceRuleSort, query: string): ReferenceRuleEntry[] {
+  const next = [...rules];
+  const activeSort = sort === 'auto' ? (query.trim() ? 'auto' : 'number-asc') : sort;
+  return next.sort((left, right) => {
+    if (activeSort === 'auto') {
+      return referenceRuleRank(left, query) - referenceRuleRank(right, query) || compareRuleNumber(left.number, right.number) || left.title.localeCompare(right.title);
+    }
+    if (activeSort === 'number-desc') {
+      return -compareRuleNumber(left.number, right.number) || left.title.localeCompare(right.title);
+    }
+    if (activeSort === 'title-asc') {
+      return left.title.localeCompare(right.title);
+    }
+    if (activeSort === 'kind-asc') {
+      return left.kind.localeCompare(right.kind) || compareRuleNumber(left.number, right.number) || left.title.localeCompare(right.title);
+    }
+    if (activeSort === 'effective-desc') {
+      return (right.effectiveDate ?? '').localeCompare(left.effectiveDate ?? '') || compareRuleNumber(left.number, right.number);
+    }
+    if (activeSort === 'effective-asc') {
+      return (left.effectiveDate ?? '').localeCompare(right.effectiveDate ?? '') || compareRuleNumber(left.number, right.number);
+    }
+    return compareRuleNumber(left.number, right.number) || left.title.localeCompare(right.title);
+  });
+}
+
+function referenceTermRank(term: ReferenceTerm, query: string): number {
+  const needle = query.trim().toLowerCase();
+  if (!needle) {
+    return 0;
+  }
+  const name = term.name.toLowerCase();
+  if (name === needle) {
+    return 0;
+  }
+  if (name.startsWith(needle)) {
+    return 1;
+  }
+  if (name.includes(needle)) {
+    return 2;
+  }
+  return 10;
+}
+
+function referenceRuleRank(rule: ReferenceRuleEntry, query: string): number {
+  const needle = query.trim().toLowerCase();
+  if (!needle) {
+    return 0;
+  }
+  const ruleNumber = rule.number?.toLowerCase() ?? '';
+  const title = rule.title.toLowerCase();
+  if (ruleNumber === needle || title === needle) {
+    return 0;
+  }
+  if (ruleNumber.startsWith(needle) || title.startsWith(needle)) {
+    return 1;
+  }
+  if (rule.text.toLowerCase().includes(needle)) {
+    return 3;
+  }
+  return 10;
+}
+
+function compareRuleNumber(left: string | undefined, right: string | undefined): number {
+  if (!left && !right) {
+    return 0;
+  }
+  if (!left) {
+    return 1;
+  }
+  if (!right) {
+    return -1;
+  }
+  return left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' });
 }
 
 interface ProjectRelatedSummary {
@@ -5008,7 +6262,7 @@ function EntityListPanel({
   children: ReactNode;
   onToggleFilters?: () => void;
   onOpenFilters?: () => void;
-  onNew: () => void;
+  onNew?: () => void;
   onCollapse?: () => void;
 }) {
   const visibleSearch = searchControl ?? filterControls;
@@ -5027,9 +6281,11 @@ function EntityListPanel({
             </button>
           ) : null}
           {canFilter ? <FilterButton label={`Filter ${title.toLowerCase()}`} activeCount={activeFilterCount} onClick={onOpenFilters ?? onToggleFilters ?? (() => undefined)} /> : null}
-          <button type="button" className="icon-button" onClick={onNew} title={newLabel}>
-            <Icon name="new" />
-          </button>
+          {onNew ? (
+            <button type="button" className="icon-button" onClick={onNew} title={newLabel}>
+              <Icon name="new" />
+            </button>
+          ) : null}
         </div>
       </div>
       {visibleSearch ? <div className="card-list-tools">{visibleSearch}</div> : null}
@@ -5653,8 +6909,52 @@ function SettingsWorkspace({
   showCardsRailItem,
   onShowCardsRailItemChange,
   showCollectionsRailItem,
-  onShowCollectionsRailItemChange
-}: Pick<WorkspaceViewProps, 'project' | 'showCardsRailItem' | 'onShowCardsRailItemChange' | 'showCollectionsRailItem' | 'onShowCollectionsRailItemChange'>) {
+  onShowCollectionsRailItemChange,
+  onStatus
+}: Pick<WorkspaceViewProps, 'project' | 'showCardsRailItem' | 'onShowCardsRailItemChange' | 'showCollectionsRailItem' | 'onShowCollectionsRailItemChange' | 'onStatus'>) {
+  const [officialSettings, setOfficialSettings] = useState<OfficialCardSyncSettings>(() => readOfficialCardSyncSettings());
+  const [officialStatus, setOfficialStatus] = useState<OfficialCardCatalogStatus | null>(null);
+  const [officialSyncing, setOfficialSyncing] = useState(false);
+  const stale = shouldAutoSyncOfficialCards(officialStatus, officialSettings);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchOfficialCardStatus()
+      .then((status) => {
+        if (!cancelled) {
+          setOfficialStatus(status);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          onStatus(error instanceof Error ? error.message : String(error));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [onStatus]);
+
+  const updateOfficialSettings = (patch: Partial<OfficialCardSyncSettings>) => {
+    setOfficialSettings((current) => writeOfficialCardSyncSettings({ ...current, ...patch }));
+  };
+
+  async function syncOfficialCardsNow() {
+    if (officialSyncing) {
+      return;
+    }
+    setOfficialSyncing(true);
+    try {
+      const status = await syncOfficialCardCatalog('both');
+      setOfficialStatus(status);
+      onStatus(`Synced official card catalog. ${formatCount(status.prints.count + status.oracle.count, 'card record')} cached.`);
+    } catch (error) {
+      onStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setOfficialSyncing(false);
+    }
+  }
+
   return (
     <div className="workspace-grid">
       <div className="workspace-card">
@@ -5676,6 +6976,54 @@ function SettingsWorkspace({
           Show Collections in the side rail
         </label>
         <p className="workspace-copy">You can also change these from View &gt; Panels.</p>
+      </div>
+      <div className="workspace-card official-settings-card">
+        <div className="inspector-heading-row">
+          <div>
+            <h2>Official Card Catalog</h2>
+            <p className="workspace-copy">Local Scryfall-backed cache used by References, Collections, Sets, and Decks.</p>
+          </div>
+          <StatusPill tone={stale ? 'warning' : officialStatus?.lastError ? 'danger' : 'success'}>{stale ? 'Stale' : officialStatus?.lastError ? 'Error' : 'Ready'}</StatusPill>
+        </div>
+        <div className="collection-detail-grid">
+          <div className="readonly-line">
+            <strong>{formatCount(officialStatus?.prints.count ?? 0, 'print')}</strong>
+            <span>Print cache</span>
+          </div>
+          <div className="readonly-line">
+            <strong>{formatCount(officialStatus?.oracle.count ?? 0, 'Oracle card')}</strong>
+            <span>Oracle cache</span>
+          </div>
+          <div className="readonly-line">
+            <strong>{officialStatus?.prints.syncedAt ? new Date(officialStatus.prints.syncedAt).toLocaleString() : 'Never'}</strong>
+            <span>Prints synced</span>
+          </div>
+          <div className="readonly-line">
+            <strong>{officialStatus?.oracle.syncedAt ? new Date(officialStatus.oracle.syncedAt).toLocaleString() : 'Never'}</strong>
+            <span>Oracle synced</span>
+          </div>
+        </div>
+        {officialStatus?.lastError ? (
+          <p className="workspace-copy warning-copy">Last sync error: {officialStatus.lastError}</p>
+        ) : null}
+        <label className="checkbox-row">
+          <input type="checkbox" checked={officialSettings.autoSync} onChange={(event) => updateOfficialSettings({ autoSync: event.target.checked })} />
+          Auto-sync official card catalog in the background
+        </label>
+        <Field label="Auto-sync cadence">
+          <select value={officialSettings.cadence} onChange={(event) => updateOfficialSettings({ cadence: event.target.value as OfficialCardSyncCadence })}>
+            <option value="off">Manual only</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </Field>
+        <div className="settings-action-row">
+          <button type="button" className="primary-button" disabled={officialSyncing} onClick={() => void syncOfficialCardsNow()}>
+            {officialSyncing ? 'Syncing...' : 'Sync Now'}
+          </button>
+          <span>{officialSettings.autoSync ? `Auto-sync: ${officialCardSyncCadenceLabel(officialSettings.cadence)}` : 'Auto-sync disabled'}</span>
+        </div>
       </div>
     </div>
   );

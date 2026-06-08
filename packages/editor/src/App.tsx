@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { createCollection, createDeck, createLibraryAsset, createSet, createUniverse as createProject, fetchHealth, fetchLibrary, fetchPreview, fetchProject, fetchReference, importCards, importCollection, restartApp, saveCard, saveDeck } from './api/client.js';
+import { createCollection, createDeck, createLibraryAsset, createSet, createUniverse as createProject, fetchHealth, fetchLibrary, fetchOfficialCardStatus, fetchPreview, fetchProject, fetchReference, importCards, importCollection, restartApp, saveCard, saveDeck, syncOfficialCardCatalog } from './api/client.js';
 import { CardList } from './components/CardList.js';
 import { CardBrowserView } from './components/CardBrowserView.js';
 import { CardPreview } from './components/CardPreview.js';
@@ -30,6 +30,7 @@ import type { CardListDensity, EditorTheme, InspectorTab, PreviewMode, PreviewTo
 import { recoveredDraftsForSet, writeDraftRecovery } from './domain/draftRecovery.js';
 import { buildTypeLine, inferColors, inferFrame } from './domain/frameRegistry.js';
 import { formatCount } from './domain/uiText.js';
+import { readOfficialCardSyncSettings, shouldAutoSyncOfficialCards } from './domain/officialCardSyncSettings.js';
 import { getWorkMode, visibleRailSectionsForMode, type WorkModeId } from './domain/workModes.js';
 import type { ReferenceCatalog } from '@homebrew-forge/forge';
 
@@ -249,6 +250,42 @@ export function App() {
   }, [editorTheme]);
 
   useEffect(() => {
+    if (!initialLoadComplete) {
+      return;
+    }
+    let cancelled = false;
+    const maybeSyncOfficialCards = async () => {
+      const settings = readOfficialCardSyncSettings();
+      try {
+        const status = await fetchOfficialCardStatus();
+        if (!shouldAutoSyncOfficialCards(status, settings) || cancelled) {
+          return;
+        }
+        setStatus('Official card catalog is stale or missing; syncing in the background.');
+        const nextStatus = await syncOfficialCardCatalog('both');
+        if (!cancelled) {
+          setStatus(`Synced official card catalog. ${formatCount(nextStatus.prints.count + nextStatus.oracle.count, 'card record')} cached.`);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setStatus(error instanceof Error ? error.message : String(error));
+        }
+      }
+    };
+    void maybeSyncOfficialCards();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialLoadComplete]);
+
+  useEffect(() => {
+    if (isFocusedCardMode || isDashboardMode) {
+      return;
+    }
+    setShowCommandBar(activeWorkspace === 'maker');
+  }, [activeWorkspace, isDashboardMode, isFocusedCardMode]);
+
+  useEffect(() => {
     let cancelled = false;
     const checkRuntimeHealth = async () => {
       try {
@@ -365,12 +402,6 @@ export function App() {
     document.addEventListener('fullscreenchange', syncFullscreenState);
     return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
   }, []);
-
-  useEffect(() => {
-    if (isFocusedCardMode && activeWorkspace !== 'maker') {
-      exitFocusedCardMode();
-    }
-  }, [activeWorkspace, isFocusedCardMode]);
 
   useEffect(() => {
     if (!project || !selectedId) {
@@ -593,11 +624,12 @@ export function App() {
 
   function handlePreviewModeChange(nextMode: PreviewMode) {
     if (nextMode === 'expanded') {
-      if (activeWorkspace !== 'maker' || isCardBrowserMode || !previewForDraft?.imageDataUri) {
-        setStatus('Card preview is not ready to expand.');
+      if (previewForDraft?.imageDataUri && activeWorkspace === 'maker' && !isCardBrowserMode) {
+        setPreviewExpandToken((value) => value + 1);
         return;
       }
-      setPreviewExpandToken((value) => value + 1);
+      enterFocusedCardMode();
+      setStatus(draft ? 'Opened Card Preview focus. Preview is still rendering.' : 'Opened Card Preview focus. Choose a card to preview.');
       return;
     }
     setPreviewMode(nextMode);
@@ -1234,7 +1266,7 @@ export function App() {
   }
 
   function enterFocusedCardMode() {
-    if (!draft || isFocusedCardMode || activeWorkspace !== 'maker') {
+    if (isFocusedCardMode) {
       return;
     }
     setIsCardBrowserMode(false);
@@ -1248,6 +1280,7 @@ export function App() {
       leftPanelWidth,
       rightPanelWidth
     });
+    setActiveWorkspace('maker');
     setFocusedLeftPanelPercent(56);
     setFocusedPanelsFlipped(false);
     setIsFocusedCardMode(true);
@@ -1486,7 +1519,7 @@ export function App() {
     {
       id: 'card-browser',
       group: 'Focused layouts',
-      label: 'Open Card List Browser',
+      label: 'Open Card Browser',
       description: 'Use the source-aware card browser and compare view.',
       run: enterCardBrowserMode
     },
@@ -1658,7 +1691,6 @@ export function App() {
           isFocusedCardMode={isFocusedCardMode}
           isCardBrowserMode={isCardBrowserMode}
           isDashboardMode={isDashboardMode}
-          canEnterFocusedCardMode={activeWorkspace === 'maker' && Boolean(draft)}
           onThemeChange={setEditorTheme}
           onWorkModeChange={handleWorkModeChange}
           onEnterFocusedCardMode={enterFocusedCardMode}
@@ -1804,7 +1836,10 @@ export function App() {
           />
         ) : activeWorkspace === 'maker' ? (
           isFocusedCardMode ? (
-            <>
+            !draft ? (
+              <FocusedCardSelector cards={cardsForList} onSelect={handleSelectCard} onNew={handleNewCard} onExit={exitFocusedCardMode} />
+            ) : (
+              <>
               <div className="focused-workbench-toolbar">
                 <button type="button" className="focused-workbench-control" onClick={toggleFocusedSplitOrientation} title="Swap preview and inspector" aria-label="Swap preview and inspector">
                   Swap
@@ -1891,6 +1926,7 @@ export function App() {
                 </>
               )}
             </>
+            )
           ) : (
             <>
               {effectiveShowPreviewPanel ? (
@@ -2552,6 +2588,60 @@ function nextCollectorNumber(cards: CardSummary[]): string {
       .filter((value) => Number.isFinite(value))
   ) + 1;
   return String(next).padStart(3, '0');
+}
+
+function FocusedCardSelector({
+  cards,
+  onSelect,
+  onNew,
+  onExit
+}: {
+  cards: CardSummary[];
+  onSelect: (cardId: string) => void;
+  onNew: () => void;
+  onExit: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const needle = query.trim().toLowerCase();
+  const matches = cards.filter((card) => !needle || `${card.name} ${card.typeLine} ${card.collectorNumber} ${card.tags.join(' ')}`.toLowerCase().includes(needle));
+  return (
+    <section className="focused-card-selector" aria-label="Choose card for focused layout">
+      <div className="focused-card-selector-header">
+        <div>
+          <h2>Choose a Card</h2>
+          <p>Focused layouts can open from any workspace. Select a card to continue in Maker.</p>
+        </div>
+        <button type="button" className="icon-button" onClick={onExit} title="Exit focused layout" aria-label="Exit focused layout">
+          <Icon name="close" />
+        </button>
+      </div>
+      <label className="search-field">
+        <Icon name="search" />
+        <input value={query} placeholder="Search cards..." onChange={(event) => setQuery(event.target.value)} />
+      </label>
+      <div className="focused-card-selector-list" role="listbox" aria-label="Cards">
+        {matches.slice(0, 100).map((card) => (
+          <button key={card.cardId} type="button" role="option" className="entity-row clickable" onClick={() => onSelect(card.cardId)}>
+            <Icon name="cards" />
+            <span>
+              <strong>{card.name}</strong>
+              <small>{card.collectorNumber} - {card.typeLine || 'No type line'}</small>
+            </span>
+          </button>
+        ))}
+        {!matches.length ? (
+          <div className="preview-empty compact-empty">
+            <strong>No cards match</strong>
+            <span>Clear search or create a new card.</span>
+          </div>
+        ) : null}
+      </div>
+      <div className="focused-card-selector-actions">
+        <button type="button" className="primary-button" onClick={onNew}>Create Card</button>
+        <button type="button" className="secondary-button" onClick={onExit}>Exit</button>
+      </div>
+    </section>
+  );
 }
 
 function summaryFromDraft(draft: CardDraft, existing?: CardSummary): CardSummary {

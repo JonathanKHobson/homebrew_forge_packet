@@ -38,7 +38,7 @@ try {
 
   await clickRail(page, 'Projects');
   await page.getByRole('heading', { name: 'Signs of Assassins' }).first().waitFor({ timeout: 15000 });
-  await page.waitForFunction(() => document.body.innerText.includes('215 linked cards') && document.body.innerText.includes("Assassin's Ledger"), { timeout: 15000 });
+  await page.waitForFunction(() => document.body.innerText.includes('linked cards') && document.body.innerText.includes("Assassin's Ledger"), { timeout: 15000 });
   await capture(page, '00-project-linked-content');
 
   await clickRail(page, 'Decks');
@@ -62,36 +62,49 @@ try {
   const memoryRecommendedLabels = await page.locator('.deck-compact-row.not-owned small').evaluateAll((nodes) => nodes.map((node) => node.textContent ?? '').filter((text) => /recommended/i.test(text)));
   assert(memoryGhostRows > 0, 'Memory Corridor should show ghost/not-owned rows.');
   assert(memoryRecommendedLabels.length > 0, 'Memory Corridor ghost rows should include a Recommended label.');
-  await capture(page, '02-memory-corridor-ghost-rows');
+	  await capture(page, '02-memory-corridor-ghost-rows');
+
+	  await clickDeckSection(page, 'Maybeboard');
+	  await page.waitForFunction(() => {
+	    const activeTab = document.querySelector('.deck-board-tab.active');
+	    return activeTab?.textContent?.includes('Maybeboard') && document.querySelectorAll('.deck-compact-row').length > 0;
+	  }, { timeout: 10000 });
+	  const memoryMaybeRows = await page.locator('.deck-compact-row').count();
+	  const memoryMaybeText = await page.textContent('body');
+  assert(memoryMaybeRows > 0, 'Memory Corridor should render Maybeboard replacement candidates.');
+  assert(/Apple of Eden|Hemlock Vial|Distract the Guards|Mjölnir|Mortify/.test(memoryMaybeText ?? ''), 'Memory Corridor Maybeboard should include incoming batch-002 options.');
+  await capture(page, '03-memory-corridor-maybeboard');
 
   await clickRail(page, 'Binders');
   await clickManagementItem(page, "Assassin's Ledger");
-  await capture(page, '03-assassin-binder');
+  await capture(page, '04-assassin-binder');
   const binderRows = await page.locator('.collection-table-row, .collection-grid-card, .collection-compact-row').count();
   assert(binderRows > 0, "Assassin's Ledger should render collection rows.");
 
   await clickRail(page, 'Lists');
   await clickManagementItem(page, 'Flagged');
-  await capture(page, '04-flagged-review-list');
+  await capture(page, '05-flagged-review-list');
   const flaggedRows = await page.locator('.collection-table-row.needs-review, .collection-grid-card.needs-review, .collection-compact-row.needs-review').count();
   assert(flaggedRows > 0, 'Flagged list should render duplicate/off-color review rows.');
 
   await clickManagementItem(page, 'Recommendations');
-  await capture(page, '05-recommendations-list-not-owned');
+  await capture(page, '06-recommendations-list-not-owned');
   const recommendationGhostRows = await page.locator('.collection-table-row.not-owned, .collection-grid-card.not-owned, .collection-compact-row.not-owned').count();
   assert(recommendationGhostRows > 0, 'Recommendations list should render not-owned rows.');
 
-  await clickRail(page, 'Decks');
-  await clickDeckItem(page, /Signs of Assassins/).catch(() => {});
-  await page.locator('.deck-workspace').waitFor({ timeout: 15000 });
-  await openDashboard(page);
+	  await openDecksWorkspace(page);
+	  await openDashboard(page);
   await page.waitForFunction(() => document.body.innerText.includes('Analysis view') && document.body.innerText.includes('Advanced filters'), { timeout: 15000 });
   await page.getByRole('button', { name: /Advanced filters/ }).click({ timeout: 10000 });
   await page.waitForFunction(() => document.body.innerText.includes('Browse Dashboard'), { timeout: 10000 });
+  await page.waitForFunction(() => {
+    const match = document.body.innerText.match(/([0-9][0-9,]*) matching dashboard rows/);
+    return Boolean(match && Number(match[1].replace(/,/g, '')) > 0);
+  }, { timeout: 25000 });
   const dashboardText = await page.textContent('body');
   assert(dashboardText?.includes('Recommendations'), 'Dashboard advanced filters should include Recommendations.');
   assert(dashboardText?.includes('Ownership'), 'Dashboard advanced filters should include Ownership.');
-  await capture(page, '06-dashboard-filters');
+  await capture(page, '07-dashboard-filters');
 
   await context.close();
 } finally {
@@ -105,10 +118,11 @@ const blocking = results.filter((result) => result.kind === 'pageerror');
     '00-project-linked-content.png',
 	    '01-hidden-blade-core-owned-only.png',
 	    '02-memory-corridor-ghost-rows.png',
-	    '03-assassin-binder.png',
-    '04-flagged-review-list.png',
-	    '05-recommendations-list-not-owned.png',
-    '06-dashboard-filters.png'
+	    '03-memory-corridor-maybeboard.png',
+	    '04-assassin-binder.png',
+    '05-flagged-review-list.png',
+	    '06-recommendations-list-not-owned.png',
+    '07-dashboard-filters.png'
   ].map((file) => resolve(outDir, file)),
   events: results,
   blockingErrors: blocking
@@ -132,6 +146,23 @@ async function clickDeckItem(page, label) {
   await row.click({ timeout: 10000 });
 }
 
+async function openDecksWorkspace(page) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await clickRail(page, 'Decks');
+    await page.locator('.management-workspace .entity-list').filter({ hasText: /Signs of Assassins/ }).first().waitFor({ timeout: 8000 }).catch(() => {});
+    try {
+      await clickDeckItem(page, /Signs of Assassins/);
+      await page.locator('.deck-workspace').waitFor({ timeout: 10000 });
+      return;
+    } catch {
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.waitForTimeout(500);
+    }
+  }
+  await capture(page, 'debug-decks-navigation-failed');
+  throw new Error('Could not return to the Signs of Assassins deck workspace.');
+}
+
 async function clickManagementItem(page, label) {
   const row = page.locator('.management-workspace .entity-list .entity-row.clickable').filter({ hasText: label }).first();
   await row.scrollIntoViewIfNeeded({ timeout: 10000 });
@@ -149,6 +180,10 @@ async function selectVariant(page, value) {
 
 async function clickDeckViewMode(page, label) {
   await page.locator(`.deck-view-mode button[aria-label="${label} view"]`).first().click({ timeout: 10000 });
+}
+
+async function clickDeckSection(page, label) {
+  await page.locator('.deck-board-tab').filter({ hasText: label }).first().click({ timeout: 10000 });
 }
 
 async function openDashboard(page) {

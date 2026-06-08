@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { CardSummary } from '../domain/editorTypes.js';
 import type { CardListDensity } from '../domain/editorUiTypes.js';
+import { sortItemsByState, type ListSortOption, type ListSortState } from '../domain/listControls.js';
 import { formatCount } from '../domain/uiText.js';
 import {
   CARD_STATUS_OPTIONS,
@@ -11,9 +12,8 @@ import {
   matchesTagFilter
 } from '../domain/filterTypes.js';
 import { BrowseFilterOverlay } from './filters/BrowseFilterOverlay.js';
-import { FilterButton } from './filters/FilterButton.js';
 import { FilteredEmptyState } from './filters/FilteredEmptyState.js';
-import { StatusPill, type StatusPillTone } from './forge-ui/index.js';
+import { AdvancedFiltersButton, ListControlsBar, ListResultsSummary, SortMenu, StatusPill, type StatusPillTone } from './forge-ui/index.js';
 import { Icon } from './Icon.js';
 import { ManaSymbolSet } from './ManaSymbols.js';
 
@@ -50,6 +50,8 @@ interface CardFilters {
   variantNotes: string;
 }
 
+type CardListSortOptionId = 'name' | 'collector' | 'mana' | 'type' | 'rarity' | 'status';
+
 const defaultCardFilters: CardFilters = {
   rarity: 'all',
   status: 'all',
@@ -73,10 +75,20 @@ const defaultCardFilters: CardFilters = {
   variantNotes: ''
 };
 
+const CARD_LIST_SORT_OPTIONS: Array<ListSortOption<CardListSortOptionId>> = [
+  { id: 'name', label: 'Name' },
+  { id: 'collector', label: 'Collector #' },
+  { id: 'mana', label: 'Mana value' },
+  { id: 'type', label: 'Type' },
+  { id: 'rarity', label: 'Rarity' },
+  { id: 'status', label: 'Status' }
+];
+
 export function CardList({ cards, selectedId, dirtyCardIds, density, onSelect, onNew, onCollapse }: CardListProps) {
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<CardFilters>(defaultCardFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortState, setSortState] = useState<ListSortState<CardListSortOptionId>>({ option: 'collector', direction: 'asc' });
   const activeFilterCount = countActiveFilters([
     { value: filters.rarity, defaultValue: defaultCardFilters.rarity },
     { value: filters.status, defaultValue: defaultCardFilters.status },
@@ -101,6 +113,23 @@ export function CardList({ cards, selectedId, dirtyCardIds, density, onSelect, o
   ]);
 
   const filteredCards = useMemo(() => cards.filter((card) => cardMatches(card, query, filters)), [cards, filters, query]);
+  const sortedCards = useMemo(
+    () =>
+      sortItemsByState(
+        filteredCards,
+        sortState,
+        {
+          name: (card) => card.name,
+          collector: (card) => card.collectorNumber,
+          mana: (card) => manaValueFromCost(card.manaCost),
+          type: (card) => card.typeLine,
+          rarity: (card) => card.rarity,
+          status: (card) => card.status
+        },
+        (card) => card.name
+      ),
+    [filteredCards, sortState]
+  );
 
   const resetFilters = () => setFilters(defaultCardFilters);
   const selectCard = (cardId: string, closeOverlay = false) => {
@@ -125,21 +154,26 @@ export function CardList({ cards, selectedId, dirtyCardIds, density, onSelect, o
               <Icon name="collapseLeft" />
             </button>
           ) : null}
-          <FilterButton label="Filter cards" activeCount={activeFilterCount} onClick={() => setFiltersOpen(true)} />
           <button type="button" className="icon-button" onClick={onNew} title="New card">
             +
           </button>
         </div>
       </div>
       <div className="card-list-tools">
-        <label className="search-field">
-          <Icon name="search" />
-          <input value={query} placeholder="Search cards..." onChange={(event) => setQuery(event.target.value)} />
-        </label>
+        <ListControlsBar
+          searchLabel="Search Maker cards"
+          searchValue={query}
+          searchPlaceholder="Search cards..."
+          onSearchChange={setQuery}
+          sortControl={<SortMenu options={CARD_LIST_SORT_OPTIONS} state={sortState} onChange={setSortState} />}
+          filterControl={<AdvancedFiltersButton label="Filters" activeCount={activeFilterCount} onClick={() => setFiltersOpen(true)} />}
+          resetControl={query.trim() || activeFilterCount ? <button type="button" className="secondary-button compact" onClick={() => { setQuery(''); resetFilters(); }}>Reset</button> : null}
+          results={<ListResultsSummary shown={sortedCards.length} total={cards.length} label="card" />}
+        />
       </div>
       <div className="card-list-scroll">
-        {filteredCards.length ? (
-          filteredCards.map((card) => <CardRow key={card.cardId} card={card} dirty={dirtyCardIds.has(card.cardId)} density={density} selected={card.cardId === selectedId} onSelect={() => selectCard(card.cardId)} />)
+        {sortedCards.length ? (
+          sortedCards.map((card) => <CardRow key={card.cardId} card={card} dirty={dirtyCardIds.has(card.cardId)} density={density} selected={card.cardId === selectedId} onSelect={() => selectCard(card.cardId)} />)
         ) : cards.length ? (
           <FilteredEmptyState
             title="No cards match"
@@ -157,14 +191,14 @@ export function CardList({ cards, selectedId, dirtyCardIds, density, onSelect, o
         <BrowseFilterOverlay
           title="Browse Cards"
           subtitle="Search stays in the card list. Use filters here when you need precise card narrowing."
-          resultsLabel={`${filteredCards.length} matching cards`}
+          resultsLabel={`${sortedCards.length} matching cards`}
           activeFilterCount={activeFilterCount}
           onClose={() => setFiltersOpen(false)}
           onResetFilters={resetFilters}
           results={
             <div className="filter-result-list">
-              {filteredCards.length ? (
-                filteredCards.map((card) => <CardRow key={card.cardId} card={card} dirty={dirtyCardIds.has(card.cardId)} density="comfortable" selected={card.cardId === selectedId} onSelect={() => selectCard(card.cardId, true)} />)
+              {sortedCards.length ? (
+                sortedCards.map((card) => <CardRow key={card.cardId} card={card} dirty={dirtyCardIds.has(card.cardId)} density="comfortable" selected={card.cardId === selectedId} onSelect={() => selectCard(card.cardId, true)} />)
               ) : (
                 <FilteredEmptyState
                   title="No cards match"
@@ -381,6 +415,34 @@ function CardRow({ card, dirty, density, selected, onSelect }: { card: CardSumma
       </span>
     </button>
   );
+}
+
+function manaValueFromCost(manaCost: string): number {
+  const symbols = manaCost.match(/\{[^}]+\}/g);
+  if (symbols?.length) {
+    return symbols.reduce((total, symbol) => total + manaSymbolValue(symbol.replace(/[{}]/g, '')), 0);
+  }
+  const numbers = manaCost.match(/\d+/g) ?? [];
+  const numeric = numbers.reduce((total, value) => total + (Number(value) || 0), 0);
+  const pips = manaCost
+    .replace(/\d+/g, '')
+    .toUpperCase()
+    .split('')
+    .filter((character) => 'WUBRGC'.includes(character)).length;
+  return numeric + pips;
+}
+
+function manaSymbolValue(symbol: string): number {
+  if (/^\d+$/.test(symbol)) {
+    return Number(symbol);
+  }
+  if (symbol.includes('/')) {
+    return 1;
+  }
+  if (symbol.toUpperCase() === 'X') {
+    return 0;
+  }
+  return symbol.trim() ? 1 : 0;
 }
 
 function toneForCardStatus(status: string): StatusPillTone {

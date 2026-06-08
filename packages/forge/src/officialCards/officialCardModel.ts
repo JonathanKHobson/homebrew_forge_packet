@@ -1,4 +1,10 @@
-export type OfficialCardCatalogView = 'prints' | 'oracle';
+export type OfficialCardCatalogView = 'prints' | 'unique' | 'oracle';
+export type OfficialCardSyncView = 'prints' | 'oracle' | 'both';
+export type OfficialCardSortKey = 'auto' | 'relevance' | 'name' | 'released' | 'price' | 'manaValue' | 'rarity' | 'set' | 'colorIdentity' | 'type';
+export type OfficialCardSortDirection = 'asc' | 'desc';
+export type OfficialCardPriceCurrency = 'usd' | 'usdFoil' | 'eur' | 'eurFoil' | 'tix';
+export type OfficialCardImageFilter = 'yes' | 'no';
+export type OfficialCardCategoryFilter = 'normal' | 'token' | 'art' | 'extra' | 'funny';
 
 export interface OfficialCardImageUris {
   small?: string;
@@ -34,6 +40,9 @@ export interface OfficialCardFace {
 export interface OfficialCardBase {
   id: string;
   oracleId?: string;
+  variantKey?: string;
+  variantCount?: number;
+  filteredVariantCount?: number;
   name: string;
   manaCost?: string;
   manaValue?: number;
@@ -95,6 +104,21 @@ export interface OfficialCardSearchFilters {
   rarity?: string;
   colorIdentity?: string;
   typeLine?: string;
+  layout?: string;
+  finish?: string;
+  lang?: string;
+  manaValueMin?: number;
+  manaValueMax?: number;
+  priceCurrency?: OfficialCardPriceCurrency;
+  priceMin?: number;
+  priceMax?: number;
+  releasedAfter?: string;
+  releasedBefore?: string;
+  year?: string;
+  hasImage?: OfficialCardImageFilter;
+  cardCategory?: OfficialCardCategoryFilter;
+  sort?: OfficialCardSortKey;
+  sortDirection?: OfficialCardSortDirection;
   limit?: number;
   offset?: number;
 }
@@ -105,12 +129,26 @@ export interface OfficialCardSearchResult {
   total: number;
   limit: number;
   offset: number;
+  sort: OfficialCardSortKey;
+  sortDirection: OfficialCardSortDirection;
+  unsupportedQueryTerms: string[];
   cards: OfficialCardSearchCard[];
   status: OfficialCardCatalogStatus;
 }
 
+export interface OfficialCardPrintVariantsResult {
+  variantKey: string;
+  oracleId?: string;
+  name: string;
+  total: number;
+  limit: number;
+  offset: number;
+  cards: OfficialCardPrint[];
+  status: OfficialCardCatalogStatus;
+}
+
 export interface OfficialCardSyncOptions {
-  view?: OfficialCardCatalogView | 'both';
+  view?: OfficialCardSyncView;
   fetchImpl?: typeof fetch;
   syncedAt?: string;
 }

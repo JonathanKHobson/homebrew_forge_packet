@@ -51,9 +51,9 @@
         "owned-only",
         "baseline"
       ],
-      "notes": "Baseline candidate build. If it falls below 36 lands, keep the land-light flag visible instead of hiding missing basics.",
-      "createdAt": "2026-06-08T03:26:22.014Z",
-      "updatedAt": "2026-06-08T03:26:29.160Z"
+      "notes": "Baseline comparison build. If it falls below 36 lands, keep the land-light flag visible instead of hiding missing basics.",
+      "createdAt": "2026-06-08T08:58:26.466Z",
+      "updatedAt": "2026-06-08T08:58:37.232Z"
     },
     {
       "deckId": "signs-of-assassins",
@@ -77,8 +77,8 @@
         "combat"
       ],
       "notes": "This variant tests the core feel of “you cannot block me” using only owned cards.",
-      "createdAt": "2026-06-08T03:26:22.014Z",
-      "updatedAt": "2026-06-08T03:26:29.160Z"
+      "createdAt": "2026-06-08T08:58:26.466Z",
+      "updatedAt": "2026-06-08T08:58:37.232Z"
     },
     {
       "deckId": "signs-of-assassins",
@@ -102,8 +102,8 @@
         "exile"
       ],
       "notes": "This variant loads the graveyard with useful Assassin bodies and uses exile/graveyard value without becoming a generic reanimator deck.",
-      "createdAt": "2026-06-08T03:26:22.014Z",
-      "updatedAt": "2026-06-08T03:26:29.160Z"
+      "createdAt": "2026-06-08T08:58:26.466Z",
+      "updatedAt": "2026-06-08T08:58:37.232Z"
     },
     {
       "deckId": "signs-of-assassins",
@@ -128,8 +128,8 @@
         "protection"
       ],
       "notes": "This variant asks whether the deck is better as a toolbelt: protect Altaïr, suit up evasive creatures, and let artifacts smooth the plan.",
-      "createdAt": "2026-06-08T03:26:22.014Z",
-      "updatedAt": "2026-06-08T03:26:29.160Z"
+      "createdAt": "2026-06-08T08:58:26.466Z",
+      "updatedAt": "2026-06-08T08:58:37.232Z"
     },
     {
       "deckId": "signs-of-assassins",
@@ -153,8 +153,8 @@
         "balanced"
       ],
       "notes": "This is the cleanest “make the deck work” variant: stronger mana, setup, protection, and answers before more speculative packages.",
-      "createdAt": "2026-06-08T03:26:22.014Z",
-      "updatedAt": "2026-06-08T03:26:29.160Z"
+      "createdAt": "2026-06-08T08:58:26.466Z",
+      "updatedAt": "2026-06-08T08:58:37.232Z"
     },
     {
       "deckId": "signs-of-assassins",
@@ -179,8 +179,8 @@
         "evasion"
       ],
       "notes": "This variant is where the weird lines live: unblockable puzzles, attack-trigger multiplication, type manipulation, and temporary-token experiments.",
-      "createdAt": "2026-06-08T03:26:22.014Z",
-      "updatedAt": "2026-06-08T03:26:29.160Z"
+      "createdAt": "2026-06-08T08:58:26.466Z",
+      "updatedAt": "2026-06-08T08:58:37.232Z"
     }
   ],
   "tags": [
@@ -192,6 +192,6 @@
     "deck-variants"
   ],
   "notes": "Imported owned cards are the source pool for this deck family, not a finalized 100. Ghost/recommended rows live in the Recommendations list and are visually marked as not owned in deck views. Owned-only variants intentionally keep missing land gaps visible.",
-  "createdAt": "2026-06-08T03:26:22.014Z",
-  "updatedAt": "2026-06-08T03:26:29.160Z"
+  "createdAt": "2026-06-08T08:58:26.466Z",
+  "updatedAt": "2026-06-08T08:58:37.232Z"
 }

@@ -5,6 +5,7 @@ import {
   cardBrowserCompareDetailsForItem,
   cardBrowserCompareSourceLabel,
   comparePreviewKeyForDraft,
+  findSavedDraftForCompareRow,
   type CardBrowserCompareItem,
   type CardBrowserCompareRow
 } from '../domain/cardBrowserCompare.js';
@@ -12,10 +13,14 @@ import { isOwnedStatus, listCategoryLabel, ownershipStatusLabel } from '../domai
 import { collectionOwnerSuggestions, normalizeCollectionOwnerName, normalizeCollectionTags } from '../domain/collectionOwnership.js';
 import type { CardDraft, CardSummary, CollectionEntry, CollectionKind, CollectionListCategory, CollectionOwnershipStatus, CollectionPurpose, CollectionState, CollectionSummary, DeckState, DeckSummary, EditorProject, FrameOption, LibraryState, OfficialCardCatalogStatus, OfficialCardCatalogView, OfficialCardSearchCard, OfficialCardSearchResult, PreviewResponse } from '../domain/editorTypes.js';
 import type { InspectorTab } from '../domain/editorUiTypes.js';
+import { countActiveFilters, matchesNumberQuery, matchesTagFilter } from '../domain/filterTypes.js';
+import { sortItemsByState, type ListSortOption, type ListSortState } from '../domain/listControls.js';
+import { imageUrlForMetadata, metadataFromCollectionEntry, metadataFromDeckCard } from '../domain/officialCardMetadata.js';
 import { formatCount } from '../domain/uiText.js';
 import { Field } from './Field.js';
-import { StatusPill, type StatusPillTone } from './forge-ui/index.js';
-import { Icon } from './Icon.js';
+import { BrowseFilterOverlay } from './filters/BrowseFilterOverlay.js';
+import { AdvancedFiltersButton, ListControlsBar, ListResultsSummary, SortMenu, StatusPill, type StatusPillTone } from './forge-ui/index.js';
+import { Icon, type IconName } from './Icon.js';
 import { Inspector } from './Inspector.js';
 import { ColorIdentitySymbols, ManaCostSymbols } from './ManaSymbols.js';
 import { PanelResizeHandle } from './PanelResizeHandle.js';
@@ -28,8 +33,51 @@ type BrowserCatalogViewMode = 'list' | 'grid' | 'columns';
 type CardBrowserSurface = 'focused' | 'workspace';
 type BrowserSourceKind = 'set' | 'deck' | 'collection' | 'official';
 type OfficialActionTarget = '' | 'collection' | 'deck' | 'set';
+type BrowserSortOptionId = 'default' | 'name' | 'source' | 'set' | 'mana' | 'color' | 'type' | 'status' | 'quantity' | 'deckSection' | 'rarity';
 
 const OFFICIAL_PAGE_SIZE = 120;
+
+interface BrowserFilters {
+  sourceKind: BrowserSourceKind | 'all';
+  cardType: string;
+  color: string;
+  manaValue: string;
+  rarity: string;
+  status: string;
+  tag: string;
+  deckSection: DeckState['entries'][number]['section'] | 'all';
+  collectionKind: CollectionKind | 'all';
+  reviewStatus: CollectionEntry['reviewStatus'] | 'all';
+  linkedState: 'all' | 'linked' | 'unresolved';
+}
+
+const DEFAULT_BROWSER_FILTERS: BrowserFilters = {
+  sourceKind: 'all',
+  cardType: 'all',
+  color: 'all',
+  manaValue: '',
+  rarity: 'all',
+  status: 'all',
+  tag: '',
+  deckSection: 'all',
+  collectionKind: 'all',
+  reviewStatus: 'all',
+  linkedState: 'all'
+};
+
+const BROWSER_SORT_OPTIONS: Array<ListSortOption<BrowserSortOptionId>> = [
+  { id: 'default', label: 'Source order' },
+  { id: 'name', label: 'Name' },
+  { id: 'source', label: 'Source' },
+  { id: 'set', label: 'Set / #' },
+  { id: 'mana', label: 'Mana value' },
+  { id: 'color', label: 'Color' },
+  { id: 'type', label: 'Type' },
+  { id: 'status', label: 'Status' },
+  { id: 'quantity', label: 'Quantity', defaultDirection: 'desc' },
+  { id: 'deckSection', label: 'Deck section' },
+  { id: 'rarity', label: 'Rarity' }
+];
 
 type ComparePreviewCacheEntry =
   | { status: 'loading' }
@@ -83,6 +131,11 @@ interface BrowserRow extends CardBrowserCompareRow {
   ownershipStatus?: CollectionOwnershipStatus;
   ownerName?: string;
   reviewStatus?: CollectionEntry['reviewStatus'];
+  rarity?: string;
+  manaValue?: number;
+  collectorNumber?: string;
+  imageUrl?: string;
+  sourceOrder?: number;
   variants: CardSummary['variants'];
   searchText: string;
 }
@@ -112,6 +165,9 @@ export function CardBrowserView({
   const [scopeId, setScopeId] = useState('');
   const [query, setQuery] = useState('');
   const [ownerFilter, setOwnerFilter] = useState('');
+  const [browserFilters, setBrowserFilters] = useState<BrowserFilters>(DEFAULT_BROWSER_FILTERS);
+  const [browserFiltersOpen, setBrowserFiltersOpen] = useState(false);
+  const [sortState, setSortState] = useState<ListSortState<BrowserSortOptionId>>({ option: 'name', direction: 'asc' });
   const [previewMode, setPreviewMode] = useState<BrowserPreviewMode>('card');
   const [compareDisplayMode, setCompareDisplayMode] = useState<BrowserCompareDisplayMode>('compact');
   const [catalogViewMode, setCatalogViewMode] = useState<BrowserCatalogViewMode>('list');
@@ -121,6 +177,7 @@ export function CardBrowserView({
   const [compareRowKeys, setCompareRowKeys] = useState<string[]>([]);
   const [compareModeActive, setCompareModeActive] = useState(false);
   const [comparePreviewCache, setComparePreviewCache] = useState<Record<string, ComparePreviewCacheEntry>>({});
+  const [browserPreviewCache, setBrowserPreviewCache] = useState<Record<string, ComparePreviewCacheEntry>>({});
   const [leftWidth, setLeftWidth] = useState(520);
   const [previewHeightPercent, setPreviewHeightPercent] = useState(54);
   const [projectsBySet, setProjectsBySet] = useState<Record<string, EditorProject>>({});
@@ -258,7 +315,30 @@ export function CardBrowserView({
     () => collectionOwnerSuggestions(collections.flatMap((collection) => collection.ownerNames ?? []), Object.values(collectionStates).flatMap((state) => state.entries.map((entry) => entry.ownerName))),
     [collectionStates, collections]
   );
-  const filteredRows = useMemo(() => filterBrowserRows(rows, scope, scopeId, query, ownerFilter), [ownerFilter, query, rows, scope, scopeId]);
+  const activeBrowserFilterCount = countActiveBrowserFilters(browserFilters, ownerFilter);
+  const filteredRows = useMemo(() => filterBrowserRows(rows, scope, scopeId, query, ownerFilter, browserFilters), [browserFilters, ownerFilter, query, rows, scope, scopeId]);
+  const sortedRows = useMemo(
+    () =>
+      sortItemsByState(
+        filteredRows,
+        sortState,
+        {
+          default: (row) => row.sourceOrder ?? 0,
+          name: (row) => row.name,
+          source: (row) => `${row.sourceKind}:${row.sourceName}`,
+          set: (row) => `${row.setCode ?? ''}:${row.collectorNumber ?? ''}`,
+          mana: (row) => row.manaValue ?? manaValueFromCost(row.manaCost),
+          color: (row) => row.colors,
+          type: (row) => row.typeLine,
+          status: (row) => row.status || row.reviewStatus,
+          quantity: (row) => row.quantity ?? 1,
+          deckSection: (row) => row.deckSection ?? '',
+          rarity: (row) => row.rarity ?? ''
+        },
+        (row) => row.name
+      ),
+    [filteredRows, sortState]
+  );
   const rowByKey = useMemo(() => new Map(rows.map((row) => [row.key, row])), [rows]);
   const compareItems = useMemo(
     () =>
@@ -274,28 +354,73 @@ export function CardBrowserView({
       draft &&
       compareItems.some((item) => item.row.setCode === draft.setCode && item.row.cardId === draft.cardId && (!item.row.variantId || item.row.variantId === draft.variantId))
   );
-  const selectedRow = filteredRows.find((row) => row.key === selectedRowKey) ?? filteredRows[0] ?? null;
+  const selectedRow = sortedRows.find((row) => row.key === selectedRowKey) ?? sortedRows[0] ?? null;
   const selectedCollection = selectedRow?.sourceKind === 'collection' ? collectionStates[selectedRow.sourceId] : null;
   const selectedCollectionEntry = selectedCollection?.entries.find((entry) => entry.entryId === selectedRow?.collectionEntryId);
   const selectedOfficialCard = selectedRow?.sourceKind === 'official' ? selectedRow.officialCard : undefined;
-  const activeDraftMatchesRow = Boolean(draft && selectedRow?.cardId && selectedRow.setCode === draft.setCode && selectedRow.cardId === draft.cardId);
+  const selectedCompareItem = useMemo(
+    () => selectedRow ? buildCardBrowserCompareItem(selectedRow, { projectsBySet, currentProject: project, collectionStates }) : null,
+    [collectionStates, project, projectsBySet, selectedRow]
+  );
+  const selectedSavedDraft = selectedCompareItem?.draft ?? null;
+  const selectedPreviewKey = selectedSavedDraft ? comparePreviewKeyForDraft(selectedSavedDraft) : '';
+  const selectedPreviewCacheEntry = selectedPreviewKey ? browserPreviewCache[selectedPreviewKey] : undefined;
+  const activeDraftMatchesRow = Boolean(draft && selectedRow?.cardId && selectedRow.setCode === draft.setCode && selectedRow.cardId === draft.cardId && (!selectedRow.variantId || selectedRow.variantId === draft.variantId));
   const activeDraft = activeDraftMatchesRow ? draft : null;
   const entityOptions = useMemo(() => buildScopeOptions(scope, library, decks, collections), [collections, decks, library, scope]);
+  const showScopeEntityPicker = scope !== 'all' && scope !== 'official' && entityOptions.length > 0;
   const previewRows = compareModeActive ? 'minmax(0, 1fr)' : `${previewHeightPercent}% 6px ${100 - previewHeightPercent}%`;
   const officialShowingStart = officialResult?.total ? officialResult.offset + 1 : 0;
   const officialShowingEnd = officialResult ? Math.min(officialResult.offset + officialResult.cards.length, officialResult.total) : 0;
+  const browserFiltersOverlay = browserFiltersOpen ? (
+    <BrowseFilterOverlay
+      title="Browse Card Browser"
+      subtitle="Filter source rows without hiding search or sort controls."
+      resultsLabel={`${sortedRows.length} matching rows`}
+      activeFilterCount={activeBrowserFilterCount}
+      onClose={() => setBrowserFiltersOpen(false)}
+      onResetFilters={resetBrowserFilters}
+      results={
+        <div className="filter-result-list">
+          {sortedRows.slice(0, 80).map((row) => (
+            <button key={row.key} type="button" className={`entity-row clickable ${row.key === selectedRow?.key ? 'selected' : ''}`} onClick={() => { setSelectedRowKey(row.key); setBrowserFiltersOpen(false); }}>
+              <Icon name={iconForBrowserSource(row.sourceKind)} />
+              <span>
+                <strong>{row.name}</strong>
+                <small>{sourceLabel(row)} - {row.sourceName}</small>
+              </span>
+            </button>
+          ))}
+          {!sortedRows.length ? (
+            <div className="preview-empty compact-empty">
+              <strong>No rows match</strong>
+              <span>Reset filters or clear the Card Browser search.</span>
+            </div>
+          ) : null}
+        </div>
+      }
+    >
+      <BrowserAdvancedFilterControls
+        filters={browserFilters}
+        ownerFilter={ownerFilter}
+        ownerSuggestions={ownerSuggestions}
+        onFiltersChange={(patch) => setBrowserFilters((current) => ({ ...current, ...patch }))}
+        onOwnerFilterChange={setOwnerFilter}
+      />
+    </BrowseFilterOverlay>
+  ) : null;
 
   useEffect(() => {
-    if (!filteredRows.length) {
+    if (!sortedRows.length) {
       setSelectedRowKey('');
       return;
     }
-    if (selectedRowKey && filteredRows.some((row) => row.key === selectedRowKey)) {
+    if (selectedRowKey && sortedRows.some((row) => row.key === selectedRowKey)) {
       return;
     }
-    const currentDraftRow = draft ? filteredRows.find((row) => row.setCode === draft.setCode && row.cardId === draft.cardId) : undefined;
-    setSelectedRowKey((currentDraftRow ?? filteredRows[0]).key);
-  }, [draft, filteredRows, selectedRowKey]);
+    const currentDraftRow = draft ? sortedRows.find((row) => row.setCode === draft.setCode && row.cardId === draft.cardId) : undefined;
+    setSelectedRowKey((currentDraftRow ?? sortedRows[0]).key);
+  }, [draft, selectedRowKey, sortedRows]);
 
   useEffect(() => {
     setScopeId('');
@@ -403,6 +528,32 @@ export function CardBrowserView({
     };
   }, [compareItems, compareModeActive, comparePreviewCache]);
 
+  useEffect(() => {
+    if (!selectedSavedDraft || !selectedPreviewKey) {
+      return;
+    }
+    const current = browserPreviewCache[selectedPreviewKey];
+    if (current?.status === 'loading' || current?.status === 'ready') {
+      return;
+    }
+    let cancelled = false;
+    setBrowserPreviewCache((cache) => ({ ...cache, [selectedPreviewKey]: { status: 'loading' } }));
+    void fetchPreview(selectedSavedDraft)
+      .then((nextPreview) => {
+        if (!cancelled) {
+          setBrowserPreviewCache((cache) => ({ ...cache, [selectedPreviewKey]: { status: 'ready', preview: nextPreview } }));
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setBrowserPreviewCache((cache) => ({ ...cache, [selectedPreviewKey]: { status: 'error', error: error instanceof Error ? error.message : String(error) } }));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [browserPreviewCache, selectedPreviewKey, selectedSavedDraft]);
+
   function resizeLeft(delta: number) {
     setLeftWidth((width) => clamp(width + delta, 320, 760));
   }
@@ -456,6 +607,11 @@ export function CardBrowserView({
     setCompareModeActive(false);
     setCompareRowKeys([]);
     onStatus('Cleared card comparison selection.');
+  }
+
+  function resetBrowserFilters() {
+    setOwnerFilter('');
+    setBrowserFilters(DEFAULT_BROWSER_FILTERS);
   }
 
   function updateCollectionEntry(patch: Partial<CollectionEntry>) {
@@ -617,7 +773,7 @@ export function CardBrowserView({
             <div className="card-browser-header">
               <div>
                 <h2>Filters</h2>
-                <p>{formatCount(filteredRows.length, 'row')} shown</p>
+                <p>{formatCount(sortedRows.length, 'row')} shown</p>
               </div>
               <button type="button" className="icon-button" onClick={() => setCatalogLeftOpen(false)} title="Collapse filters" aria-label="Collapse filters">
                 <Icon name="collapseLeft" />
@@ -637,17 +793,19 @@ export function CardBrowserView({
                     <option value="list">List</option>
                   </select>
                 </label>
-                <label className="filter-field">
-                  <span>Filter</span>
-                  <select value={scopeId} disabled={scope === 'all'} onChange={(event) => setScopeId(event.target.value)}>
-                    <option value="">{scope === 'all' ? 'Everything' : allScopeLabel(scope)}</option>
-                    {entityOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {showScopeEntityPicker ? (
+                  <label className="filter-field">
+                    <span>{scopeContextLabel(scope)}</span>
+                    <select value={scopeId} onChange={(event) => setScopeId(event.target.value)}>
+                      <option value="">{allScopeLabel(scope)}</option>
+                      {entityOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
                 <label className="filter-field">
                   <span>Owner</span>
                   <input list="card-catalog-owner-filter-options" value={ownerFilter} placeholder="Any owner" onChange={(event) => setOwnerFilter(event.target.value)} />
@@ -670,7 +828,7 @@ export function CardBrowserView({
           <div className="card-browser-header card-catalog-main-header">
             <div>
               <h2>Cards</h2>
-              <p>{formatCount(filteredRows.length, 'row')} of {formatCount(rows.length, 'row')} in this app</p>
+              <p>{formatCount(sortedRows.length, 'row')} of {formatCount(rows.length, 'row')} in this app</p>
             </div>
             <div className="card-browser-preview-actions">
               <button type="button" className="secondary-button compact" onClick={() => setCatalogLeftOpen((value) => !value)}>
@@ -696,13 +854,19 @@ export function CardBrowserView({
             </div>
           </div>
           <div className="card-browser-controls card-catalog-search-row">
-            <label className="search-field">
-              <Icon name="search" />
-              <input value={query} placeholder="Search app cards..." onChange={(event) => setQuery(event.target.value)} />
-            </label>
+            <ListControlsBar
+              searchLabel="Search app cards"
+              searchValue={query}
+              searchPlaceholder="Search app cards..."
+              onSearchChange={setQuery}
+              sortControl={<SortMenu options={BROWSER_SORT_OPTIONS} state={sortState} onChange={setSortState} />}
+              filterControl={<AdvancedFiltersButton activeCount={activeBrowserFilterCount} onClick={() => setBrowserFiltersOpen(true)} />}
+              resetControl={query.trim() || activeBrowserFilterCount ? <button type="button" className="secondary-button compact" onClick={() => { setQuery(''); resetBrowserFilters(); }}>Reset</button> : null}
+              results={<ListResultsSummary shown={sortedRows.length} total={rows.length} />}
+            />
           </div>
           <div className={`card-catalog-results ${catalogViewMode}`} role="list" aria-label="Cards in this app">
-            {filteredRows.map((row) => (
+            {sortedRows.map((row) => (
               <button
                 key={row.key}
                 type="button"
@@ -726,7 +890,7 @@ export function CardBrowserView({
                 <span className="card-browser-row-meta">{row.variants.length ? `${row.variants.length}v` : row.reviewStatus === 'needs_review' ? 'Review' : ''}</span>
               </button>
             ))}
-            {!filteredRows.length ? (
+            {!sortedRows.length ? (
               <div className="preview-empty compact-empty">
                 <strong>No cards match</strong>
                 <span>Clear search or change the filter scope.</span>
@@ -759,30 +923,37 @@ export function CardBrowserView({
             <Icon name="collapseLeft" />
           </button>
         )}
+        {browserFiltersOverlay}
       </div>
     );
   }
 
   return (
     <div className="card-browser-view" style={{ gridTemplateColumns: `${leftWidth}px 6px minmax(0, 1fr)` }}>
+      {onExit ? (
+        <button type="button" className="focused-layout-exit-button" onClick={onExit} title="Exit Card Browser" aria-label="Exit Card Browser">
+          <Icon name="close" />
+        </button>
+      ) : null}
       <section className="card-browser-list-panel">
         <div className="card-browser-header">
           <div>
-            <h2>Card List</h2>
-            <p>{formatCount(filteredRows.length, 'row')} of {formatCount(rows.length, 'row')}</p>
+            <h2>Card Browser</h2>
+            <p>{formatCount(sortedRows.length, 'row')} of {formatCount(rows.length, 'row')}</p>
           </div>
-          {onExit ? (
-            <button type="button" className="icon-button" onClick={onExit} title="Exit card list view" aria-label="Exit card list view">
-              <Icon name="close" />
-            </button>
-          ) : null}
         </div>
         <div className="card-browser-controls">
-          <label className="search-field">
-            <Icon name="search" />
-            <input value={query} placeholder="Search cards..." onChange={(event) => setQuery(event.target.value)} />
-          </label>
-          <div className="grid-2 compact-filter-grid">
+          <ListControlsBar
+            searchLabel="Search Card Browser rows"
+            searchValue={query}
+            searchPlaceholder="Search cards..."
+            onSearchChange={setQuery}
+            sortControl={<SortMenu options={BROWSER_SORT_OPTIONS} state={sortState} onChange={setSortState} />}
+            filterControl={<AdvancedFiltersButton activeCount={activeBrowserFilterCount} onClick={() => setBrowserFiltersOpen(true)} />}
+            resetControl={query.trim() || activeBrowserFilterCount ? <button type="button" className="secondary-button compact" onClick={() => { setQuery(''); resetBrowserFilters(); }}>Reset</button> : null}
+            results={<ListResultsSummary shown={sortedRows.length} total={rows.length} />}
+          />
+          <div className="grid-2 compact-filter-grid card-browser-scope-controls">
             <label className="filter-field">
               <span>Scope</span>
               <select value={scope} onChange={(event) => setScope(event.target.value as BrowserScope)}>
@@ -796,26 +967,19 @@ export function CardBrowserView({
                 {focusedSurface ? <option value="official">Official catalog</option> : null}
               </select>
             </label>
-            <label className="filter-field">
-              <span>Filter</span>
-              <select value={scopeId} disabled={scope === 'all' || scope === 'official'} onChange={(event) => setScopeId(event.target.value)}>
-                <option value="">{scope === 'all' ? 'Everything' : allScopeLabel(scope)}</option>
-                {entityOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="filter-field">
-              <span>Owner</span>
-              <input list="card-browser-owner-filter-options" value={ownerFilter} placeholder="Any owner" onChange={(event) => setOwnerFilter(event.target.value)} />
-              <datalist id="card-browser-owner-filter-options">
-                {ownerSuggestions.map((owner) => (
-                  <option key={owner} value={owner} />
-                ))}
-              </datalist>
-            </label>
+            {showScopeEntityPicker ? (
+              <label className="filter-field">
+                <span>{scopeContextLabel(scope)}</span>
+                <select value={scopeId} onChange={(event) => setScopeId(event.target.value)}>
+                  <option value="">{allScopeLabel(scope)}</option>
+                  {entityOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </div>
           {scope === 'official' ? (
             <div className="card-browser-official-tools">
@@ -849,10 +1013,10 @@ export function CardBrowserView({
             </div>
           ) : null}
         </div>
-        <div className="card-browser-compare-bar" aria-live="polite">
+        <div className="card-browser-compare-bar compact" aria-live="polite">
           <div>
-            <strong>{formatCount(compareRowKeys.length, 'selected row')}</strong>
-            <span>Compare two source rows without changing card, deck, or collection data.</span>
+            <strong>Compare {compareRowKeys.length}/2</strong>
+            <span title="Compare two saved source rows without changing card, deck, or collection data.">Saved rows only</span>
           </div>
           <div className="card-browser-compare-actions">
             <button type="button" className="secondary-button compact" disabled={!compareReady} onClick={openCompareMode}>
@@ -864,7 +1028,7 @@ export function CardBrowserView({
           </div>
         </div>
         <div className="card-browser-list" role="list" aria-label="Cards">
-          {filteredRows.map((row) => {
+          {sortedRows.map((row) => {
             const compareSelected = compareRowKeys.includes(row.key);
             const compareDisabled = !compareSelected && compareRowKeys.length >= 2;
             return (
@@ -886,7 +1050,7 @@ export function CardBrowserView({
               </div>
             );
           })}
-          {!filteredRows.length ? (
+          {!sortedRows.length ? (
             <div className="preview-empty compact-empty">
               <strong>{scope === 'official' && officialSyncing ? 'Syncing official catalog' : 'No cards match'}</strong>
               <span>{scope === 'official' && officialSyncing ? 'Downloading the local Scryfall cache in the background.' : 'Clear search or change the scope filter.'}</span>
@@ -941,15 +1105,17 @@ export function CardBrowserView({
                 <OfficialBrowserPreview card={selectedOfficialCard} loading={officialLoading} />
               ) : previewMode === 'card' ? (
                 <BrowserCardImage
-                  draft={activeDraft}
-                  preview={activeDraft ? preview : null}
-                  previewLoading={activeDraft ? previewLoading : false}
+                  draft={selectedSavedDraft}
+                  row={selectedRow}
+                  preview={selectedPreviewCacheEntry?.status === 'ready' ? selectedPreviewCacheEntry.preview : activeDraft ? preview : null}
+                  previewLoading={selectedPreviewCacheEntry?.status === 'loading' || (activeDraft ? previewLoading : false)}
                   previewUpdating={activeDraft ? previewUpdating : false}
-                  selectedFrame={activeDraft ? selectedFrame : null}
-                  hasUnsavedChanges={activeDraft ? hasUnsavedChanges : false}
+                  selectedFrame={selectedPreviewCacheEntry?.status === 'ready' ? selectedPreviewCacheEntry.preview.inferredFrame : activeDraft ? selectedFrame : null}
+                  hasUnsavedChanges={Boolean(activeDraft && hasUnsavedChanges)}
+                  previewError={selectedPreviewCacheEntry?.status === 'error' ? selectedPreviewCacheEntry.error : ''}
                 />
               ) : (
-                <ArtworkPreview draft={activeDraft} row={selectedRow} />
+                <ArtworkPreview draft={selectedSavedDraft} row={selectedRow} />
               )}
             </section>
             <PanelResizeHandle label="Resize card browser preview" orientation="horizontal" onResize={resizePreview} />
@@ -1002,16 +1168,19 @@ export function CardBrowserView({
                   onVariantChange={onVariantChange}
                   onSaveVariant={onSaveVariant}
                 />
+              ) : selectedSavedDraft && selectedRow ? (
+                <CatalogRowDetails row={selectedRow} onOpenInMaker={() => void openRowInMaker(selectedRow)} />
               ) : (
                 <div className="card-browser-detail-empty">
                   <h2>Details</h2>
-                  <p>Select an authored card from a set or deck row to load editable card details.</p>
+                  <p>{selectedCompareItem?.renderUnavailableReason ?? 'Select an authored card row to inspect saved details.'}</p>
                 </div>
               )}
             </section>
           </>
         )}
       </div>
+      {browserFiltersOverlay}
     </div>
   );
 }
@@ -1049,6 +1218,140 @@ function CatalogRowDetails({ row, onOpenInMaker }: { row: BrowserRow; onOpenInMa
   );
 }
 
+function BrowserAdvancedFilterControls({
+  filters,
+  ownerFilter,
+  ownerSuggestions,
+  onFiltersChange,
+  onOwnerFilterChange
+}: {
+  filters: BrowserFilters;
+  ownerFilter: string;
+  ownerSuggestions: string[];
+  onFiltersChange: (patch: Partial<BrowserFilters>) => void;
+  onOwnerFilterChange: (value: string) => void;
+}) {
+  return (
+    <div className="filter-panel">
+      <label className="filter-field">
+        <span>Source</span>
+        <select value={filters.sourceKind} onChange={(event) => onFiltersChange({ sourceKind: event.target.value as BrowserFilters['sourceKind'] })}>
+          <option value="all">All sources</option>
+          <option value="set">Set cards</option>
+          <option value="deck">Deck rows</option>
+          <option value="collection">Collection rows</option>
+          <option value="official">Official catalog</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Card type</span>
+        <select value={filters.cardType} onChange={(event) => onFiltersChange({ cardType: event.target.value })}>
+          <option value="all">All card types</option>
+          <option value="Artifact">Artifact</option>
+          <option value="Battle">Battle</option>
+          <option value="Creature">Creature</option>
+          <option value="Enchantment">Enchantment</option>
+          <option value="Instant">Instant</option>
+          <option value="Land">Land</option>
+          <option value="Planeswalker">Planeswalker</option>
+          <option value="Sorcery">Sorcery</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Color</span>
+        <select value={filters.color} onChange={(event) => onFiltersChange({ color: event.target.value })}>
+          <option value="all">All colors</option>
+          <option value="W">White</option>
+          <option value="U">Blue</option>
+          <option value="B">Black</option>
+          <option value="R">Red</option>
+          <option value="G">Green</option>
+          <option value="multicolor">Multicolor</option>
+          <option value="colorless">Colorless</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Mana value</span>
+        <input value={filters.manaValue} placeholder="2, >=4, <3..." onChange={(event) => onFiltersChange({ manaValue: event.target.value })} />
+      </label>
+      <label className="filter-field">
+        <span>Rarity</span>
+        <select value={filters.rarity} onChange={(event) => onFiltersChange({ rarity: event.target.value })}>
+          <option value="all">All rarities</option>
+          <option value="common">Common</option>
+          <option value="uncommon">Uncommon</option>
+          <option value="rare">Rare</option>
+          <option value="mythic">Mythic</option>
+          <option value="special">Special</option>
+          <option value="bonus">Bonus</option>
+          <option value="token">Token</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Status</span>
+        <select value={filters.status} onChange={(event) => onFiltersChange({ status: event.target.value })}>
+          <option value="all">All statuses</option>
+          <option value="idea">Idea</option>
+          <option value="draft">Draft</option>
+          <option value="review">Review</option>
+          <option value="playtest">Playtest</option>
+          <option value="final">Final</option>
+          <option value="cut">Cut</option>
+          <option value="official">Official</option>
+          <option value="needs_review">Needs review</option>
+          <option value="matched">Matched</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Tags</span>
+        <input value={filters.tag} placeholder="trade, commander..." onChange={(event) => onFiltersChange({ tag: event.target.value })} />
+      </label>
+      <label className="filter-field">
+        <span>Owner</span>
+        <input list="card-browser-advanced-owner-options" value={ownerFilter} placeholder="Any owner" onChange={(event) => onOwnerFilterChange(event.target.value)} />
+        <datalist id="card-browser-advanced-owner-options">
+          {ownerSuggestions.map((owner) => (
+            <option key={owner} value={owner} />
+          ))}
+        </datalist>
+      </label>
+      <label className="filter-field">
+        <span>Deck section</span>
+        <select value={filters.deckSection} onChange={(event) => onFiltersChange({ deckSection: event.target.value as BrowserFilters['deckSection'] })}>
+          <option value="all">All sections</option>
+          <option value="main">Main board</option>
+          <option value="side">Sideboard</option>
+          <option value="maybe">Maybeboard</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Collection kind</span>
+        <select value={filters.collectionKind} onChange={(event) => onFiltersChange({ collectionKind: event.target.value as BrowserFilters['collectionKind'] })}>
+          <option value="all">All collection kinds</option>
+          <option value="binder">Binders</option>
+          <option value="list">Lists</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Review</span>
+        <select value={filters.reviewStatus} onChange={(event) => onFiltersChange({ reviewStatus: event.target.value as BrowserFilters['reviewStatus'] })}>
+          <option value="all">All review states</option>
+          <option value="matched">Matched</option>
+          <option value="needs_review">Needs review</option>
+        </select>
+      </label>
+      <label className="filter-field">
+        <span>Linked render</span>
+        <select value={filters.linkedState} onChange={(event) => onFiltersChange({ linkedState: event.target.value as BrowserFilters['linkedState'] })}>
+          <option value="all">Any linked state</option>
+          <option value="linked">Linked authored rows</option>
+          <option value="unresolved">Unresolved rows</option>
+        </select>
+      </label>
+    </div>
+  );
+}
+
 function toneForBrowserSource(sourceKind: BrowserSourceKind): StatusPillTone {
   if (sourceKind === 'deck') {
     return 'success';
@@ -1060,6 +1363,19 @@ function toneForBrowserSource(sourceKind: BrowserSourceKind): StatusPillTone {
     return 'info';
   }
   return 'neutral';
+}
+
+function iconForBrowserSource(sourceKind: BrowserSourceKind): IconName {
+  if (sourceKind === 'deck') {
+    return 'decks';
+  }
+  if (sourceKind === 'collection') {
+    return 'collections';
+  }
+  if (sourceKind === 'official') {
+    return 'guide';
+  }
+  return 'cards';
 }
 
 function CardBrowserComparePanel({
@@ -1303,7 +1619,7 @@ function buildBrowserRows({
     rows.push(rowFromOfficialCard(card));
   }
 
-  return rows.sort((a, b) => a.name.localeCompare(b.name) || a.sourceKind.localeCompare(b.sourceKind) || a.sourceName.localeCompare(b.sourceName));
+  return rows.map((row, index) => ({ ...row, sourceOrder: index }));
 }
 
 function rowFromCardSummary({
@@ -1333,10 +1649,13 @@ function rowFromCardSummary({
     setName,
     cardId: card.cardId,
     variantId: card.activeVariantId || card.primaryVariantId,
+    collectorNumber: card.collectorNumber,
     name: card.name,
     typeLine: card.typeLine,
     manaCost: card.manaCost,
+    manaValue: manaValueFromCost(card.manaCost),
     colors: card.colors,
+    rarity: card.rarity,
     status: card.status,
     tags: card.tags,
     variants: card.variants ?? [],
@@ -1346,6 +1665,7 @@ function rowFromCardSummary({
 
 function rowFromDeckEntry(deck: DeckSummary, entry: DeckState['entries'][number], projectId?: string): BrowserRow {
   const card = entry.card!;
+  const metadata = metadataFromDeckCard(card);
   return {
     key: `deck:${deck.deckId}:${entry.section}:${entry.setCode}:${entry.cardId}:${entry.variantId ?? ''}`,
     sourceKind: 'deck',
@@ -1356,14 +1676,18 @@ function rowFromDeckEntry(deck: DeckSummary, entry: DeckState['entries'][number]
     setName: card.setName,
     cardId: entry.cardId,
     variantId: entry.variantId || card.variants.find((variant) => variant.isPrimary)?.variantId,
+    collectorNumber: card.collectorNumber,
     name: card.name,
-    typeLine: card.typeLine,
-    manaCost: card.manaCost,
-    colors: card.colors,
+    typeLine: metadata?.typeLine ?? card.typeLine,
+    manaCost: metadata?.manaCost ?? card.manaCost,
+    manaValue: metadata?.manaValue ?? manaValueFromCost(card.manaCost),
+    colors: metadata?.colorIdentity ?? card.colors,
+    rarity: metadata?.rarity,
     status: card.status,
     tags: card.tags,
     quantity: entry.count,
     deckSection: entry.section,
+    imageUrl: imageUrlForMetadata(metadata, 'normal'),
     variants: [],
     searchText: [deck.name, entry.section, card.name, card.typeLine, card.oracleText, card.tags.join(' ')].join(' ')
   };
@@ -1374,6 +1698,7 @@ function rowFromCollectionEntry(collection: CollectionSummary, entry: Collection
   const collectionKind = collection.kind ?? 'binder';
   const listCategory = collection.listCategory ?? 'general';
   const ownerName = normalizeCollectionOwnerName(entry.ownerName);
+  const metadata = metadataFromCollectionEntry(entry);
   return {
     key: `collection:${collection.collectionId}:${entry.entryId}`,
     sourceKind: 'collection',
@@ -1384,19 +1709,23 @@ function rowFromCollectionEntry(collection: CollectionSummary, entry: Collection
     setName: entry.setName,
     cardId: entry.linkedCardId,
     variantId: entry.linkedVariantId,
+    collectorNumber: entry.collectorNumber,
     collectionEntryId: entry.entryId,
     collectionKind,
     collectionListCategory: listCategory,
     ownershipStatus: entry.ownershipStatus,
     ownerName,
     name: entry.cardName,
-    typeLine: collectionKind === 'list' ? `${listCategoryLabel(listCategory)} row` : entry.reviewStatus === 'matched' ? 'Binder row' : 'Binder row needs review',
-    manaCost: '',
-    colors: '',
+    typeLine: metadata?.typeLine ?? (collectionKind === 'list' ? `${listCategoryLabel(listCategory)} row` : entry.reviewStatus === 'matched' ? 'Binder row' : 'Binder row needs review'),
+    manaCost: metadata?.manaCost ?? '',
+    manaValue: metadata?.manaValue,
+    colors: metadata?.colorIdentity ?? '',
+    rarity: metadata?.rarity,
     status: entry.reviewStatus,
     tags: entry.tags ?? [],
     quantity: entry.quantity,
     reviewStatus: entry.reviewStatus,
+    imageUrl: imageUrlForMetadata(metadata, 'normal'),
     variants: [],
     searchText: [
       collection.name,
@@ -1436,6 +1765,10 @@ function rowFromOfficialCard(card: OfficialCardSearchCard): BrowserRow {
     cardId: card.id,
     setCode: card.view === 'prints' ? card.setCode : undefined,
     setName: card.view === 'prints' ? card.setName : undefined,
+    collectorNumber: card.view === 'prints' ? card.collectorNumber : undefined,
+    manaValue: card.manaValue,
+    rarity: card.view === 'prints' ? card.rarity : undefined,
+    imageUrl: officialCardImageUrl(card),
     searchText: [
       card.name,
       card.typeLine,
@@ -1455,15 +1788,83 @@ function rowFromOfficialCard(card: OfficialCardSearchCard): BrowserRow {
   };
 }
 
-function filterBrowserRows(rows: BrowserRow[], scope: BrowserScope, scopeId: string, query: string, ownerFilter: string): BrowserRow[] {
+function filterBrowserRows(rows: BrowserRow[], scope: BrowserScope, scopeId: string, query: string, ownerFilter: string, filters: BrowserFilters): BrowserRow[] {
   const needle = query.trim().toLowerCase();
   const ownerNeedle = ownerFilter.trim().toLowerCase();
   return rows.filter((row) => {
     const matchesScope = matchesBrowserScope(row, scope, scopeId);
     const matchesQuery = !needle || row.searchText.toLowerCase().includes(needle);
-    const matchesOwner = !ownerNeedle || (row.sourceKind === 'collection' && (row.ownerName ?? '').toLowerCase().includes(ownerNeedle));
-    return matchesScope && matchesQuery && matchesOwner;
+    const matchesOwner = !ownerNeedle || (row.ownerName ?? '').toLowerCase().includes(ownerNeedle);
+    const matchesSource = filters.sourceKind === 'all' || row.sourceKind === filters.sourceKind;
+    const matchesType = filters.cardType === 'all' || row.typeLine.toLowerCase().includes(filters.cardType.toLowerCase());
+    const matchesColor = filters.color === 'all' || colorMatches(row.colors, filters.color);
+    const matchesMana = matchesNumberQuery(row.manaValue ?? manaValueFromCost(row.manaCost), filters.manaValue);
+    const matchesRarity = filters.rarity === 'all' || row.rarity === filters.rarity;
+    const matchesStatus = filters.status === 'all' || row.status === filters.status;
+    const matchesTag = matchesTagFilter(row.tags, filters.tag);
+    const matchesDeckSection = filters.deckSection === 'all' || row.deckSection === filters.deckSection;
+    const matchesCollectionKind = filters.collectionKind === 'all' || row.collectionKind === filters.collectionKind;
+    const matchesReview = filters.reviewStatus === 'all' || row.reviewStatus === filters.reviewStatus;
+    const matchesLinked =
+      filters.linkedState === 'all' ||
+      (filters.linkedState === 'linked' && Boolean(row.setCode && row.cardId && row.sourceKind !== 'official')) ||
+      (filters.linkedState === 'unresolved' && row.sourceKind !== 'official' && (!row.setCode || !row.cardId));
+    return matchesScope && matchesQuery && matchesOwner && matchesSource && matchesType && matchesColor && matchesMana && matchesRarity && matchesStatus && matchesTag && matchesDeckSection && matchesCollectionKind && matchesReview && matchesLinked;
   });
+}
+
+function countActiveBrowserFilters(filters: BrowserFilters, ownerFilter: string): number {
+  return countActiveFilters([
+    { value: filters.sourceKind, defaultValue: DEFAULT_BROWSER_FILTERS.sourceKind },
+    { value: filters.cardType, defaultValue: DEFAULT_BROWSER_FILTERS.cardType },
+    { value: filters.color, defaultValue: DEFAULT_BROWSER_FILTERS.color },
+    { value: filters.manaValue, defaultValue: DEFAULT_BROWSER_FILTERS.manaValue },
+    { value: filters.rarity, defaultValue: DEFAULT_BROWSER_FILTERS.rarity },
+    { value: filters.status, defaultValue: DEFAULT_BROWSER_FILTERS.status },
+    { value: filters.tag, defaultValue: DEFAULT_BROWSER_FILTERS.tag },
+    { value: filters.deckSection, defaultValue: DEFAULT_BROWSER_FILTERS.deckSection },
+    { value: filters.collectionKind, defaultValue: DEFAULT_BROWSER_FILTERS.collectionKind },
+    { value: filters.reviewStatus, defaultValue: DEFAULT_BROWSER_FILTERS.reviewStatus },
+    { value: filters.linkedState, defaultValue: DEFAULT_BROWSER_FILTERS.linkedState },
+    { value: ownerFilter, defaultValue: '' }
+  ]);
+}
+
+function colorMatches(colors: string, filter: string): boolean {
+  const normalized = colors.toUpperCase();
+  if (filter === 'colorless') {
+    return !normalized || normalized === 'C';
+  }
+  if (filter === 'multicolor') {
+    return normalized.replace(/[^WUBRG]/g, '').length > 1;
+  }
+  return normalized.includes(filter.toUpperCase());
+}
+
+function manaValueFromCost(manaCost: string | undefined): number {
+  const value = String(manaCost ?? '');
+  const symbols = value.match(/\{[^}]+\}/g);
+  if (symbols?.length) {
+    return symbols.reduce((total, symbol) => total + manaSymbolValue(symbol.replace(/[{}]/g, '')), 0);
+  }
+  const numbers = value.match(/\d+/g) ?? [];
+  const numeric = numbers.reduce((total, part) => total + (Number(part) || 0), 0);
+  const pips = value
+    .replace(/\d+/g, '')
+    .toUpperCase()
+    .split('')
+    .filter((character) => 'WUBRGC'.includes(character)).length;
+  return numeric + pips;
+}
+
+function manaSymbolValue(symbol: string): number {
+  if (/^\d+$/.test(symbol)) {
+    return Number(symbol);
+  }
+  if (symbol.includes('/')) {
+    return 1;
+  }
+  return symbol.trim().toUpperCase() === 'X' ? 0 : 1;
 }
 
 function matchesBrowserScope(row: BrowserRow, scope: BrowserScope, scopeId: string): boolean {
@@ -1554,8 +1955,30 @@ function allScopeLabel(scope: BrowserScope): string {
   return 'Everything';
 }
 
+function scopeContextLabel(scope: BrowserScope): string {
+  if (scope === 'project') {
+    return 'Project';
+  }
+  if (scope === 'set') {
+    return 'Set';
+  }
+  if (scope === 'deck') {
+    return 'Deck';
+  }
+  if (scope === 'binder') {
+    return 'Binder';
+  }
+  if (scope === 'list') {
+    return 'List';
+  }
+  if (scope === 'collection') {
+    return 'Collection';
+  }
+  return 'Context';
+}
+
 function ArtworkPreview({ draft, row }: { draft: CardDraft | null; row: BrowserRow | null }) {
-  const src = artSrcFromDraft(draft);
+  const src = artSrcFromDraft(draft) || row?.imageUrl || '';
   return (
     <div className="card-browser-artwork">
       {src ? (
@@ -1572,31 +1995,37 @@ function ArtworkPreview({ draft, row }: { draft: CardDraft | null; row: BrowserR
 
 function BrowserCardImage({
   draft,
+  row,
   preview,
   previewLoading,
   previewUpdating,
   selectedFrame,
-  hasUnsavedChanges
+  hasUnsavedChanges,
+  previewError
 }: {
   draft: CardDraft | null;
+  row: BrowserRow | null;
   preview: PreviewResponse | null;
   previewLoading: boolean;
   previewUpdating: boolean;
   selectedFrame: FrameOption | null;
   hasUnsavedChanges: boolean;
+  previewError?: string;
 }) {
   return (
     <div className="card-browser-card-preview">
       <div className="card-browser-preview-meta">
-        <span>{selectedFrame ? `${selectedFrame.label} - ${selectedFrame.source}` : 'No frame selected'}</span>
+        <span>{selectedFrame ? `${selectedFrame.label} - ${selectedFrame.source}` : row?.imageUrl ? 'Source image' : 'No linked authored render'}</span>
         <span>{hasUnsavedChanges ? 'Unsaved' : previewUpdating ? 'Updating' : previewLoading ? 'Loading' : ''}</span>
       </div>
       {preview?.imageDataUri ? (
         <img src={preview.imageDataUri} alt={draft?.name ?? 'Card preview'} />
+      ) : row?.imageUrl ? (
+        <img src={row.imageUrl} alt={`${row.name} source image`} />
       ) : (
         <div className="preview-empty compact-empty">
-          <strong>{previewLoading ? 'Loading preview' : 'No card preview'}</strong>
-          <span>{draft?.name ?? 'Select an authored card from the list.'}</span>
+          <strong>{previewLoading ? 'Loading preview' : previewError ? 'Preview failed' : 'No linked rendered card'}</strong>
+          <span>{previewError || draft?.name || row?.name || 'Select an authored card from the list.'}</span>
         </div>
       )}
     </div>

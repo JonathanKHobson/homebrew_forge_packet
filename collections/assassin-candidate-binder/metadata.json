@@ -1,7 +1,7 @@
 {
   "collectionId": "assassin-candidate-binder",
   "name": "Assassin's Ledger",
-  "description": "Kyle owned ManaBox batch for the Signs of Assassins Commander deck family.",
+  "description": "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and delivery-pending online orders.",
   "linkedUniverseId": "assassin-deck-candidates",
   "gameId": "mtg",
   "purpose": "owned",
@@ -14,7 +14,11 @@
     "commander",
     "mardu",
     "manabox",
-    "signs-of-assassins"
+    "signs-of-assassins",
+    "batch-002",
+    "incoming",
+    "ordered",
+    "delivery-pending"
   ],
   "defaultEntryTags": [
     "batch-001",
@@ -33,7 +37,7 @@
   "linkedSetCodes": [
     "SOA"
   ],
-  "acquisitionNotes": "batch-001 import from Kyle's ManaBox Assassin deck CSV.",
+  "acquisitionNotes": "batch-001 import from Kyle's ManaBox Assassin deck CSV. batch-002 incoming partner-purchased online cards expected around June 15, 2026.",
   "createdAt": "2026-06-08T02:54:00.457Z",
-  "updatedAt": "2026-06-08T03:26:24.559Z"
+  "updatedAt": "2026-06-08T08:58:30.809Z"
 }

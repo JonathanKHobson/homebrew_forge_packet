@@ -11,10 +11,13 @@ import type {
   OfficialCardImageUris,
   OfficialCardOracle,
   OfficialCardPrices,
+  OfficialCardPriceCurrency,
   OfficialCardPrint,
   OfficialCardSearchCard,
   OfficialCardSearchFilters,
   OfficialCardSearchResult,
+  OfficialCardSortDirection,
+  OfficialCardSortKey,
   OfficialCardSyncOptions
 } from './officialCardModel.js';
 
@@ -27,6 +30,47 @@ const DEFAULT_SEARCH_LIMIT = 80;
 const MAX_SEARCH_LIMIT = 240;
 const SEARCH_FETCH_TIMEOUT_MS = 240_000;
 const BULK_DOWNLOAD_TIMEOUT_MS = 900_000;
+const NATURAL_COLLATOR = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+const DEFAULT_PRICE_CURRENCY: OfficialCardPriceCurrency = 'usd';
+
+interface ParsedOfficialCardQuery {
+  freeTerms: string[];
+  rankTerms: string[];
+  clauses: OfficialCardQueryClause[];
+  unsupportedQueryTerms: string[];
+}
+
+interface OfficialCardQueryClause {
+  raw: string;
+  field: OfficialCardQueryField;
+  operator: QueryOperator;
+  value: string;
+  negated: boolean;
+}
+
+type OfficialCardQueryField =
+  | 'name'
+  | 'oracle'
+  | 'type'
+  | 'set'
+  | 'rarity'
+  | 'lang'
+  | 'finish'
+  | 'layout'
+  | 'colors'
+  | 'identity'
+  | 'manaValue'
+  | 'power'
+  | 'toughness'
+  | 'usd'
+  | 'eur'
+  | 'tix'
+  | 'year'
+  | 'date'
+  | 'has'
+  | 'is';
+
+type QueryOperator = ':' | '=' | '<' | '<=' | '>' | '>=';
 
 interface CacheFile<TCard extends OfficialCardSearchCard> {
   version: 1;
@@ -101,12 +145,13 @@ export async function searchOfficialCards(rootDir: string, filters: OfficialCard
   const limit = clampNumber(filters.limit ?? DEFAULT_SEARCH_LIMIT, 1, MAX_SEARCH_LIMIT);
   const offset = Math.max(0, Math.floor(filters.offset ?? 0));
   const query = clean(filters.query);
+  const parsedQuery = parseOfficialCardQuery(query);
+  const sort = normalizeSort(filters.sort, parsedQuery);
+  const sortDirection = normalizeSortDirection(filters.sortDirection, sort);
   const file = await readCacheFileForView(rootDir, view);
   const allCards = file?.cards ?? [];
-  const filtered = allCards.filter((card) => officialCardMatches(card, filters, query));
-  if (query) {
-    filtered.sort((left, right) => compareOfficialCardSearchRank(left, right, query));
-  }
+  const filtered = allCards.filter((card) => officialCardMatches(card, filters, parsedQuery));
+  filtered.sort((left, right) => compareOfficialCards(left, right, { sort, sortDirection, query: rankQueryForParsedQuery(parsedQuery), priceCurrency: normalizePriceCurrency(filters.priceCurrency) }));
   const cards = filtered.slice(offset, offset + limit);
   return {
     view,
@@ -114,6 +159,9 @@ export async function searchOfficialCards(rootDir: string, filters: OfficialCard
     total: filtered.length,
     limit,
     offset,
+    sort,
+    sortDirection,
+    unsupportedQueryTerms: parsedQuery.unsupportedQueryTerms,
     cards,
     status: await buildStatus(rootDir)
   };
@@ -483,11 +531,11 @@ async function writeStatus(rootDir: string, status: OfficialCardCatalogStatus): 
   await writeFile(join(officialCardsCacheDir(rootDir), OFFICIAL_STATUS_FILE), `${JSON.stringify(status, null, 2)}\n`, 'utf8');
 }
 
-function officialCardMatches(card: OfficialCardSearchCard, filters: OfficialCardSearchFilters, query: string): boolean {
-  if (filters.setCode && card.view === 'prints' && card.setCode?.toLowerCase() !== filters.setCode.toLowerCase()) {
+function officialCardMatches(card: OfficialCardSearchCard, filters: OfficialCardSearchFilters, parsedQuery: ParsedOfficialCardQuery): boolean {
+  if (filters.setCode && (card.view !== 'prints' || card.setCode?.toLowerCase() !== filters.setCode.toLowerCase())) {
     return false;
   }
-  if (filters.rarity && card.view === 'prints' && card.rarity !== filters.rarity) {
+  if (filters.rarity && (card.view !== 'prints' || card.rarity !== filters.rarity)) {
     return false;
   }
   if (filters.colorIdentity && !colorIdentityMatches(card.colorIdentity, filters.colorIdentity)) {
@@ -496,11 +544,46 @@ function officialCardMatches(card: OfficialCardSearchCard, filters: OfficialCard
   if (filters.typeLine && !(card.typeLine ?? '').toLowerCase().includes(filters.typeLine.toLowerCase())) {
     return false;
   }
-  if (!query) {
-    return true;
+  if (filters.layout && (card.layout ?? '').toLowerCase() !== filters.layout.toLowerCase()) {
+    return false;
   }
-  const haystack = searchText(card);
-  return query.split(/\s+/).filter(Boolean).every((term) => haystack.includes(term));
+  if (filters.finish && (card.view !== 'prints' || !card.finishes.some((finish) => finish.toLowerCase() === filters.finish?.toLowerCase()))) {
+    return false;
+  }
+  if (filters.lang && (card.view !== 'prints' || card.lang?.toLowerCase() !== filters.lang.toLowerCase())) {
+    return false;
+  }
+  if (!numberFilterMatches(card.manaValue, filters.manaValueMin, filters.manaValueMax)) {
+    return false;
+  }
+  if (!numberFilterMatches(priceForCard(card, normalizePriceCurrency(filters.priceCurrency)), filters.priceMin, filters.priceMax)) {
+    return false;
+  }
+  if (filters.releasedAfter && (card.view !== 'prints' || !dateFilterMatches(card.releasedAt, filters.releasedAfter, '>='))) {
+    return false;
+  }
+  if (filters.releasedBefore && (card.view !== 'prints' || !dateFilterMatches(card.releasedAt, filters.releasedBefore, '<='))) {
+    return false;
+  }
+  if (filters.year && (card.view !== 'prints' || !clean(card.releasedAt).startsWith(clean(filters.year)))) {
+    return false;
+  }
+  if (filters.hasImage === 'yes' && !officialCardImageUrl(card)) {
+    return false;
+  }
+  if (filters.hasImage === 'no' && officialCardImageUrl(card)) {
+    return false;
+  }
+  if (filters.cardCategory && officialCardCategory(card) !== filters.cardCategory) {
+    return false;
+  }
+  if (parsedQuery.freeTerms.length) {
+    const haystack = searchText(card);
+    if (!parsedQuery.freeTerms.every((term) => haystack.includes(term))) {
+      return false;
+    }
+  }
+  return parsedQuery.clauses.every((clause) => officialQueryClauseMatches(card, clause));
 }
 
 function searchText(card: OfficialCardSearchCard): string {
@@ -566,6 +649,379 @@ function officialCardPrintSortKey(card: OfficialCardSearchCard): string {
     return '';
   }
   return [card.releasedAt, card.setCode, card.collectorNumber].filter(Boolean).join(':');
+}
+
+function parseOfficialCardQuery(query: string): ParsedOfficialCardQuery {
+  const parsed: ParsedOfficialCardQuery = { freeTerms: [], rankTerms: [], clauses: [], unsupportedQueryTerms: [] };
+  for (const rawToken of tokenizeOfficialQuery(query)) {
+    const raw = clean(rawToken);
+    if (!raw) {
+      continue;
+    }
+    const negated = raw.startsWith('-');
+    const token = negated ? raw.slice(1) : raw;
+    const match = token.match(/^([a-z_]+)(:|<=|>=|<|>|=)(.+)$/i);
+    if (!match) {
+      parsed.freeTerms.push(unquote(token).toLowerCase());
+      parsed.rankTerms.push(unquote(token));
+      continue;
+    }
+    const alias = normalizeQueryField(match[1] ?? '');
+    if (!alias) {
+      parsed.unsupportedQueryTerms.push(raw);
+      continue;
+    }
+    const valueWithOperator = splitQueryValueOperator(match[2] as QueryOperator, match[3] ?? '');
+    const value = unquote(valueWithOperator.value);
+    if (!value) {
+      parsed.unsupportedQueryTerms.push(raw);
+      continue;
+    }
+    parsed.clauses.push({ raw, field: alias, operator: valueWithOperator.operator, value, negated });
+    parsed.rankTerms.push(value);
+  }
+  return parsed;
+}
+
+function tokenizeOfficialQuery(query: string): string[] {
+  return clean(query).match(/"[^"]+"|\S+/g) ?? [];
+}
+
+function normalizeQueryField(field: string): OfficialCardQueryField | '' {
+  const normalized = field.toLowerCase();
+  const aliases: Record<string, OfficialCardQueryField> = {
+    n: 'name',
+    name: 'name',
+    o: 'oracle',
+    oracle: 'oracle',
+    t: 'type',
+    type: 'type',
+    set: 'set',
+    r: 'rarity',
+    rarity: 'rarity',
+    lang: 'lang',
+    finish: 'finish',
+    layout: 'layout',
+    c: 'colors',
+    color: 'colors',
+    id: 'identity',
+    identity: 'identity',
+    mv: 'manaValue',
+    cmc: 'manaValue',
+    pow: 'power',
+    power: 'power',
+    tou: 'toughness',
+    toughness: 'toughness',
+    usd: 'usd',
+    eur: 'eur',
+    tix: 'tix',
+    year: 'year',
+    date: 'date',
+    has: 'has',
+    is: 'is'
+  };
+  return aliases[normalized] ?? '';
+}
+
+function splitQueryValueOperator(operator: QueryOperator, value: string): { operator: QueryOperator; value: string } {
+  if (operator === ':' || operator === '=') {
+    const nested = clean(value).match(/^(<=|>=|<|>|=)(.+)$/);
+    if (nested) {
+      return { operator: nested[1] as QueryOperator, value: nested[2] ?? '' };
+    }
+  }
+  return { operator, value };
+}
+
+function unquote(value: string): string {
+  const cleaned = clean(value);
+  return cleaned.startsWith('"') && cleaned.endsWith('"') ? cleaned.slice(1, -1).trim() : cleaned;
+}
+
+function officialQueryClauseMatches(card: OfficialCardSearchCard, clause: OfficialCardQueryClause): boolean {
+  const matches = officialQueryClauseMatchesUnnegated(card, clause);
+  return clause.negated ? !matches : matches;
+}
+
+function officialQueryClauseMatchesUnnegated(card: OfficialCardSearchCard, clause: OfficialCardQueryClause): boolean {
+  switch (clause.field) {
+    case 'name':
+      return textMatches([card.name, ...(card.cardFaces ?? []).map((face) => face.name)], clause.value);
+    case 'oracle':
+      return textMatches([card.oracleText, ...(card.cardFaces ?? []).map((face) => face.oracleText)], clause.value);
+    case 'type':
+      return textMatches([card.typeLine, ...(card.cardFaces ?? []).map((face) => face.typeLine)], clause.value);
+    case 'set':
+      return card.view === 'prints' && stringCompare(card.setCode, clause.value, clause.operator);
+    case 'rarity':
+      return card.view === 'prints' && stringCompare(card.rarity, clause.value, clause.operator);
+    case 'lang':
+      return card.view === 'prints' && stringCompare(card.lang, clause.value, clause.operator);
+    case 'finish':
+      return card.view === 'prints' && card.finishes.some((finish) => stringCompare(finish, clause.value, clause.operator));
+    case 'layout':
+      return stringCompare(card.layout, clause.value, clause.operator);
+    case 'colors':
+      return colorListMatches(card.colors, clause.value, clause.operator);
+    case 'identity':
+      return colorListMatches(card.colorIdentity, clause.value, clause.operator);
+    case 'manaValue':
+      return numericCompare(card.manaValue, numberFromString(clause.value), clause.operator);
+    case 'power':
+      return numericCompare(numberFromString(card.power), numberFromString(clause.value), clause.operator);
+    case 'toughness':
+      return numericCompare(numberFromString(card.toughness), numberFromString(clause.value), clause.operator);
+    case 'usd':
+      return numericCompare(priceForCard(card, 'usd'), numberFromString(clause.value), clause.operator);
+    case 'eur':
+      return numericCompare(priceForCard(card, 'eur'), numberFromString(clause.value), clause.operator);
+    case 'tix':
+      return numericCompare(priceForCard(card, 'tix'), numberFromString(clause.value), clause.operator);
+    case 'year':
+      return card.view === 'prints' && numericCompare(numberFromString(card.releasedAt?.slice(0, 4)), numberFromString(clause.value), clause.operator);
+    case 'date':
+      return card.view === 'prints' && dateFilterMatches(card.releasedAt, clause.value, clause.operator);
+    case 'has':
+      return clause.value.toLowerCase() === 'image' ? Boolean(officialCardImageUrl(card)) : false;
+    case 'is':
+      return officialCardCategory(card) === normalizeQueryCategory(clause.value);
+  }
+}
+
+function compareOfficialCards(
+  left: OfficialCardSearchCard,
+  right: OfficialCardSearchCard,
+  args: { sort: OfficialCardSortKey; sortDirection: OfficialCardSortDirection; query: string; priceCurrency: OfficialCardPriceCurrency }
+): number {
+  const sort = args.sort === 'auto' ? (args.query ? 'relevance' : 'name') : args.sort;
+  const primary =
+    sort === 'relevance'
+      ? compareOfficialCardSearchRank(left, right, args.query)
+      : sort === 'released'
+        ? compareNullableString(left.view === 'prints' ? left.releasedAt : undefined, right.view === 'prints' ? right.releasedAt : undefined, args.sortDirection)
+        : sort === 'price'
+          ? compareNullableNumber(priceForCard(left, args.priceCurrency), priceForCard(right, args.priceCurrency), args.sortDirection)
+          : sort === 'manaValue'
+            ? compareNullableNumber(left.manaValue, right.manaValue, args.sortDirection)
+            : sort === 'rarity'
+              ? compareNullableNumber(rarityRank(left), rarityRank(right), args.sortDirection)
+              : sort === 'set'
+                ? compareSetPrint(left, right, args.sortDirection)
+                : sort === 'colorIdentity'
+                  ? compareNullableString(left.colorIdentity.join('') || 'C', right.colorIdentity.join('') || 'C', args.sortDirection)
+                  : sort === 'type'
+                    ? compareNullableString(left.typeLine, right.typeLine, args.sortDirection)
+                    : compareNullableString(left.name, right.name, args.sortDirection);
+  return primary || left.name.localeCompare(right.name) || officialCardPrintSortKey(left).localeCompare(officialCardPrintSortKey(right));
+}
+
+function normalizeSort(sort: OfficialCardSortKey | undefined, parsedQuery: ParsedOfficialCardQuery): OfficialCardSortKey {
+  const supported = new Set<OfficialCardSortKey>(['auto', 'relevance', 'name', 'released', 'price', 'manaValue', 'rarity', 'set', 'colorIdentity', 'type']);
+  if (sort && supported.has(sort)) {
+    return sort;
+  }
+  return parsedQuery.freeTerms.length || parsedQuery.clauses.length ? 'auto' : 'name';
+}
+
+function normalizeSortDirection(direction: OfficialCardSortDirection | undefined, sort: OfficialCardSortKey): OfficialCardSortDirection {
+  if (direction === 'desc' || direction === 'asc') {
+    return direction;
+  }
+  return sort === 'released' ? 'desc' : 'asc';
+}
+
+function rankQueryForParsedQuery(parsedQuery: ParsedOfficialCardQuery): string {
+  return parsedQuery.rankTerms.map((term) => term.toLowerCase()).join(' ').trim();
+}
+
+function normalizePriceCurrency(currency: OfficialCardPriceCurrency | undefined): OfficialCardPriceCurrency {
+  return currency === 'usdFoil' || currency === 'eur' || currency === 'eurFoil' || currency === 'tix' ? currency : DEFAULT_PRICE_CURRENCY;
+}
+
+function priceForCard(card: OfficialCardSearchCard, currency: OfficialCardPriceCurrency): number | undefined {
+  if (card.view !== 'prints') {
+    return undefined;
+  }
+  return numberFromString(card.prices?.[currency]);
+}
+
+function officialCardImageUrl(card: OfficialCardSearchCard): string {
+  const images = card.imageUris ?? card.cardFaces?.find((face) => face.imageUris)?.imageUris;
+  return images?.normal ?? images?.large ?? images?.png ?? images?.small ?? images?.artCrop ?? images?.borderCrop ?? '';
+}
+
+function officialCardCategory(card: OfficialCardSearchCard): 'normal' | 'token' | 'art' | 'extra' | 'funny' {
+  const layout = clean(card.layout).toLowerCase();
+  const typeLine = clean(card.typeLine).toLowerCase();
+  if (layout === 'art_series') {
+    return 'art';
+  }
+  if (layout === 'token' || typeLine.includes('token')) {
+    return 'token';
+  }
+  if (['plane', 'planar', 'scheme', 'vanguard', 'emblem'].includes(layout) || /\b(plane|scheme|vanguard|emblem|phenomenon)\b/.test(typeLine)) {
+    return 'extra';
+  }
+  if (['funny', 'augment', 'host'].includes(layout)) {
+    return 'funny';
+  }
+  return 'normal';
+}
+
+function normalizeQueryCategory(value: string): 'normal' | 'token' | 'art' | 'extra' | 'funny' | '' {
+  const normalized = value.toLowerCase();
+  if (normalized === 'token') {
+    return 'token';
+  }
+  if (normalized === 'art' || normalized === 'art_series') {
+    return 'art';
+  }
+  if (normalized === 'extra' || normalized === 'plane' || normalized === 'scheme' || normalized === 'emblem') {
+    return 'extra';
+  }
+  if (normalized === 'funny') {
+    return 'funny';
+  }
+  if (normalized === 'normal') {
+    return 'normal';
+  }
+  return '';
+}
+
+function textMatches(values: Array<string | undefined>, value: string): boolean {
+  const needle = value.toLowerCase();
+  return values.some((candidate) => clean(candidate).toLowerCase().includes(needle));
+}
+
+function stringCompare(actual: string | undefined, expected: string, operator: QueryOperator): boolean {
+  const left = clean(actual).toLowerCase();
+  const right = clean(expected).toLowerCase();
+  if (!left) {
+    return false;
+  }
+  if (operator === ':' || operator === '=') {
+    return left === right || left.includes(right);
+  }
+  const compared = NATURAL_COLLATOR.compare(left, right);
+  return operator === '<' ? compared < 0 : operator === '<=' ? compared <= 0 : operator === '>' ? compared > 0 : compared >= 0;
+}
+
+function colorListMatches(colors: string[], expected: string, operator: QueryOperator): boolean {
+  const normalized = clean(expected).toUpperCase();
+  const actual = colors.map((color) => color.toUpperCase()).sort().join('');
+  if (normalized === 'C') {
+    return colors.length === 0;
+  }
+  const expectedColors = normalized.split('').filter(Boolean).sort().join('');
+  if (operator === '=') {
+    return actual === expectedColors;
+  }
+  return expectedColors.split('').every((color) => actual.includes(color));
+}
+
+function numberFilterMatches(value: number | undefined, min: number | undefined, max: number | undefined): boolean {
+  if (min === undefined && max === undefined) {
+    return true;
+  }
+  if (value === undefined) {
+    return false;
+  }
+  if (min !== undefined && value < min) {
+    return false;
+  }
+  if (max !== undefined && value > max) {
+    return false;
+  }
+  return true;
+}
+
+function numericCompare(actual: number | undefined, expected: number | undefined, operator: QueryOperator): boolean {
+  if (actual === undefined || expected === undefined) {
+    return false;
+  }
+  if (operator === '<') {
+    return actual < expected;
+  }
+  if (operator === '<=') {
+    return actual <= expected;
+  }
+  if (operator === '>') {
+    return actual > expected;
+  }
+  if (operator === '>=') {
+    return actual >= expected;
+  }
+  return actual === expected;
+}
+
+function dateFilterMatches(actual: string | undefined, expected: string, operator: QueryOperator): boolean {
+  const left = clean(actual);
+  const right = clean(expected);
+  if (!left || !right) {
+    return false;
+  }
+  if (operator === ':' || operator === '=') {
+    return left.startsWith(right);
+  }
+  return operator === '<' ? left < right : operator === '<=' ? left <= right : operator === '>' ? left > right : left >= right;
+}
+
+function compareNullableString(left: string | undefined, right: string | undefined, direction: OfficialCardSortDirection): number {
+  const leftValue = clean(left);
+  const rightValue = clean(right);
+  if (!leftValue && !rightValue) {
+    return 0;
+  }
+  if (!leftValue) {
+    return 1;
+  }
+  if (!rightValue) {
+    return -1;
+  }
+  const compared = NATURAL_COLLATOR.compare(leftValue, rightValue);
+  return direction === 'desc' ? -compared : compared;
+}
+
+function compareNullableNumber(left: number | undefined, right: number | undefined, direction: OfficialCardSortDirection): number {
+  if (left === undefined && right === undefined) {
+    return 0;
+  }
+  if (left === undefined) {
+    return 1;
+  }
+  if (right === undefined) {
+    return -1;
+  }
+  const compared = left - right;
+  return direction === 'desc' ? -compared : compared;
+}
+
+function compareSetPrint(left: OfficialCardSearchCard, right: OfficialCardSearchCard, direction: OfficialCardSortDirection): number {
+  const setCompared = compareNullableString(left.view === 'prints' ? left.setCode : undefined, right.view === 'prints' ? right.setCode : undefined, direction);
+  if (setCompared) {
+    return setCompared;
+  }
+  return compareNullableString(left.view === 'prints' ? left.collectorNumber : undefined, right.view === 'prints' ? right.collectorNumber : undefined, direction);
+}
+
+function rarityRank(card: OfficialCardSearchCard): number | undefined {
+  if (card.view !== 'prints' || !card.rarity) {
+    return undefined;
+  }
+  const ranks = new Map([
+    ['common', 1],
+    ['uncommon', 2],
+    ['rare', 3],
+    ['mythic', 4],
+    ['special', 5],
+    ['bonus', 6]
+  ]);
+  return ranks.get(card.rarity.toLowerCase()) ?? 10;
+}
+
+function numberFromString(value: unknown): number | undefined {
+  const number = Number(clean(value).replace(/^\$/, ''));
+  return Number.isFinite(number) ? number : undefined;
 }
 
 function colorIdentityMatches(identity: string[], filter: string): boolean {

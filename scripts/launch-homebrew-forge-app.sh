@@ -258,10 +258,11 @@ bootstrap_launch_agent() {
 start_direct_editor_server() {
   local node_bin="$1"
   log "Starting Homebrew Forge editor directly because LaunchAgent did not start"
-  HOMEBREW_FORGE_PORT="$PORT" "$node_bin" "$REPO_ROOT/scripts/run-homebrew-forge-editor.mjs" >> "$LOG_FILE" 2>&1 &
+  /usr/bin/nohup /usr/bin/env HOMEBREW_FORGE_PORT="$PORT" "$node_bin" "$REPO_ROOT/scripts/run-homebrew-forge-editor.mjs" >> "$LOG_FILE" 2>&1 &
   local pid="$!"
   print -r -- "$pid" > "$APP_SUPPORT/editor-server.pid"
   log "Started direct Homebrew Forge editor pid=$pid on $URL"
+  disown "$pid" 2>/dev/null || true
 }
 
 kickstart_launch_agent() {

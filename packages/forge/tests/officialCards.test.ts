@@ -108,6 +108,69 @@ describe('Official card catalog', () => {
     assert.equal(result.cards[0]?.name, 'Lightning Bolt');
   });
 
+  it('filters cached cards with local Scryfall-like tokens and reports unsupported tokens', async () => {
+    const rootDir = await createFixtureRoot();
+    await writeOfficialCardCacheForTest(rootDir, {
+      prints: [
+        officialPrint({
+          id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+          name: 'Verdant Growth',
+          manaCost: '{2}{G}',
+          manaValue: 3,
+          typeLine: 'Enchantment',
+          oracleText: 'Whenever a land enters, draw a card.',
+          colorIdentity: ['G'],
+          setCode: 'TST',
+          rarity: 'rare',
+          releasedAt: '2024-05-01',
+          finishes: ['nonfoil', 'foil'],
+          prices: { usd: '3.25' }
+        }),
+        officialPrint({
+          id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+          name: 'Verdant Token',
+          manaValue: 0,
+          typeLine: 'Token Creature - Plant',
+          oracleText: 'A token fixture.',
+          colorIdentity: ['G'],
+          layout: 'token',
+          setCode: 'TST',
+          rarity: 'common',
+          releasedAt: '2024-05-01',
+          finishes: ['nonfoil'],
+          prices: { usd: '0.10' }
+        })
+      ]
+    });
+
+    const result = await searchOfficialCards(rootDir, {
+      view: 'prints',
+      query: 'name:Verdant o:draw mv>=3 usd<5 madeup:ignored -is:token',
+      limit: 10
+    });
+
+    assert.equal(result.total, 1);
+    assert.equal(result.cards[0]?.name, 'Verdant Growth');
+    assert.deepEqual(result.unsupportedQueryTerms, ['madeup:ignored']);
+  });
+
+  it('sorts the full filtered result before pagination', async () => {
+    const rootDir = await createFixtureRoot();
+    await writeOfficialCardCacheForTest(rootDir, {
+      prints: [
+        officialPrint({ id: '11111111-aaaa-4aaa-8aaa-111111111111', name: 'High Price', prices: { usd: '9.00' } }),
+        officialPrint({ id: '22222222-aaaa-4aaa-8aaa-222222222222', name: 'Low Price', prices: { usd: '1.00' } }),
+        officialPrint({ id: '33333333-aaaa-4aaa-8aaa-333333333333', name: 'Mid Price', prices: { usd: '5.00' } })
+      ]
+    });
+
+    const firstPage = await searchOfficialCards(rootDir, { view: 'prints', sort: 'price', sortDirection: 'asc', limit: 1, offset: 0 });
+    const secondPage = await searchOfficialCards(rootDir, { view: 'prints', sort: 'price', sortDirection: 'asc', limit: 1, offset: 1 });
+
+    assert.equal(firstPage.cards[0]?.name, 'Low Price');
+    assert.equal(secondPage.cards[0]?.name, 'Mid Price');
+  });
+
   it('syncs official cards by stream-parsing Scryfall bulk downloads', async () => {
     const rootDir = await createFixtureRoot();
     const calls: string[] = [];

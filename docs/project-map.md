@@ -39,6 +39,14 @@ components. Keep new shell chrome in that folder rather than growing `App.tsx`.
 The Phase 7 command palette is a non-destructive global action surface opened
 from the toolbar or `Cmd/Ctrl+K`; the Workspace Health panel is opened from the
 status strip and uses existing local runtime/source/preview/reference state.
+References Official Cards now uses the local Scryfall-backed official-card cache
+as a full browser surface: advanced local query/filter/sort logic lives in
+`packages/forge/src/officialCards/`, editor-side browser settings live in
+`packages/editor/src/domain/officialCardBrowser.ts`, and sync cadence/manual
+sync settings live in `packages/editor/src/domain/officialCardSyncSettings.ts`
+plus Settings > Official Card Catalog. Keep future official-card search UI in
+References/Card Browser wired to this local cache contract rather than adding
+live Scryfall requests to the UI.
 
 The 2026-06-07 editor review pass lives in
 `docs/52_editor_review_issue_catalog.md`,
@@ -123,9 +131,9 @@ scripts/
     homebrew-forge-launcher-health-hook.sh
                           # Codex Stop hook target: repairs stale shortcut/support launcher and opens the current app for review
     import-signs-of-assassins.ts
-                          # Deterministic ManaBox Assassin import: owned ledger, flags, recommendations, SOA shell, and six deck variants
+                          # Deterministic Assassin import: owned ledger, batch-002 incoming orders, flags, recommendations, SOA shell, and six deck variants
     qa-signs-of-assassins.mjs
-                          # Playwright visual QA for the Signs of Assassins project, deck variants, binder/list rows, ghost styling, and dashboard filters
+                          # Playwright visual QA for the Signs of Assassins project, deck variants, Maybeboard rows, binder/list rows, ghost styling, and dashboard filters
 .codex/
   config.toml             # Project-scoped Codex Stop hook wiring for launcher health
 printables/
@@ -146,7 +154,7 @@ collections/
   demo-reference/        # Seeded Demo Project collection with one matched row and one review row
   squirrel-away/         # Partner modified Squirrel Away CSV owned by Eleni, enriched with Scryfall IDs, print metadata, and image URI references
   assassin-candidate-binder/
-                          # User-facing Assassin's Ledger binder for Kyle's batch-001 ManaBox Assassin import
+                          # User-facing Assassin's Ledger binder for Kyle's batch-001 ManaBox import plus batch-002 delivery-pending online orders
   recommendations/       # Global recommendation list; includes Signs of Assassins ghost/unowned gap-filler rows
   flagged/               # Global flagged list; includes Signs of Assassins duplicate/off-color review rows
   <collection-id>/       # Isolated binder/list metadata and normalized scanner/reference CSV entries

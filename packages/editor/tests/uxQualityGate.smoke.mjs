@@ -209,15 +209,16 @@ async function verifyInspectorTabs(browser, baseUrl) {
 async function verifyLinkedTextAreaThemeContrast(browser, baseUrl) {
   for (const theme of ['light', 'dark']) {
     const context = await browser.newContext({ viewport: { width: 1292, height: 768 } });
-    await context.addInitScript(
-      ([themeKey, themeValue, firstRunKey]) => {
-        localStorage.setItem(themeKey, themeValue);
-        localStorage.setItem(firstRunKey, 'true');
-      },
-      ['homebrew-forge.theme', theme, 'homebrew-forge.firstRunOrientationDismissed']
-    );
-    const page = await context.newPage();
-    await loadDemo(page, baseUrl);
+	    await context.addInitScript(
+	      ([themeKey, themeValue, firstRunKey]) => {
+	        localStorage.setItem(themeKey, themeValue);
+	        localStorage.setItem(firstRunKey, 'true');
+	      },
+	      ['homebrew-forge.theme', theme, 'homebrew-forge.firstRunOrientationDismissed']
+	    );
+	    await routeManagementFixtures(context);
+	    const page = await context.newPage();
+	    await loadDemo(page, baseUrl);
 
     for (const label of ['Rules text', 'Flavor text']) {
       const field = page.locator(`textarea[aria-label="${label}"]`);
@@ -362,7 +363,7 @@ async function verifyPreviewAndToolsMenus(browser, baseUrl) {
 
   menuPanel = await openMenu(page, 'View');
   await menuPanel.getByRole('button', { name: /Focused Layouts/ }).hover();
-  await expectCount(page.getByRole('menuitem', { name: 'Card Only Preview' }), 1, 'View > Focused Layouts should include Card Only Preview');
+  await expectCount(page.getByRole('menuitem', { name: 'Card Preview' }), 1, 'View > Focused Layouts should include Card Preview');
 
   menuPanel = await openMenu(page, 'Tools');
   await menuPanel.getByRole('button', { name: /Card Tools/ }).hover();
@@ -580,6 +581,257 @@ async function fetchJson(url) {
   const response = await fetch(url);
   assert.equal(response.ok, true, `Fetch failed: ${url}`);
   return response.json();
+}
+
+async function routeManagementFixtures(context) {
+  const fixtures = buildManagementFixtures();
+  await context.route('**/api/collections', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(fixtures.collections)
+    });
+  });
+  await context.route('**/api/collection?id=*', async (route) => {
+    const id = new URL(route.request().url()).searchParams.get('id') ?? '';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(fixtures.collectionStates[id] ?? fixtures.collectionStates['ux-gate-binder'])
+    });
+  });
+  await context.route('**/api/decks', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(fixtures.decks)
+    });
+  });
+  await context.route('**/api/deck?id=*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(fixtures.deckState)
+    });
+  });
+}
+
+function buildManagementFixtures() {
+  const now = '2026-06-08T00:00:00.000Z';
+  const collectionEntries = [
+    collectionEntry('ux-gate-binder', 'binder-entry-001', 'Example Vanguard', 2, {
+      setCode: 'DEMO',
+      collectorNumber: '001',
+      condition: 'near_mint',
+      finish: 'nonfoil',
+      estimatedMarketPrice: 1.25,
+      tags: ['playtest'],
+      reviewStatus: 'matched'
+    }),
+    collectionEntry('ux-gate-binder', 'binder-entry-002', 'Clockwork Relic', 1, {
+      setCode: 'DEMO',
+      collectorNumber: '002',
+      condition: 'light_played',
+      finish: 'foil',
+      reviewStatus: 'needs_review',
+      flagged: true,
+      tags: ['artifact']
+    })
+  ];
+  const listEntries = [
+    collectionEntry('ux-gate-list', 'list-entry-001', 'Hidden Orchard', 1, {
+      ownershipStatus: 'wanted',
+      reviewStatus: 'matched',
+      tags: ['wishlist']
+    })
+  ];
+  const binderMetadata = collectionMetadata('ux-gate-binder', 'UX Gate Binder', 'binder', 'owned', now);
+  const listMetadata = collectionMetadata('ux-gate-list', 'UX Gate List', 'list', 'research', now, 'wishlist');
+  const collections = [
+    collectionSummary(binderMetadata, collectionEntries),
+    collectionSummary(listMetadata, listEntries)
+  ];
+  const deckVariant = {
+    deckId: 'ux-gate-deck',
+    variantId: 'default',
+    name: 'Main Variant',
+    status: 'testing',
+    colorIdentity: 'W',
+    tags: ['ux'],
+    createdAt: now,
+    updatedAt: now
+  };
+  const deckCard = {
+    setCode: 'DEMO',
+    setName: 'Demo',
+    cardId: 'ux-card-001',
+    collectorNumber: '001',
+    name: 'Example Vanguard',
+    typeLine: 'Creature - Human Soldier',
+    rarity: 'rare',
+    colors: 'W',
+    manaCost: '{2}{W}',
+    manaValue: 3,
+    colorIdentity: 'W',
+    oracleText: 'Vigilance',
+    flavorText: '',
+    power: '2',
+    toughness: '3',
+    status: 'playtest',
+    tags: ['vanguard'],
+    variants: [{ variantId: 'default', displayName: 'Main', kind: 'standard', status: 'draft', isPrimary: true }]
+  };
+  const deckEntries = [
+    {
+      deckId: 'ux-gate-deck',
+      entryId: 'deck-entry-001',
+      deckVariantId: 'default',
+      section: 'main',
+      count: 4,
+      setCode: 'DEMO',
+      cardId: 'ux-card-001',
+      variantId: 'default',
+      nameSnapshot: 'Example Vanguard',
+      candidateStatus: 'active',
+      roles: ['ramp'],
+      roleSource: 'manual',
+      roleConfidence: 1,
+      entryTags: ['curve'],
+      flags: [],
+      starred: false,
+      markedForDeletion: false,
+      card: deckCard
+    }
+  ];
+  const deckMetadata = {
+    deckId: 'ux-gate-deck',
+    name: 'UX Gate Deck',
+    description: 'Deterministic deck fixture for list-control QA.',
+    linkedUniverseId: 'demo',
+    linkedSetCode: 'DEMO',
+    format: 'casual',
+    playStyleTags: ['midrange'],
+    colorIdentity: 'W',
+    status: 'playtest',
+    activeVariantId: 'default',
+    variants: [deckVariant],
+    tags: ['ux'],
+    createdAt: now,
+    updatedAt: now
+  };
+  const deckState = {
+    metadata: deckMetadata,
+    variants: [deckVariant],
+    activeVariantId: 'default',
+    activeVariant: deckVariant,
+    entries: deckEntries,
+    availableCards: [deckCard],
+    warnings: []
+  };
+  const decks = [
+    {
+      ...deckMetadata,
+      cardCount: 4,
+      mainCount: 4,
+      sideCount: 0,
+      maybeCount: 0,
+      variantCount: 1,
+      activeVariantId: 'default',
+      activeVariantName: 'Main Variant',
+      candidateCount: 0,
+      cutCount: 0,
+      unresolvedCount: 0
+    }
+  ];
+  return {
+    collections,
+    collectionStates: {
+      'ux-gate-binder': { metadata: binderMetadata, entries: collectionEntries, warnings: [] },
+      'ux-gate-list': { metadata: listMetadata, entries: listEntries, warnings: [] }
+    },
+    decks,
+    deckState
+  };
+}
+
+function collectionMetadata(collectionId, name, kind, purpose, now, listCategory = 'general') {
+  return {
+    collectionId,
+    name,
+    description: `${name} fixture.`,
+    linkedUniverseId: 'demo',
+    gameId: 'mtg',
+    purpose,
+    source: 'generic',
+    kind,
+    listCategory,
+    tags: ['ux'],
+    defaultEntryTags: [],
+    defaultStarred: false,
+    defaultFlagged: false,
+    defaultProxy: false,
+    defaultHomebrew: false,
+    linkedSetCodes: ['DEMO'],
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+function collectionSummary(metadata, entries) {
+  return {
+    ...metadata,
+    entryCount: entries.length,
+    cardCount: entries.reduce((total, entry) => total + entry.quantity, 0),
+    matchedCount: entries.filter((entry) => entry.reviewStatus === 'matched').length,
+    reviewCount: entries.filter((entry) => entry.reviewStatus === 'needs_review').length,
+    sourceCount: new Set(entries.map((entry) => entry.source)).size,
+    ownerNames: [...new Set(entries.map((entry) => entry.ownerName))]
+  };
+}
+
+function collectionEntry(collectionId, entryId, cardName, quantity, overrides = {}) {
+  return {
+    collectionId,
+    entryId,
+    quantity,
+    ownershipStatus: overrides.ownershipStatus ?? 'owned',
+    ownerName: overrides.ownerName ?? 'Kyle',
+    cardName,
+    setCode: overrides.setCode,
+    setName: overrides.setName ?? 'Demo',
+    collectorNumber: overrides.collectorNumber,
+    scryfallId: overrides.scryfallId,
+    finish: overrides.finish ?? 'nonfoil',
+    condition: overrides.condition ?? 'near_mint',
+    language: overrides.language ?? 'en',
+    location: overrides.location ?? 'Test Binder',
+    source: overrides.source ?? 'generic',
+    sourceRow: overrides.sourceRow,
+    matchKey: overrides.matchKey,
+    matchStrategy: overrides.matchStrategy ?? 'set_number',
+    reviewStatus: overrides.reviewStatus ?? 'matched',
+    reviewNotes: overrides.reviewNotes,
+    linkedSetCode: overrides.linkedSetCode,
+    linkedCardId: overrides.linkedCardId,
+    linkedVariantId: overrides.linkedVariantId,
+    previewArtSource: overrides.previewArtSource ?? 'auto',
+    purchasePrice: overrides.purchasePrice,
+    purchaseCurrency: overrides.purchaseCurrency ?? 'USD',
+    purchaseDate: overrides.purchaseDate,
+    estimatedMarketPrice: overrides.estimatedMarketPrice,
+    estimatedMarketCurrency: overrides.estimatedMarketCurrency ?? 'USD',
+    marketPriceSource: overrides.marketPriceSource,
+    marketPriceUpdatedAt: overrides.marketPriceUpdatedAt,
+    tags: overrides.tags ?? [],
+    notes: overrides.notes,
+    starred: overrides.starred ?? false,
+    flagged: overrides.flagged ?? false,
+    altered: overrides.altered ?? false,
+    misprint: overrides.misprint ?? false,
+    proxy: overrides.proxy ?? false,
+    homebrew: overrides.homebrew ?? false,
+    markedForDeletion: overrides.markedForDeletion ?? false
+  };
 }
 
 function optionalRequire(requireFrom, specifier) {
