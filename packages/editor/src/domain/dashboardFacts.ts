@@ -10,6 +10,8 @@ export interface DashboardScope {
   kind: DashboardScopeKind;
   id: string;
   label: string;
+  deckVariantId?: string;
+  deckVariantName?: string;
   customKeys?: Set<string>;
 }
 
@@ -28,6 +30,9 @@ export interface DashboardCardFact {
   setCode?: string;
   setName?: string;
   deckId?: string;
+  deckVariantId?: string;
+  deckVariantName?: string;
+  activeDeckVariant?: boolean;
   collectionId?: string;
   collectionKind?: CollectionKind;
   collectionListCategory?: CollectionListCategory;
@@ -135,6 +140,7 @@ export interface DashboardStats {
   roleRows: DashboardChartDatum[];
   reviewRowsByStatus: DashboardChartDatum[];
   deckRatioRows: DashboardChartDatum[];
+  landManaRows: DashboardChartDatum[];
   probabilityRows: DashboardProbabilityDatum[];
   recommendationRows: DashboardRecommendation[];
   cubeRows: DashboardCubeCell[];
@@ -309,17 +315,48 @@ export function buildDashboardFacts({
       continue;
     }
     const activeVariantId = deckState.activeVariantId || deck.activeVariantId;
-    const activeEntries = deckState.entries.filter((entry) => {
-      const inActiveVariant = !activeVariantId || !entry.deckVariantId || entry.deckVariantId === activeVariantId;
-      return inActiveVariant && !entry.markedForDeletion && entry.candidateStatus !== 'candidate' && entry.candidateStatus !== 'cut';
-    });
-    for (const [index, entry] of activeEntries.entries()) {
+    const variantsById = new Map(deckState.metadata.variants.map((variant) => [variant.variantId, variant]));
+    const commanderReferences = deckState.metadata.variants.length ? deckState.metadata.variants : [{ ...deckState.activeVariant, variantId: activeVariantId || deckState.activeVariant.variantId }];
+    for (const variant of commanderReferences) {
+      const commander = variant.commander ?? deckState.metadata.commander;
+      const commanderCard = commander ? deckState.availableCards.find((card) => card.setCode === commander.setCode && card.cardId === commander.cardId) : undefined;
+      if (!commander || !commanderCard) {
+        continue;
+      }
+      facts.push(cardSummaryToFact(commanderCard, {
+        key: `deck:${deck.deckId}:${variant.variantId}:commander:${commander.setCode}:${commander.cardId}`,
+        sourceKind: 'deck_entry',
+        sourceId: deck.deckId,
+        sourceName: deck.name,
+        projectId: deck.linkedUniverseId,
+        setCode: commander.setCode,
+        setName: commanderCard.setName,
+        deckId: deck.deckId,
+        deckVariantId: variant.variantId,
+        deckVariantName: variant.name,
+        activeDeckVariant: variant.variantId === activeVariantId,
+        cardId: commander.cardId,
+        variantId: commander.variantId,
+        quantity: 1,
+        section: 'commander',
+        name: commanderCard.name,
+        tags: [...(variant.tags ?? []), 'commander-zone'],
+        status: 'active',
+        deckRoles: ['commander'],
+        roleSource: 'manual',
+        candidateStatus: 'active'
+      }));
+    }
+    const deckEntries = deckState.entries.filter((entry) => !entry.markedForDeletion && entry.candidateStatus !== 'candidate' && entry.candidateStatus !== 'cut');
+    for (const [index, entry] of deckEntries.entries()) {
       const card = entry.card;
       const fallbackProject = entry.setCode ? projects.get(entry.setCode) : undefined;
       const fallbackCard = fallbackProject?.cards.find((candidate) => candidate.cardId === entry.cardId);
       const cardLike = card ?? fallbackCard;
+      const entryVariantId = entry.deckVariantId || activeVariantId;
+      const entryVariant = entryVariantId ? variantsById.get(entryVariantId) : undefined;
       facts.push(cardSummaryToFact(cardLike, {
-        key: `deck:${deck.deckId}:${activeVariantId ?? 'default'}:${entry.section}:${entry.setCode}:${entry.cardId}:${entry.variantId ?? ''}:${index}`,
+        key: `deck:${deck.deckId}:${entryVariantId ?? 'default'}:${entry.section}:${entry.setCode}:${entry.cardId}:${entry.variantId ?? ''}:${index}`,
         sourceKind: 'deck_entry',
         sourceId: deck.deckId,
         sourceName: deck.name,
@@ -327,6 +364,9 @@ export function buildDashboardFacts({
         setCode: entry.setCode,
         setName: card?.setName ?? fallbackProject?.setName,
         deckId: deck.deckId,
+        deckVariantId: entryVariantId,
+        deckVariantName: entryVariant?.name,
+        activeDeckVariant: !entryVariantId || entryVariantId === activeVariantId,
         cardId: entry.cardId,
         variantId: entry.variantId,
         quantity: entry.count,
@@ -509,6 +549,7 @@ export function computeDashboardStats(facts: DashboardCardFact[], scope: Dashboa
   const keywords = new Map<string, number>();
   const roles = new Map<string, number>();
   const review = new Map<string, number>();
+  const landMana = new Map<string, number>();
   const cube = new Map<string, DashboardCubeCell>();
   let authoredQuantity = 0;
   let deckQuantity = 0;
@@ -581,6 +622,9 @@ export function computeDashboardStats(facts: DashboardCardFact[], scope: Dashboa
     const isCreature = fact.cardTypes.includes('creature');
     if (isLand) {
       landCount += quantity;
+      for (const sourceColor of inferLandManaSources(fact)) {
+        add(landMana, sourceColor, quantity);
+      }
     } else if (isCreature) {
       creatureCount += quantity;
     } else {
@@ -650,6 +694,7 @@ export function computeDashboardStats(facts: DashboardCardFact[], scope: Dashboa
     roleRows: roleRowsFromMap(roles),
     reviewRowsByStatus: mapRows(review),
     deckRatioRows,
+    landManaRows: mapRows(landMana, 8),
     probabilityRows,
     recommendationRows: [],
     cubeRows: Array.from(cube.values()).sort((a, b) => b.value - a.value).slice(0, 30)
@@ -669,6 +714,9 @@ function cardSummaryToFact(
     setCode?: string;
     setName?: string;
     deckId?: string;
+    deckVariantId?: string;
+    deckVariantName?: string;
+    activeDeckVariant?: boolean;
     collectionId?: string;
     collectionKind?: CollectionKind;
     collectionListCategory?: CollectionListCategory;
@@ -722,6 +770,7 @@ function cardSummaryToFact(
     meta.sourceName,
     meta.setCode,
     meta.section,
+    meta.deckVariantName,
     status,
     meta.reviewStatus,
     meta.matchStrategy,
@@ -746,6 +795,9 @@ function cardSummaryToFact(
     setCode: meta.setCode,
     setName: meta.setName,
     deckId: meta.deckId,
+    deckVariantId: meta.deckVariantId,
+    deckVariantName: meta.deckVariantName,
+    activeDeckVariant: meta.activeDeckVariant,
     collectionId: meta.collectionId,
     collectionKind: meta.collectionKind,
     collectionListCategory: meta.collectionListCategory,
@@ -878,6 +930,32 @@ function inferRoles(fact: DashboardCardFact): string[] {
     roles.push('Finisher');
   }
   return roles;
+}
+
+function inferLandManaSources(fact: DashboardCardFact): string[] {
+  const name = fact.name.toLowerCase();
+  const subtypeSet = new Set(fact.subtypes);
+  const oracle = (fact.oracleText ?? '').toLowerCase();
+  const sources = new Set<string>();
+  const addSource = (symbol: string) => {
+    const label = COLOR_LABELS[symbol] ?? (symbol === 'C' ? 'Colorless' : symbol);
+    sources.add(label);
+  };
+  if (name === 'plains' || subtypeSet.has('plains')) addSource('W');
+  if (name === 'island' || subtypeSet.has('island')) addSource('U');
+  if (name === 'swamp' || subtypeSet.has('swamp')) addSource('B');
+  if (name === 'mountain' || subtypeSet.has('mountain')) addSource('R');
+  if (name === 'forest' || subtypeSet.has('forest')) addSource('G');
+  for (const match of oracle.matchAll(/add\s+\{([wubrgc])\}/gi)) {
+    addSource(match[1]?.toUpperCase() ?? '');
+  }
+  if (/add (one|a) mana of any color|add .*mana.*any color|chosen color|commander'?s color identity/.test(oracle)) {
+    sources.add('Any color');
+  }
+  if (/add \{c\}|colorless/.test(oracle)) {
+    sources.add('Colorless');
+  }
+  return sources.size ? Array.from(sources) : ['Unspecified'];
 }
 
 function roleLabel(role: string): string {

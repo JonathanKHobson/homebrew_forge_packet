@@ -9,6 +9,7 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 | 0 | Local backup, Git bundle, diff/status packet, pushed backup branch | Done | original web repo | backup branch `backup/pre-desktop-delivery-20260608-132519` | backups folder |
 | 0 | Migration worktree isolation | Done | `homebrew_forge_packet_desktop_migration` | `git status --short` clean before docs | worktree list |
 | 0 | Research packet copied into migration lane | Done | docs | packet present under `docs/superpowers/plans/` | git status |
+| 0 | Finished primary-tree deck-building changes imported | Done | data/editor/scripts | typecheck, build, UX gate, runtime-service tests | local command output |
 | 0 | Final roadmap/tracker/test/cutover docs | In progress | docs | docs added and project map updated | this file |
 | 0 | Dirty tree triage and archive index | In progress | docs/data/source/scripts | `docs/64_repo_cleanup_archive_index.md` | pending |
 | 1 | Full route inventory | In progress | `editorApiPlugin.ts` | inventory seeded; acceptance checks listed | `docs/61_runtime_service_route_inventory.md` |
@@ -28,6 +29,6 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 
 ## Current Blockers
 
-- The primary web checkout is actively changing for deck-building data; import/rebase those changes before deeper route extraction.
+- None for Phase 0 import. The primary web checkout remains the working app lane and can continue changing independently; import future finished work before deeper route extraction if it affects API/data contracts.
 - Electron dependencies should not be installed until route inventory and runtime-service proof are complete.
 - Current web checkout remains dirty and must not be used as the desktop implementation lane.

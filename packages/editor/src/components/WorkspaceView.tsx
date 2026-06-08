@@ -1619,7 +1619,11 @@ function buildDeckLiveStats(deck: DeckState | null, entries: DeckState['entries'
 function deckDashboardScope(deck: DeckState | DeckSummary): DashboardScope {
   const deckId = 'metadata' in deck ? deck.metadata.deckId : deck.deckId;
   const label = 'metadata' in deck ? deck.metadata.name : deck.name;
-  return { kind: 'deck', id: deckId, label };
+  const variantId = 'metadata' in deck ? activeDeckVariantId(deck) : deck.activeVariantId;
+  const variantName = 'metadata' in deck
+    ? deck.metadata.variants.find((variant) => variant.variantId === variantId)?.name ?? deck.activeVariant?.name
+    : deck.activeVariantName;
+  return { kind: 'deck', id: deckId, label, deckVariantId: variantId, deckVariantName: variantName };
 }
 
 function orderedStatRows(values: Map<string, number>, order: string[]): Array<{ label: string; value: number }> {
@@ -2714,6 +2718,8 @@ function DecksWorkspace({
 
             <WorkModeNote mode={workMode} section="decks" />
 
+            <DeckCommanderZone deck={deck} activeVariant={activeVariant} onOpenCard={onOpenCard} />
+
             {deck.warnings.length > 0 ? (
               <div className="deck-warning-list">
                 {deck.warnings.map((warning) => (
@@ -3067,6 +3073,73 @@ function DeckSectionList({
       </div>
     </section>
   );
+}
+
+function DeckCommanderZone({
+  deck,
+  activeVariant,
+  onOpenCard
+}: {
+  deck: DeckState;
+  activeVariant?: DeckState['variants'][number];
+  onOpenCard: (setCode: string, cardId: string, variantId?: string) => Promise<void> | void;
+}) {
+  const commanderReferences = deckCommanderReferences(deck, activeVariant);
+  if (!commanderReferences.length) {
+    return (
+      <section className="deck-commander-zone empty" aria-label="Commander zone">
+        <div className="deck-section-heading">
+          <h3>Commander zone</h3>
+          <span>Unset</span>
+        </div>
+        <p className="workspace-copy">Set a commander in the inspector to complete the Commander deck structure.</p>
+      </section>
+    );
+  }
+  return (
+    <section className="deck-commander-zone" aria-label="Commander zone">
+      <div className="deck-section-heading">
+        <h3>Commander zone</h3>
+        <span>{formatCount(commanderReferences.length, 'card')}</span>
+      </div>
+      <div className="deck-commander-card-row">
+        {commanderReferences.map(({ label, reference }) => {
+          const card = deckCardForReference(deck, reference);
+          const metadata = metadataFromDeckCard(card);
+          const imageSrc = imageUrlForMetadata(metadata, 'small');
+          const name = card?.name ?? reference.nameSnapshot ?? reference.cardId;
+          return (
+            <button key={`${label}-${reference.setCode}-${reference.cardId}`} type="button" className="deck-commander-card" onClick={() => void onOpenCard(reference.setCode, reference.cardId, reference.variantId)}>
+              <span className={`deck-entry-thumb ${imageSrc ? 'has-art' : ''}`} aria-hidden="true">
+                {imageSrc ? <img src={imageSrc} alt="" loading="lazy" /> : <span>{name.slice(0, 2).toUpperCase()}</span>}
+              </span>
+              <span>
+                <small>{label}</small>
+                <strong>{name}</strong>
+                <em>{metadata?.typeLine ?? 'Commander card'}</em>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function deckCommanderReferences(deck: DeckState, activeVariant?: DeckState['variants'][number]): Array<{ label: string; reference: NonNullable<DeckMetadata['commander']> }> {
+  const commander = activeVariant?.commander ?? deck.metadata.commander;
+  const partners = activeVariant?.partnerCommanders?.length ? activeVariant.partnerCommanders : deck.metadata.partnerCommanders;
+  return [
+    commander ? { label: 'Commander', reference: commander } : null,
+    ...(partners ?? []).map((reference, index) => ({ label: index === 0 ? 'Partner' : `Partner ${index + 1}`, reference }))
+  ].filter((slot): slot is { label: string; reference: NonNullable<DeckMetadata['commander']> } => Boolean(slot));
+}
+
+function deckCardForReference(deck: DeckState, reference: DeckMetadata['commander']): DeckCardOption | undefined {
+  if (!reference) {
+    return undefined;
+  }
+  return deck.availableCards.find((card) => card.setCode === reference.setCode && card.cardId === reference.cardId);
 }
 
 function DeckEntryThumb({ entry }: { entry: DeckState['entries'][number] }) {

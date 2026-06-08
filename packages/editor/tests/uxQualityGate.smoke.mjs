@@ -9,7 +9,7 @@ const editorRoot = resolve(repoRoot, 'packages/editor');
 const requireFromEditor = createRequire(resolve(editorRoot, 'package.json'));
 const requireFromForge = createRequire(resolve(repoRoot, 'packages/forge/package.json'));
 
-test('UX quality gate smoke covers Maker orientation, responsive layout, tabs, and transfer dialogs', async (t) => {
+test('UX quality gate smoke covers Maker orientation, responsive layout, tabs, and transfer dialogs', { timeout: 240_000 }, async (t) => {
   const playwright = optionalRequire(requireFromForge, 'playwright');
   if (!playwright) {
     t.skip('Playwright is not installed; install workspace dependencies to run the UX quality gate smoke.');
@@ -20,39 +20,80 @@ test('UX quality gate smoke covers Maker orientation, responsive layout, tabs, a
   const createServer = vite.createServer ?? vite.default?.createServer;
   assert.equal(typeof createServer, 'function', 'Vite createServer must be available');
 
-  const server = await createServer({
-    root: editorRoot,
-    configFile: resolve(editorRoot, 'vite.config.ts'),
-    server: {
-      host: '127.0.0.1',
-      port: 0
-    },
-    clearScreen: false,
-    logLevel: 'silent'
-  });
+  let server;
+  let browser;
 
-  await server.listen();
-  const urls = server.resolvedUrls?.local ?? [];
-  const baseUrl = urls.find((url) => url.startsWith('http://127.0.0.1:')) ?? urls[0];
-  assert.ok(baseUrl, 'Vite must expose a local URL');
+  try {
+    server = await createServer({
+      root: editorRoot,
+      configFile: resolve(editorRoot, 'vite.config.ts'),
+      server: {
+        host: '127.0.0.1',
+        port: 0
+      },
+      clearScreen: false,
+      logLevel: 'silent'
+    });
 
-  const browser = await playwright.chromium.launch({ headless: true });
-  t.after(async () => {
-    await browser.close();
-    await server.close();
-  });
+    await server.listen();
+    const urls = server.resolvedUrls?.local ?? [];
+    const baseUrl = urls.find((url) => url.startsWith('http://127.0.0.1:')) ?? urls[0];
+    assert.ok(baseUrl, 'Vite must expose a local URL');
 
-  await verifyFirstRunMakerOnboarding(browser, baseUrl);
-  await verifyProjectLoadAndRailCrashGuard(browser, baseUrl);
-  await verifyDemoOnlyMakerOnboarding(browser, baseUrl);
-  await verifyZeroCardOnboarding(browser, baseUrl);
-  await verifyNarrowMakerLayout(browser, baseUrl);
-  await verifyInspectorTabs(browser, baseUrl);
-  await verifyLinkedTextAreaThemeContrast(browser, baseUrl);
-  await verifyCollectionFamilyAndDeckThemeSurfaces(browser, baseUrl);
-  await verifyTransferDialogHierarchy(browser, baseUrl);
-  await verifyPreviewAndToolsMenus(browser, baseUrl);
+    browser = await playwright.chromium.launch({ headless: true });
+
+    await verifyFirstRunMakerOnboarding(browser, baseUrl);
+    await verifyProjectLoadAndRailCrashGuard(browser, baseUrl);
+    await verifyDemoOnlyMakerOnboarding(browser, baseUrl);
+    await verifyZeroCardOnboarding(browser, baseUrl);
+    await verifyNarrowMakerLayout(browser, baseUrl);
+    await verifyInspectorTabs(browser, baseUrl);
+    await verifyLinkedTextAreaThemeContrast(browser, baseUrl);
+    await verifyCollectionFamilyAndDeckThemeSurfaces(browser, baseUrl);
+    await verifyTransferDialogHierarchy(browser, baseUrl);
+    await verifyPreviewAndToolsMenus(browser, baseUrl);
+  } finally {
+    await closePlaywrightBrowser(browser);
+    await closeViteServer(server);
+    await stopEsbuildService();
+  }
 });
+
+async function closePlaywrightBrowser(browser) {
+  if (!browser) {
+    return;
+  }
+  await closeWithTimeout('Playwright browser', () => browser.close());
+}
+
+async function closeViteServer(server) {
+  if (!server) {
+    return;
+  }
+  server.httpServer?.closeAllConnections?.();
+  server.httpServer?.closeIdleConnections?.();
+  await closeWithTimeout('Vite server', () => server.close());
+}
+
+async function closeWithTimeout(label, closeResource) {
+  let timeoutId;
+  await Promise.race([
+    Promise.resolve().then(closeResource),
+    new Promise((resolve) => {
+      timeoutId = setTimeout(() => {
+        process.stderr.write(`${label} close timed out; continuing UX gate cleanup.\n`);
+        resolve();
+      }, 10_000);
+      timeoutId.unref?.();
+    })
+  ]);
+  clearTimeout(timeoutId);
+}
+
+async function stopEsbuildService() {
+  const esbuild = optionalRequire(requireFromEditor, 'esbuild');
+  esbuild?.stop?.();
+}
 
 async function verifyFirstRunMakerOnboarding(browser, baseUrl) {
   const context = await browser.newContext({ viewport: { width: 1292, height: 768 } });

@@ -7,6 +7,7 @@ export type DashboardWidgetId =
   | 'types'
   | 'curve'
   | 'colors'
+  | 'landMana'
   | 'deckRatio'
   | 'keywords'
   | 'roles'
@@ -64,6 +65,14 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDefinition[] = [
     title: 'Color mix',
     eyebrow: 'Color pressure',
     description: 'Resolved card colors only; unresolved rows are excluded from color counts.',
+    defaultVisualization: 'bar',
+    alternateVisualizations: ['donut']
+  },
+  {
+    id: 'landMana',
+    title: 'Land mana sources',
+    eyebrow: 'Mana base',
+    description: 'Colors and flexible sources produced by lands in the selected scope.',
     defaultVisualization: 'bar',
     alternateVisualizations: ['donut']
   },
@@ -206,6 +215,9 @@ function WidgetContent({ id, visualization, stats }: { id: DashboardWidgetId; vi
   }
   if (id === 'colors') {
     return visualization === 'donut' ? <Donut rows={stats.colorRows} /> : <BarList rows={stats.colorRows} />;
+  }
+  if (id === 'landMana') {
+    return visualization === 'donut' ? <Donut rows={stats.landManaRows} emptyLabel="No land mana sources in this scope." /> : <BarList rows={stats.landManaRows} emptyLabel="No land mana sources in this scope." />;
   }
   if (id === 'deckRatio') {
     return visualization === 'bar' ? <BarList rows={stats.deckRatioRows} /> : <Donut rows={stats.deckRatioRows} />;
