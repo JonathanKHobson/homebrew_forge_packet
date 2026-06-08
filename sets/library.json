@@ -40,7 +40,7 @@
         "mardu",
         "deck-building"
       ],
-      "updatedAt": "2026-06-08T08:58:26.466Z",
+      "updatedAt": "2026-06-08T20:49:23.084Z",
       "coverImageUrl": "https://cards.scryfall.io/art_crop/front/3/5/358026de-ab7c-4a17-8cac-cfbee391b127.jpg?1721423908"
     }
   ],
@@ -63,7 +63,7 @@
     {
       "setCode": "SOA",
       "universeId": "assassin-deck-candidates",
-      "sortOrder": 101
+      "sortOrder": 141
     }
   ]
 }

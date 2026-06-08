@@ -6,6 +6,7 @@ import {
   computeDashboardStats,
   filterDashboardFacts,
   type DashboardCardFact,
+  type DashboardScope,
   type DashboardScopeKind
 } from '../../domain/dashboardFacts.js';
 import {
@@ -39,9 +40,15 @@ interface DashboardViewProps {
   library: LibraryState | null;
   project: EditorProject | null;
   cardsForList: CardSummary[];
+  scopeRequest?: DashboardScopeRequest | null;
   onOpenCard: (setCode: string, cardId: string, variantId?: string) => Promise<void> | void;
   onExit: () => void;
   onStatus: (status: string) => void;
+}
+
+interface DashboardScopeRequest {
+  scope: DashboardScope;
+  token: number;
 }
 
 const DEFAULT_WIDGET_ORDER = DASHBOARD_WIDGETS.map((widget) => widget.id);
@@ -63,6 +70,7 @@ interface DashboardAdvancedFilters {
   purchaseValue: string;
   marketValue: string;
   deckSection: string;
+  deckVariantId: string;
   collectionReview: string;
   matchStrategy: string;
   name: string;
@@ -97,6 +105,7 @@ const DEFAULT_DASHBOARD_FILTERS: DashboardAdvancedFilters = {
   purchaseValue: 'all',
   marketValue: 'all',
   deckSection: 'all',
+  deckVariantId: 'active',
   collectionReview: 'all',
   matchStrategy: 'all',
   name: '',
@@ -237,7 +246,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
-export function DashboardView({ library, project, cardsForList, onOpenCard, onExit, onStatus }: DashboardViewProps) {
+export function DashboardView({ library, project, cardsForList, scopeRequest, onOpenCard, onExit, onStatus }: DashboardViewProps) {
   const [initialDashboardStore] = useState(() => loadDashboardSettingsStore<DashboardAdvancedFilters, DashboardWidgetId, DashboardVisualization>(createDefaultDashboardSnapshot(), normalizeDashboardSnapshot));
   const initialDashboardSettings = initialDashboardStore.lastSettings;
   const [scopeKind, setScopeKind] = useState<DashboardScopeKind>(initialDashboardSettings.scopeKind);
@@ -344,6 +353,24 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
     return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   }, []);
 
+  useEffect(() => {
+    if (!scopeRequest) {
+      return;
+    }
+    const { scope } = scopeRequest;
+    const nextFilters = {
+      ...DEFAULT_DASHBOARD_FILTERS,
+      deckVariantId: scope.kind === 'deck' ? scope.deckVariantId ?? 'active' : DEFAULT_DASHBOARD_FILTERS.deckVariantId
+    };
+    setScopeKind(scope.kind);
+    setScopeId(scope.id);
+    setQuery('');
+    setAdvancedFilters(nextFilters);
+    setSelectedCustomKeys(new Set(scope.customKeys ?? []));
+    setSelectedDashboardPresetId('');
+    onStatus(`Dashboard scoped to ${scope.label}.`);
+  }, [onStatus, scopeRequest]);
+
   const allFacts = useMemo(
     () => buildDashboardFacts({ library, projectsBySet, currentProject: project, currentCards: cardsForList, decks, deckStates, collections, collectionStates }),
     [cardsForList, collectionStates, collections, deckStates, decks, library, project, projectsBySet]
@@ -353,10 +380,41 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
   const setOptions = useMemo(() => buildDashboardScopeOptions('set', library, decks, collections), [collections, decks, library]);
   const deckOptions = useMemo(() => buildDashboardScopeOptions('deck', library, decks, collections), [collections, decks, library]);
   const collectionOptions = useMemo(() => buildDashboardScopeOptions('collection', library, decks, collections), [collections, decks, library]);
+  const selectedDeckState = scopeKind === 'deck' && scopeId ? deckStates[scopeId] : null;
+  const selectedDeckActiveVariant = selectedDeckState?.metadata.variants.find((variant) => variant.variantId === selectedDeckState.activeVariantId) ?? selectedDeckState?.activeVariant ?? null;
+  const deckVariantOptions = useMemo(
+    () => selectedDeckState?.metadata.variants.map((variant) => ({ value: variant.variantId, label: variant.name })) ?? [],
+    [selectedDeckState]
+  );
+  const dashboardVariantLabel = selectedDeckState
+    ? advancedFilters.deckVariantId === 'all'
+      ? 'All variants'
+      : advancedFilters.deckVariantId === 'active' || !advancedFilters.deckVariantId
+        ? selectedDeckActiveVariant?.name ?? 'Active variant'
+        : selectedDeckState.metadata.variants.find((variant) => variant.variantId === advancedFilters.deckVariantId)?.name ?? 'Selected variant'
+    : '';
+
+  useEffect(() => {
+    if (!selectedDeckState) {
+      return;
+    }
+    const validVariantIds = new Set(['active', 'all', ...selectedDeckState.metadata.variants.map((variant) => variant.variantId)]);
+    if (!validVariantIds.has(advancedFilters.deckVariantId || 'active')) {
+      setAdvancedFilters((current) => ({ ...current, deckVariantId: 'active' }));
+    }
+  }, [advancedFilters.deckVariantId, selectedDeckState]);
+
   const ownerOptions = useMemo(
     () => collectionOwnerSuggestions(collections.flatMap((collection) => collection.ownerNames ?? []), allFacts.map((fact) => fact.ownerName)),
     [allFacts, collections]
   );
+  const requestedScopeLabel = scopeRequest?.scope.kind === scopeKind && scopeRequest.scope.id === scopeId ? scopeRequest.scope.label : '';
+  const visibleScopeOptions = useMemo(() => {
+    if (!scopeId || !requestedScopeLabel || scopeKind === 'all' || scopeKind === 'custom' || scopeOptions.some((option) => option.value === scopeId)) {
+      return scopeOptions;
+    }
+    return [{ value: scopeId, label: requestedScopeLabel, detail: 'Selected scope' }, ...scopeOptions];
+  }, [requestedScopeLabel, scopeId, scopeKind, scopeOptions]);
   const scopeLabel = useMemo(() => {
     if (scopeKind === 'all') {
       return 'All cards, decks, and collections';
@@ -364,8 +422,8 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
     if (scopeKind === 'custom') {
       return selectedCustomKeys.size ? `${selectedCustomKeys.size} selected dashboard rows` : 'Custom selection';
     }
-    return scopeOptions.find((option) => option.value === scopeId)?.label ?? allScopeEntityLabel(scopeKind);
-  }, [scopeId, scopeKind, scopeOptions, selectedCustomKeys.size]);
+    return visibleScopeOptions.find((option) => option.value === scopeId)?.label ?? (requestedScopeLabel || allScopeEntityLabel(scopeKind));
+  }, [requestedScopeLabel, scopeId, scopeKind, selectedCustomKeys.size, visibleScopeOptions]);
   const sourceScopedFacts = useMemo(
     () => filterDashboardFacts(allFacts, { kind: scopeKind, id: scopeId, label: scopeLabel, customKeys: selectedCustomKeys }, query),
     [allFacts, query, scopeId, scopeKind, scopeLabel, selectedCustomKeys]
@@ -625,7 +683,7 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
                   <span>Filter</span>
                   <select value={scopeId} disabled={scopeKind === 'all' || scopeKind === 'custom'} onChange={(event) => setScopeId(event.target.value)}>
                     <option value="">{scopeKind === 'all' ? 'Everything' : allScopeEntityLabel(scopeKind)}</option>
-                    {scopeOptions.map((option) => (
+                    {visibleScopeOptions.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
@@ -677,7 +735,7 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
           <div className="dashboard-title-block">
             <span>Analysis view</span>
             <h2>{scopeLabel}</h2>
-            <p>Source-aware stats across authored cards, decks, and collections.</p>
+            <p>{dashboardVariantLabel ? `Deck variant: ${dashboardVariantLabel}. ` : ''}Source-aware stats across authored cards, decks, and collections.</p>
           </div>
           <div className="dashboard-topbar-controls">
             <label>
@@ -698,7 +756,19 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
                 <span>{scopeEntityLabel(scopeKind)}</span>
                 <select value={scopeId} onChange={(event) => setScopeId(event.target.value)}>
                   <option value="">{allScopeEntityLabel(scopeKind)}</option>
-                  {scopeOptions.map((option) => (
+                  {visibleScopeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {selectedDeckState && deckVariantOptions.length > 1 ? (
+              <label className="dashboard-source-filter">
+                <span>Variant</span>
+                <select value={advancedFilters.deckVariantId || 'active'} onChange={(event) => setAdvancedFilters((current) => ({ ...current, deckVariantId: event.target.value }))}>
+                  <option value="active">Active - {selectedDeckActiveVariant?.name ?? 'Default'}</option>
+                  <option value="all">All variants</option>
+                  {deckVariantOptions.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
@@ -801,6 +871,7 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
               projectOptions={projectOptions}
               setOptions={setOptions}
               deckOptions={deckOptions}
+              deckVariantOptions={deckVariantOptions}
               collectionOptions={collectionOptions}
               ownerOptions={ownerOptions}
             />
@@ -846,11 +917,12 @@ interface DashboardFilterControlsProps {
   projectOptions: Array<{ value: string; label: string }>;
   setOptions: Array<{ value: string; label: string }>;
   deckOptions: Array<{ value: string; label: string }>;
+  deckVariantOptions: Array<{ value: string; label: string }>;
   collectionOptions: Array<{ value: string; label: string }>;
   ownerOptions: string[];
 }
 
-function DashboardFilterControls({ filters, onChange, projectOptions, setOptions, deckOptions, collectionOptions, ownerOptions }: DashboardFilterControlsProps) {
+function DashboardFilterControls({ filters, onChange, projectOptions, setOptions, deckOptions, deckVariantOptions, collectionOptions, ownerOptions }: DashboardFilterControlsProps) {
   const statusOptions = [
     { value: 'all', label: 'Any status' },
     ...normalizeFilterOptions(CARD_STATUS_OPTIONS).filter((option) => option.value !== 'all'),
@@ -983,9 +1055,20 @@ function DashboardFilterControls({ filters, onChange, projectOptions, setOptions
             <span>Deck section</span>
             <select value={filters.deckSection} onChange={(event) => update('deckSection', event.target.value)}>
               <option value="all">Any section</option>
+              <option value="commander">Commander</option>
               <option value="main">Main</option>
               <option value="side">Sideboard</option>
               <option value="maybe">Maybe</option>
+            </select>
+          </label>
+          <label className="filter-field">
+            <span>Deck variant</span>
+            <select value={filters.deckVariantId} onChange={(event) => update('deckVariantId', event.target.value)}>
+              <option value="active">Active variant</option>
+              <option value="all">All variants</option>
+              {deckVariantOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
           <label className="filter-field">
@@ -1209,6 +1292,15 @@ function dashboardFactMatches(fact: DashboardCardFact, filters: DashboardAdvance
   }
   if (filters.deckSection !== 'all' && fact.section !== filters.deckSection) {
     return false;
+  }
+  if (filters.deckVariantId !== 'all' && fact.sourceKind === 'deck_entry') {
+    if (filters.deckVariantId === 'active') {
+      if (fact.activeDeckVariant === false) {
+        return false;
+      }
+    } else if (fact.deckVariantId !== filters.deckVariantId) {
+      return false;
+    }
   }
   if (filters.collectionReview !== 'all' && fact.reviewStatus !== filters.collectionReview) {
     return false;
@@ -1435,7 +1527,7 @@ function sourceLabel(fact: DashboardCardFact): string {
     return fact.setCode ? `Set ${fact.setCode}` : 'Authored';
   }
   if (fact.sourceKind === 'deck_entry') {
-    return `${fact.sourceName}${fact.section ? ` / ${fact.section}` : ''}${fact.quantity > 1 ? ` x${fact.quantity}` : ''}`;
+    return `${fact.sourceName}${fact.deckVariantName ? ` / ${fact.deckVariantName}` : ''}${fact.section ? ` / ${fact.section}` : ''}${fact.quantity > 1 ? ` x${fact.quantity}` : ''}`;
   }
   if (fact.collectionKind === 'list') {
     return `${fact.sourceName} / ${listCategoryLabel(fact.collectionListCategory ?? 'general')}${fact.ownershipStatus && !isOwnedStatus(fact.ownershipStatus) ? ` / ${ownershipStatusLabel(fact.ownershipStatus)}` : ''}${fact.quantity > 1 ? ` x${fact.quantity}` : ''}`;
@@ -1448,7 +1540,7 @@ function sourceKindLabel(fact: DashboardCardFact): string {
     return 'Set';
   }
   if (fact.sourceKind === 'deck_entry') {
-    return fact.section === 'side' ? 'Side' : fact.section === 'maybe' ? 'Maybe' : 'Deck';
+    return fact.section === 'commander' ? 'Commander' : fact.section === 'side' ? 'Side' : fact.section === 'maybe' ? 'Maybe' : 'Deck';
   }
   if (fact.collectionKind === 'list') {
     return fact.collectionListCategory ? listCategoryLabel(fact.collectionListCategory) : 'List';

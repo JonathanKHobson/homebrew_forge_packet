@@ -1,7 +1,7 @@
 {
   "collectionId": "assassin-candidate-binder",
   "name": "Assassin's Ledger",
-  "description": "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and delivery-pending online orders.",
+  "description": "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and ordered batch-002 additions.",
   "linkedUniverseId": "assassin-deck-candidates",
   "gameId": "mtg",
   "purpose": "owned",
@@ -37,7 +37,7 @@
   "linkedSetCodes": [
     "SOA"
   ],
-  "acquisitionNotes": "batch-001 import from Kyle's ManaBox Assassin deck CSV. batch-002 incoming partner-purchased online cards expected around June 15, 2026.",
+  "acquisitionNotes": "batch-001 import from Kyle's ManaBox Assassin deck CSV. batch-002 ordered cards were added as owned cards for deck-building evaluation.",
   "createdAt": "2026-06-08T02:54:00.457Z",
-  "updatedAt": "2026-06-08T08:58:30.809Z"
+  "updatedAt": "2026-06-08T20:49:31.907Z"
 }

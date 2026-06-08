@@ -32,6 +32,7 @@ import type {
   ImportDeckRequest,
   LibraryState,
   OfficialCardCatalogStatus,
+  OfficialCardPrintVariantsResult,
   OfficialCardSearchFilters,
   OfficialCardSearchResult,
   PrintExportRequest,
@@ -77,6 +78,16 @@ export async function searchOfficialCardCatalog(filters: OfficialCardSearchFilte
     }
   }
   return fetchJson<OfficialCardSearchResult>(`/api/official-cards/search?${params.toString()}`);
+}
+
+export async function fetchOfficialCardVariants(args: { cardId?: string; oracleId?: string; variantKey?: string; name?: string; query?: string; limit?: number; offset?: number }): Promise<OfficialCardPrintVariantsResult> {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(args)) {
+    if (value !== undefined && value !== '') {
+      params.set(key, String(value));
+    }
+  }
+  return fetchJson<OfficialCardPrintVariantsResult>(`/api/official-cards/variants?${params.toString()}`);
 }
 
 export async function syncOfficialCardCatalog(view: 'prints' | 'oracle' | 'both' = 'both'): Promise<OfficialCardCatalogStatus> {

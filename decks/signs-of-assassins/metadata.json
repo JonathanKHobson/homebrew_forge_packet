@@ -1,20 +1,24 @@
 {
   "deckId": "signs-of-assassins",
   "name": "Signs of Assassins",
-  "description": "Altaïr Commander deck-building workspace for Kyle's Assassin ledger, with owned-only and recommendation-enhanced variants.",
+  "description": "Altaïr Mardu Commander deck built around evasive Assassin attacks, graveyard setup, and temporary exile-memory value instead of generic reanimation.",
   "linkedUniverseId": "assassin-deck-candidates",
   "linkedSetCode": "SOA",
   "format": "Commander",
   "playStyleTags": [
-    "evasion",
+    "evasive-combat",
     "unblockable",
+    "cannot-block",
+    "combat-puzzle",
     "graveyard-setup",
     "exile-value",
     "assassin-typal",
+    "freerunning",
+    "attack-triggers",
     "mardu",
-    "puzzle-combat"
+    "toolbox"
   ],
-  "colorIdentity": "BRW",
+  "colorIdentity": "WBR",
   "commander": {
     "setCode": "ACR",
     "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
@@ -28,6 +32,7 @@
     "variantId": "official-print",
     "nameSnapshot": "Altaïr Ibn-La'Ahad"
   },
+  "commanderBracket": "Bracket 3 - Upgraded",
   "status": "draft",
   "activeVariantId": "hidden-blade-core",
   "variants": [
@@ -35,9 +40,9 @@
       "deckId": "signs-of-assassins",
       "variantId": "hidden-blade-core",
       "name": "Hidden Blade Core",
-      "description": "Owned-only baseline build using Kyle's scanned batch, with no ghost slots.",
+      "description": "Owned-only reality check for the Altaïr plan: Assassin density, evasive bodies, graveyard setup, and the cards Kyle can actually sleeve today.",
       "status": "testing",
-      "colorIdentity": "BRW",
+      "colorIdentity": "WBR",
       "commander": {
         "setCode": "ACR",
         "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
@@ -49,19 +54,21 @@
         "assassin",
         "mardu",
         "owned-only",
-        "baseline"
+        "baseline",
+        "graveyard-setup",
+        "evasive-combat"
       ],
-      "notes": "Baseline comparison build. If it falls below 36 lands, keep the land-light flag visible instead of hiding missing basics.",
-      "createdAt": "2026-06-08T08:58:26.466Z",
-      "updatedAt": "2026-06-08T08:58:37.232Z"
+      "notes": "Use this as the honest starting point. It shows whether the owned pool already has enough mana, evasive attackers, discard/mill, and interaction for Altaïr before any upgrades are added.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
     },
     {
       "deckId": "signs-of-assassins",
       "variantId": "rooftop-evasion",
       "name": "Rooftop Evasion",
-      "description": "Owned-only combat build prioritizing flying, menace, unblockable lines, and attacks that are awkward to block.",
+      "description": "Owned-only pressure build for the \"you cannot block me\" fantasy: flying, menace, tap-downs, cannot-block effects, and awkward combat math.",
       "status": "testing",
-      "colorIdentity": "BRW",
+      "colorIdentity": "WBR",
       "commander": {
         "setCode": "ACR",
         "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
@@ -74,19 +81,21 @@
         "mardu",
         "owned-only",
         "evasion",
-        "combat"
+        "unblockable",
+        "cannot-block",
+        "combat-puzzle"
       ],
-      "notes": "This variant tests the core feel of “you cannot block me” using only owned cards.",
-      "createdAt": "2026-06-08T08:58:26.466Z",
-      "updatedAt": "2026-06-08T08:58:37.232Z"
+      "notes": "This is the owned-only combat puzzle build. It favors cards that make blocks impossible, bad, or irrelevant, then checks whether the deck can keep pressure up without leaning on unowned staples.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
     },
     {
       "deckId": "signs-of-assassins",
       "variantId": "memory-corridor",
       "name": "Memory Corridor",
-      "description": "Graveyard/exile build with recommended setup pieces and ghost lands.",
+      "description": "Graveyard/exile engine build: stock the graveyard with Assassins, let Altaïr turn those memories into combat pressure, and avoid becoming generic reanimator.",
       "status": "draft",
-      "colorIdentity": "BRW",
+      "colorIdentity": "WBR",
       "commander": {
         "setCode": "ACR",
         "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
@@ -99,19 +108,21 @@
         "mardu",
         "recommendation-enhanced",
         "graveyard",
-        "exile"
+        "exile",
+        "altaïr-engine",
+        "discard-outlets"
       ],
-      "notes": "This variant loads the graveyard with useful Assassin bodies and uses exile/graveyard value without becoming a generic reanimator deck.",
-      "createdAt": "2026-06-08T08:58:26.466Z",
-      "updatedAt": "2026-06-08T08:58:37.232Z"
+      "notes": "This variant is built around filling the graveyard on purpose, then using Altaïr and exile-adjacent pieces to borrow value temporarily. Cards that only return creatures permanently are treated as tension unless they also advance the exile/memory theme.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
     },
     {
       "deckId": "signs-of-assassins",
       "variantId": "brotherhood-arsenal",
       "name": "Brotherhood Arsenal",
-      "description": "Equipment, artifact, and protection build with recommended support upgrades and ghost lands.",
+      "description": "Artifact and Equipment toolbelt build: protect Altaïr, suit up evasive Assassins, and turn relics into card flow or closing pressure.",
       "status": "draft",
-      "colorIdentity": "BRW",
+      "colorIdentity": "WBR",
       "commander": {
         "setCode": "ACR",
         "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
@@ -125,19 +136,21 @@
         "recommendation-enhanced",
         "equipment",
         "artifact",
-        "protection"
+        "protection",
+        "toolbox",
+        "relics"
       ],
-      "notes": "This variant asks whether the deck is better as a toolbelt: protect Altaïr, suit up evasive creatures, and let artifacts smooth the plan.",
-      "createdAt": "2026-06-08T08:58:26.466Z",
-      "updatedAt": "2026-06-08T08:58:37.232Z"
+      "notes": "This variant asks whether the deck wants to be a relic toolbox. It prioritizes protection, Equipment, tribal artifacts, and the Kassandra plus Spear package over pure graveyard velocity.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
     },
     {
       "deckId": "signs-of-assassins",
       "variantId": "nothing-is-true",
       "name": "Nothing Is True",
-      "description": "Stronger recommendation-enhanced build focused on fixing, efficient setup, protection, and clean interaction.",
+      "description": "Most practical upgraded build: better mana, cleaner setup, stronger protection, and removal that keeps the Altaïr plan alive.",
       "status": "draft",
-      "colorIdentity": "BRW",
+      "colorIdentity": "WBR",
       "commander": {
         "setCode": "ACR",
         "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
@@ -150,19 +163,21 @@
         "mardu",
         "recommendation-enhanced",
         "stronger-build",
-        "balanced"
+        "balanced",
+        "fixing",
+        "protection"
       ],
-      "notes": "This is the cleanest “make the deck work” variant: stronger mana, setup, protection, and answers before more speculative packages.",
-      "createdAt": "2026-06-08T08:58:26.466Z",
-      "updatedAt": "2026-06-08T08:58:37.232Z"
+      "notes": "This is the version to test when you want the deck to function first and express theme second. It spends recommendation slots on fixing, protection, graveyard setup, and flexible answers before adding cuter puzzle pieces.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
     },
     {
       "deckId": "signs-of-assassins",
       "variantId": "everything-is-permitted",
       "name": "Everything Is Permitted",
-      "description": "Experimental puzzle/evasion build using the most playful recommendation package.",
+      "description": "Experimental puzzle-combat build: unblockable lines, attack-trigger multiplication, type manipulation, and temporary-token weirdness.",
       "status": "draft",
-      "colorIdentity": "BRW",
+      "colorIdentity": "WBR",
       "commander": {
         "setCode": "ACR",
         "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
@@ -176,11 +191,14 @@
         "recommendation-enhanced",
         "experimental",
         "puzzle",
-        "evasion"
+        "evasion",
+        "unblockable",
+        "attack-triggers",
+        "token-copy"
       ],
-      "notes": "This variant is where the weird lines live: unblockable puzzles, attack-trigger multiplication, type manipulation, and temporary-token experiments.",
-      "createdAt": "2026-06-08T08:58:26.466Z",
-      "updatedAt": "2026-06-08T08:58:37.232Z"
+      "notes": "This is the sandbox version. It keeps cards that create strange attack states, unblockable shortcuts, copied attack triggers, and creature-type hacks, even when those lines are less efficient than the practical build.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
     }
   ],
   "tags": [
@@ -191,7 +209,7 @@
     "batch-001",
     "deck-variants"
   ],
-  "notes": "Imported owned cards are the source pool for this deck family, not a finalized 100. Ghost/recommended rows live in the Recommendations list and are visually marked as not owned in deck views. Owned-only variants intentionally keep missing land gaps visible.",
-  "createdAt": "2026-06-08T08:58:26.466Z",
-  "updatedAt": "2026-06-08T08:58:37.232Z"
+  "notes": "Core thesis: make blocking awkward or impossible, put useful Assassins into the graveyard, then let Altaïr turn those cards into temporary combat value. Owned-only variants show the real pool; recommendation-enhanced variants show the upgrades, lands, and gap fillers to test next.",
+  "createdAt": "2026-06-08T20:49:23.084Z",
+  "updatedAt": "2026-06-08T20:49:36.253Z"
 }

@@ -26,9 +26,10 @@ interface CardPreviewProps {
   onChange?: (draft: CardDraft) => void;
   onVariantChange?: (variantId: string) => void;
   onCardSelect?: (cardId: string) => void;
+  onPreviewRetry?: () => void;
 }
 
-export function CardPreview({ draft, preview, selectedFrame, previewLoading = false, previewUpdating = false, hasUnsavedChanges = false, showGuides, showSafeArea, showCardGrid, zoom, previewToolMode, hideHeader = false, expandRequestToken = 0, cards = [], onChange, onVariantChange, onCardSelect }: CardPreviewProps) {
+export function CardPreview({ draft, preview, selectedFrame, previewLoading = false, previewUpdating = false, hasUnsavedChanges = false, showGuides, showSafeArea, showCardGrid, zoom, previewToolMode, hideHeader = false, expandRequestToken = 0, cards = [], onChange, onVariantChange, onCardSelect, onPreviewRetry }: CardPreviewProps) {
   const [artEditing, setArtEditing] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [imageExpanded, setImageExpanded] = useState(false);
@@ -393,6 +394,11 @@ export function CardPreview({ draft, preview, selectedFrame, previewLoading = fa
           <div className="preview-empty">
             <strong>{selectedFrame?.label ?? 'Select a card'}</strong>
             <span>{warning ?? 'Preview will render here.'}</span>
+            {warning && draft && onPreviewRetry ? (
+              <button type="button" className="secondary-button compact" onClick={onPreviewRetry}>
+                Retry preview
+              </button>
+            ) : null}
           </div>
         )}
       </div>
@@ -886,6 +892,9 @@ function humanPreviewWarning(warning: string): string {
   const cleaned = warning.replace(/\s+/g, ' ').trim();
   if (!cleaned) {
     return 'Preview render failed.';
+  }
+  if (/timed out/i.test(cleaned)) {
+    return `${cleaned} Retry the preview or check the renderer status.`;
   }
   if (cleaned.length > 180 || /<html|<!doctype|at\s+\S+\s+\(|\/src\/|node_modules|function\s+\w+\(/i.test(cleaned)) {
     return 'Preview render failed. Check the dev server status and card data.';

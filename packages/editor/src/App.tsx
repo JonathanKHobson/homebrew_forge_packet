@@ -32,6 +32,7 @@ import { buildTypeLine, inferColors, inferFrame } from './domain/frameRegistry.j
 import { formatCount } from './domain/uiText.js';
 import { readOfficialCardSyncSettings, shouldAutoSyncOfficialCards } from './domain/officialCardSyncSettings.js';
 import { getWorkMode, visibleRailSectionsForMode, type WorkModeId } from './domain/workModes.js';
+import type { DashboardScope } from './domain/dashboardFacts.js';
 import type { ReferenceCatalog } from '@homebrew-forge/forge';
 
 interface FocusedCardModeState {
@@ -42,6 +43,11 @@ interface FocusedCardModeState {
   showRightPanel: boolean;
   leftPanelWidth: number;
   rightPanelWidth: number;
+}
+
+interface DashboardScopeRequest {
+  scope: DashboardScope;
+  token: number;
 }
 
 interface DraftHistoryEntry {
@@ -56,6 +62,7 @@ const FIRST_RUN_ORIENTATION_STORAGE_KEY = 'homebrew-forge.firstRunOrientationDis
 const EDITOR_THEME_STORAGE_KEY = 'homebrew-forge.theme';
 const DRAFT_RECOVERY_AUTOSAVE_MS = 1200;
 const MAX_DRAFT_HISTORY = 80;
+const PREVIEW_RENDER_TIMEOUT_MS = 6500;
 const EDITOR_THEMES: EditorTheme[] = ['light', 'dark', 'parchment'];
 const DEMO_SET_CODES = new Set(['DEMO']);
 const DEMO_UNIVERSE_IDS = new Set(['demo']);
@@ -64,6 +71,24 @@ type NarrowCardPanel = 'list' | 'preview' | 'inspector';
 
 function isEditorTheme(value: string | null): value is EditorTheme {
   return EDITOR_THEMES.includes(value as EditorTheme);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function withPreviewTimeout(promise: Promise<PreviewResponse>, draftName: string): Promise<PreviewResponse> {
+  let timeoutId: number | undefined;
+  const timeout = new Promise<PreviewResponse>((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error(`Preview render timed out after ${Math.round(PREVIEW_RENDER_TIMEOUT_MS / 1000)}s for ${draftName || 'this card'}.`));
+    }, PREVIEW_RENDER_TIMEOUT_MS);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+    }
+  });
 }
 
 function readEditorTheme(): EditorTheme {
@@ -165,6 +190,7 @@ export function App() {
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [previewDraftKey, setPreviewDraftKey] = useState('');
   const [previewPendingKey, setPreviewPendingKey] = useState('');
+  const [previewRetryToken, setPreviewRetryToken] = useState(0);
   const [status, setStatus] = useState('Loading DEMO...');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -205,12 +231,14 @@ export function App() {
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showPreviewPanel, setShowPreviewPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [initialLoadError, setInitialLoadError] = useState('');
   const [leftPanelWidth, setLeftPanelWidth] = useState(280);
   const [rightPanelWidth, setRightPanelWidth] = useState(380);
   const [commandBarHeight, setCommandBarHeight] = useState(72);
   const [isFocusedCardMode, setIsFocusedCardMode] = useState(false);
   const [isCardBrowserMode, setIsCardBrowserMode] = useState(false);
   const [isDashboardMode, setIsDashboardMode] = useState(false);
+  const [dashboardScopeRequest, setDashboardScopeRequest] = useState<DashboardScopeRequest | null>(null);
   const [workspaceSaveShortcutToken, setWorkspaceSaveShortcutToken] = useState(0);
   const [focusedLeftPanelPercent, setFocusedLeftPanelPercent] = useState(54);
   const [focusedPanelsFlipped, setFocusedPanelsFlipped] = useState(false);
@@ -220,8 +248,10 @@ export function App() {
   const [narrowCardPanel, setNarrowCardPanel] = useState<NarrowCardPanel>('preview');
   const [previewExpandToken, setPreviewExpandToken] = useState(0);
   const previewRequestId = useRef(0);
+  const dashboardScopeRequestToken = useRef(0);
   const workbenchRef = useRef<HTMLElement | null>(null);
   const recoverySaveErrorRef = useRef('');
+  const initialLoadPromiseRef = useRef<Promise<void> | null>(null);
   const viewportWidth = useViewportWidth();
   const dirtyDrafts = useMemo(() => Object.values(sessionDrafts), [sessionDrafts]);
   const dirtyCardIds = useMemo(() => new Set(dirtyDrafts.map((candidate) => candidate.cardId)), [dirtyDrafts]);
@@ -230,8 +260,19 @@ export function App() {
   useEffect(() => {
     let mounted = true;
     setShowFirstRunOrientation(!firstRunOrientationDismissed());
-    void loadInitial()
-      .catch((error: unknown) => setStatus(error instanceof Error ? error.message : String(error)))
+    void runInitialLoad()
+      .then(() => {
+        if (mounted) {
+          setInitialLoadError('');
+        }
+      })
+      .catch((error: unknown) => {
+        if (mounted) {
+          const message = errorMessage(error);
+          setInitialLoadError(message);
+          setStatus(`Could not load project. ${message}`);
+        }
+      })
       .finally(() => {
         if (mounted) {
           setInitialLoadComplete(true);
@@ -391,8 +432,9 @@ export function App() {
   }, [activeWorkspace, draft, draftHistory, saveState, sessionDrafts, project]);
 
   useEffect(() => {
-    document.title = `${workspaceLabel(activeWorkspace)}${project?.setCode ? ` - ${project.setCode}` : ''} - Homebrew Forge`;
-  }, [activeWorkspace, project?.setCode]);
+    const objectLabel = activeWorkspace === 'maker' && draft?.name ? ` - ${draft.name}` : '';
+    document.title = `${workspaceLabel(activeWorkspace)}${objectLabel}${project?.setCode ? ` - ${project.setCode}` : ''} - Homebrew Forge`;
+  }, [activeWorkspace, draft?.name, project?.setCode]);
 
   useEffect(() => {
     const syncFullscreenState = () => {
@@ -440,7 +482,7 @@ export function App() {
     };
     let cancelled = false;
     const timeout = window.setTimeout(() => {
-      void fetchPreview(previewDraft)
+      void withPreviewTimeout(fetchPreview(previewDraft), previewDraft.name)
         .then((nextPreview) => {
           if (!cancelled && requestId === previewRequestId.current) {
             setPreview(nextPreview);
@@ -464,7 +506,7 @@ export function App() {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [draft, project?.frames]);
+  }, [draft, previewRetryToken, project?.frames]);
 
   const selectedFrame = useMemo(() => (draft ? inferFrame(draft, project?.frames) : null), [draft, project?.frames]);
   const activePreviewKey = draft ? previewKeyForDraft(draft) : '';
@@ -633,6 +675,37 @@ export function App() {
       return;
     }
     setPreviewMode(nextMode);
+  }
+
+  function runInitialLoad(force = false): Promise<void> {
+    if (force) {
+      initialLoadPromiseRef.current = null;
+    }
+    if (!initialLoadPromiseRef.current) {
+      initialLoadPromiseRef.current = loadInitial().catch((error: unknown) => {
+        initialLoadPromiseRef.current = null;
+        throw error;
+      });
+    }
+    return initialLoadPromiseRef.current;
+  }
+
+  async function handleRetryInitialLoad() {
+    setInitialLoadComplete(false);
+    setDraftRecoveryReady(false);
+    setInitialLoadError('');
+    setStatus('Loading project...');
+    try {
+      await runInitialLoad(true);
+      setInitialLoadError('');
+    } catch (error) {
+      const message = errorMessage(error);
+      setInitialLoadError(message);
+      setStatus(`Could not load project. ${message}`);
+    } finally {
+      setInitialLoadComplete(true);
+      setDraftRecoveryReady(true);
+    }
   }
 
   async function loadInitial() {
@@ -1349,11 +1422,17 @@ export function App() {
     setIsCardBrowserMode(false);
   }
 
-  function enterDashboardMode() {
+  function enterDashboardMode(scope?: DashboardScope) {
     setIsFocusedCardMode(false);
     setIsCardBrowserMode(false);
     setFocusedCardModeState(null);
     setFocusedPanelsFlipped(false);
+    if (scope) {
+      dashboardScopeRequestToken.current += 1;
+      setDashboardScopeRequest({ scope, token: dashboardScopeRequestToken.current });
+    } else {
+      setDashboardScopeRequest(null);
+    }
     setIsDashboardMode(true);
   }
 
@@ -1782,11 +1861,16 @@ export function App() {
           </button>
         ) : null}
 
-        {isDashboardMode ? (
+        {!initialLoadComplete && !project ? (
+          <InitialLoadPending />
+        ) : initialLoadError && !project ? (
+          <InitialLoadFailure error={initialLoadError} onRetry={() => void handleRetryInitialLoad()} />
+        ) : isDashboardMode ? (
           <DashboardView
             library={library}
             project={project}
             cardsForList={cardsForList}
+            scopeRequest={dashboardScopeRequest}
             onOpenCard={handleOpenCard}
             onExit={exitDashboardMode}
             onStatus={setStatus}
@@ -1885,6 +1969,7 @@ export function App() {
                       onChange={handleDraftChange}
                       onVariantChange={handleSelectVariant}
                       onCardSelect={handleSelectCard}
+                      onPreviewRetry={() => setPreviewRetryToken((value) => value + 1)}
                     />
                   </section>
                 </>
@@ -1909,6 +1994,7 @@ export function App() {
                       onChange={handleDraftChange}
                       onVariantChange={handleSelectVariant}
                       onCardSelect={handleSelectCard}
+                      onPreviewRetry={() => setPreviewRetryToken((value) => value + 1)}
                     />
                   </section>
                   <PanelResizeHandle label="Resize focused Maker layout" onResize={resizeFocusedSplit} />
@@ -1974,6 +2060,7 @@ export function App() {
                         onChange={handleDraftChange}
                         onVariantChange={handleSelectVariant}
                         onCardSelect={handleSelectCard}
+                        onPreviewRetry={() => setPreviewRetryToken((value) => value + 1)}
                       />
                     </>
                   )}
@@ -2033,7 +2120,7 @@ export function App() {
             onOpenCard={(setCode, cardId, variantId) => void handleOpenCard(setCode, cardId, variantId)}
             onOpenSet={(setCode) => void handleOpenSet(setCode)}
             onOpenCardBrowser={() => setIsCardBrowserMode(true)}
-            onOpenDashboard={() => setIsDashboardMode(true)}
+            onOpenDashboard={enterDashboardMode}
             onStatus={setStatus}
             saveShortcutToken={workspaceSaveShortcutToken}
             deckRefreshToken={deckRefreshToken}
@@ -2160,6 +2247,38 @@ export function App() {
         <CreateLibraryAssetOverlay project={project} onCreateAsset={handleCreateLibraryAssetFromOverlay} onStatus={setStatus} onClose={() => setCreateOverlay(null)} />
       ) : null}
     </AppShell>
+  );
+}
+
+function InitialLoadFailure({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <section className="initial-load-failure" role="alert" aria-live="assertive">
+      <div>
+        <span className="initial-load-failure-eyebrow">Project load interrupted</span>
+        <h2>Homebrew Forge could not load the active project.</h2>
+        <p>{error}</p>
+      </div>
+      <button type="button" className="primary-button" onClick={onRetry}>
+        Retry
+      </button>
+    </section>
+  );
+}
+
+function InitialLoadPending() {
+  return (
+    <section className="initial-load-failure initial-load-pending" role="status" aria-live="polite" aria-busy="true">
+      <div>
+        <span className="initial-load-failure-eyebrow">Project loading</span>
+        <h2>Loading Homebrew Forge data...</h2>
+        <p>Cards, decks, collections, and references are being applied from local files.</p>
+      </div>
+      <div className="initial-load-skeleton" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+    </section>
   );
 }
 

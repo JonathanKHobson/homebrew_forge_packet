@@ -9,6 +9,7 @@ import {
   fetchCollections,
   fetchDeck,
   fetchDecks,
+  fetchOfficialCardVariants,
   fetchOfficialCardStatus,
   fetchPreview,
   fetchProject,
@@ -37,6 +38,7 @@ import type {
   LibraryState,
   OfficialCardCatalogStatus,
   OfficialCardCatalogView,
+  OfficialCardPrintVariantsResult,
   OfficialCardSearchCard,
   OfficialCardSearchResult,
   SetSummary,
@@ -48,6 +50,7 @@ import { applyCollectionBulkEdit, collectionOwnerSuggestions, normalizeCollectio
 import { getWorkMode, type WorkModeId } from '../domain/workModes.js';
 import { formatCount } from '../domain/uiText.js';
 import { assessDeckLegality } from '../domain/deckLegality.js';
+import type { DashboardScope } from '../domain/dashboardFacts.js';
 import {
   DECK_STATUS_OPTIONS,
   PROJECT_STATUS_OPTIONS,
@@ -127,6 +130,7 @@ import { CollectionMetadataOverlay } from './overlays/CollectionMetadataOverlay.
 import { CollectionPriceToolsOverlay } from './overlays/CollectionPriceToolsOverlay.js';
 import { DeckAddCardsOverlay } from './overlays/DeckAddCardsOverlay.js';
 import { DeckCardPreviewOverlay } from './overlays/DeckCardPreviewOverlay.js';
+import { OverlayShell } from './overlays/OverlayShell.js';
 import { ReferenceCreateOverlay } from './overlays/ReferenceCreateOverlay.js';
 import { OfficialCardFilterControls } from './reference/OfficialCardFilterControls.js';
 import { ReferenceFilterControls } from './reference/ReferenceFilterControls.js';
@@ -163,7 +167,7 @@ interface WorkspaceViewProps {
   onOpenCard: (setCode: string, cardId: string, variantId?: string) => Promise<void> | void;
   onOpenSet: (setCode: string) => Promise<void> | void;
   onOpenCardBrowser: () => void;
-  onOpenDashboard: () => void;
+  onOpenDashboard: (scope?: DashboardScope) => void;
   onStatus: (message: string) => void;
   saveShortcutToken: number;
   deckRefreshToken: number;
@@ -304,10 +308,10 @@ const DECK_ENTRY_SORT_OPTIONS: Array<ListSortOption<DeckEntrySortOptionId>> = [
 
 const DECK_GROUP_BASICS_STORAGE_KEY = 'homebrew-forge.deck.groupBasics';
 
-function defaultDeckFiltersForProject(projectId: string) {
+function defaultDeckFilters() {
   return {
     ...DEFAULT_DECK_FILTERS,
-    linkedUniverseId: projectId || 'all'
+    linkedUniverseId: 'all'
   };
 }
 
@@ -519,6 +523,7 @@ const referenceCategories: Array<{ id: ReferenceCategory | 'all'; label: string 
 
 type ReferenceMode = 'terms' | 'rules' | 'official-cards';
 const REFERENCE_OFFICIAL_PAGE_SIZE = 120;
+const REFERENCE_OFFICIAL_VARIANT_PAGE_SIZE = 120;
 
 const referenceModes: Array<{ id: ReferenceMode; label: string }> = [
   { id: 'terms', label: 'Terms' },
@@ -950,35 +955,46 @@ function CollectionsWorkspace({
       { label: 'Entries', value: collection?.entries.length ?? 0, icon: 'collections' },
       { label: collection?.metadata.kind === 'list' ? 'References' : 'Cards', value: collectionMetrics.totalCards, icon: collection?.metadata.kind === 'list' ? 'lists' : 'cards' }
     ];
-    if (collectionMetrics.duplicateCopies > 0) {
-      items.push({ label: 'Duplicates', value: collectionMetrics.duplicateCopies, icon: 'grid' });
-    }
     if (collectionMetrics.reviewCopies > 0) {
       items.push({ label: 'Review', value: collectionMetrics.reviewCopies, icon: 'flag' });
     }
-    if (collectionMetrics.premiumCopies > 0) {
-      items.push({ label: 'Premium', value: collectionMetrics.premiumCopies, icon: 'star' });
+    const signalCopies = collectionMetrics.starredCopies + collectionMetrics.flaggedCopies + collectionMetrics.deletionCopies;
+    if (signalCopies > 0) {
+      items.push({
+        label: 'Signals',
+        value: signalCopies,
+        note: [
+          collectionMetrics.starredCopies ? `${collectionMetrics.starredCopies} starred` : '',
+          collectionMetrics.flaggedCopies ? `${collectionMetrics.flaggedCopies} flagged` : '',
+          collectionMetrics.deletionCopies ? `${collectionMetrics.deletionCopies} delete` : ''
+        ].filter(Boolean).join(' / '),
+        icon: 'star'
+      });
     }
-    if (collectionMetrics.knownConditionCopies > 0) {
-      items.push({ label: 'Conditions', value: collectionMetrics.knownConditionCopies, icon: 'guide' });
+    const printSignals = collectionMetrics.duplicateCopies + collectionMetrics.premiumCopies + collectionMetrics.knownConditionCopies;
+    if (printSignals > 0) {
+      items.push({
+        label: 'Print data',
+        value: printSignals,
+        note: [
+          collectionMetrics.duplicateCopies ? `${collectionMetrics.duplicateCopies} duplicate` : '',
+          collectionMetrics.premiumCopies ? `${collectionMetrics.premiumCopies} premium` : '',
+          collectionMetrics.knownConditionCopies ? `${collectionMetrics.knownConditionCopies} condition` : ''
+        ].filter(Boolean).join(' / '),
+        icon: 'grid'
+      });
     }
-    if (collectionMetrics.starredCopies > 0) {
-      items.push({ label: 'Starred', value: collectionMetrics.starredCopies, icon: 'star' });
-    }
-    if (collectionMetrics.flaggedCopies > 0) {
-      items.push({ label: 'Flagged', value: collectionMetrics.flaggedCopies, icon: 'flag' });
-    }
-    if (collectionMetrics.deletionCopies > 0) {
-      items.push({ label: 'Delete Queue', value: collectionMetrics.deletionCopies, icon: 'trash' });
-    }
-    if (collectionMetrics.purchaseRows > 0) {
-      items.push({ label: 'Purchase', value: formatMoney(collectionMetrics.purchaseTotal, collectionMetrics.purchaseCurrency), note: 'Manual/imported', icon: 'download' });
-    }
-    if (collectionMetrics.valueSourceRows > 0) {
-      items.push({ label: 'Value', value: formatMoney(collectionMetrics.estimatedValue, collectionMetrics.valueCurrency), note: `${formatCount(collectionMetrics.valueSourceRows, 'priced row')}`, icon: 'view' });
-    }
-    if (collectionMetrics.gainLoss !== null) {
-      items.push({ label: 'Gain/Loss', value: formatMoney(collectionMetrics.gainLoss, collectionMetrics.valueCurrency), icon: 'settings' });
+    if (collectionMetrics.valueSourceRows > 0 || collectionMetrics.purchaseRows > 0 || collectionMetrics.gainLoss !== null) {
+      items.push({
+        label: 'Value',
+        value: collectionMetrics.valueSourceRows > 0 ? formatMoney(collectionMetrics.estimatedValue, collectionMetrics.valueCurrency) : formatMoney(collectionMetrics.purchaseTotal, collectionMetrics.purchaseCurrency),
+        note: [
+          collectionMetrics.valueSourceRows > 0 ? `${formatCount(collectionMetrics.valueSourceRows, 'priced row')}` : '',
+          collectionMetrics.purchaseRows > 0 ? `${formatMoney(collectionMetrics.purchaseTotal, collectionMetrics.purchaseCurrency)} paid` : '',
+          collectionMetrics.gainLoss !== null ? `${formatMoney(collectionMetrics.gainLoss, collectionMetrics.valueCurrency)} gain/loss` : ''
+        ].filter(Boolean).join(' / '),
+        icon: 'view'
+      });
     }
     return items;
   }, [collection?.entries.length, collection?.metadata.kind, collectionMetrics]);
@@ -1510,6 +1526,194 @@ function summarizeDeck(deck: DeckState | null) {
   };
 }
 
+interface DeckLiveStats {
+  totalCards: number;
+  curve: Array<{ label: string; value: number }>;
+  colors: Array<{ label: string; value: number }>;
+  types: Array<{ label: string; value: number }>;
+  sections: Array<{ label: string; value: number }>;
+  unresolvedCards: number;
+  duplicateWarnings: number;
+  collectionOwnedCards: number;
+  collectionNeededCards: number;
+  collectionMissingNames: number;
+  collectionSourceCount: number;
+}
+
+function buildDeckLiveStats(deck: DeckState | null, entries: DeckState['entries'], collectionStates: CollectionState[]): DeckLiveStats {
+  const curveTotals = new Map<string, number>();
+  const colorTotals = new Map<string, number>();
+  const typeTotals = new Map<string, number>();
+  const sectionTotals = new Map<string, number>();
+  const requiredByName = new Map<string, number>();
+  const ownedByName = new Map<string, number>();
+  const unresolvedCards = entries.filter((entry) => entry.warning || !entry.card).reduce((total, entry) => total + entry.count, 0);
+  const totalCards = entries.reduce((total, entry) => total + entry.count, 0);
+  const singletonFormat = /commander|brawl|singleton/i.test(deck?.metadata.format ?? '');
+
+  for (const entry of entries) {
+    const quantity = Math.max(1, Number(entry.count) || 1);
+    const manaValue = Math.max(0, Math.floor(deckEntryManaValue(entry)));
+    const curveKey = manaValue >= 7 ? '7+' : String(manaValue);
+    curveTotals.set(curveKey, (curveTotals.get(curveKey) ?? 0) + quantity);
+    const colorKey = deckColorBucket(entry.card?.colorIdentity ?? entry.card?.colors ?? '');
+    colorTotals.set(colorKey, (colorTotals.get(colorKey) ?? 0) + quantity);
+    const typeKey = deckPrimaryType(entry.card?.typeLine ?? '');
+    typeTotals.set(typeKey, (typeTotals.get(typeKey) ?? 0) + quantity);
+    const sectionKey = deckSectionLabel(entry.section);
+    sectionTotals.set(sectionKey, (sectionTotals.get(sectionKey) ?? 0) + quantity);
+    const name = normalizedCardName(entry.card?.name ?? entry.nameSnapshot);
+    if (name) {
+      requiredByName.set(name, (requiredByName.get(name) ?? 0) + quantity);
+    }
+  }
+
+  for (const collection of collectionStates) {
+    if (collection.metadata.kind === 'list') {
+      continue;
+    }
+    for (const entry of collection.entries) {
+      if (!isOwnedStatus(entry.ownershipStatus)) {
+        continue;
+      }
+      const name = normalizedCardName(entry.cardName);
+      if (!name) {
+        continue;
+      }
+      ownedByName.set(name, (ownedByName.get(name) ?? 0) + Math.max(0, Number(entry.quantity) || 0));
+    }
+  }
+
+  let duplicateWarnings = 0;
+  let collectionOwnedCards = 0;
+  let collectionMissingNames = 0;
+  for (const [name, requiredCount] of requiredByName) {
+    const representative = entries.find((entry) => normalizedCardName(entry.card?.name ?? entry.nameSnapshot) === name);
+    const isBasicLand = Boolean(basicLandGroupKey(representative?.card?.name ?? representative?.nameSnapshot, representative?.card?.typeLine));
+    const duplicateLimit = singletonFormat ? 1 : 4;
+    if (!isBasicLand && requiredCount > duplicateLimit) {
+      duplicateWarnings += 1;
+    }
+    const owned = ownedByName.get(name) ?? 0;
+    collectionOwnedCards += Math.min(requiredCount, owned);
+    if (owned < requiredCount) {
+      collectionMissingNames += 1;
+    }
+  }
+
+  return {
+    totalCards,
+    curve: orderedStatRows(curveTotals, ['0', '1', '2', '3', '4', '5', '6', '7+']),
+    colors: orderedStatRows(colorTotals, ['W', 'U', 'B', 'R', 'G', 'Multi', 'C']),
+    types: orderedStatRows(typeTotals, ['Creature', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Planeswalker', 'Land', 'Other']),
+    sections: orderedStatRows(sectionTotals, ['Main board', 'Sideboard', 'Maybeboard']),
+    unresolvedCards,
+    duplicateWarnings,
+    collectionOwnedCards,
+    collectionNeededCards: totalCards,
+    collectionMissingNames,
+    collectionSourceCount: collectionStates.filter((collection) => collection.metadata.kind !== 'list').length
+  };
+}
+
+function deckDashboardScope(deck: DeckState | DeckSummary): DashboardScope {
+  const deckId = 'metadata' in deck ? deck.metadata.deckId : deck.deckId;
+  const label = 'metadata' in deck ? deck.metadata.name : deck.name;
+  const variantId = 'metadata' in deck ? activeDeckVariantId(deck) : deck.activeVariantId;
+  const variantName = 'metadata' in deck
+    ? deck.metadata.variants.find((variant) => variant.variantId === variantId)?.name ?? deck.activeVariant?.name
+    : deck.activeVariantName;
+  return { kind: 'deck', id: deckId, label, deckVariantId: variantId, deckVariantName: variantName };
+}
+
+function orderedStatRows(values: Map<string, number>, order: string[]): Array<{ label: string; value: number }> {
+  const ordered = order.map((label) => ({ label, value: values.get(label) ?? 0 })).filter((row) => row.value > 0);
+  const known = new Set(order);
+  for (const [label, value] of values) {
+    if (!known.has(label) && value > 0) {
+      ordered.push({ label, value });
+    }
+  }
+  return ordered;
+}
+
+function deckColorBucket(colors: string): string {
+  const normalized = String(colors ?? '').toUpperCase().replace(/[^WUBRGC]/g, '');
+  const uniqueColors = [...new Set(normalized.split('').filter((color) => 'WUBRG'.includes(color)))];
+  if (uniqueColors.length > 1) {
+    return 'Multi';
+  }
+  if (uniqueColors.length === 1) {
+    return uniqueColors[0]!;
+  }
+  return 'C';
+}
+
+function deckPrimaryType(typeLine: string): string {
+  const normalized = typeLine.toLowerCase();
+  for (const type of ['Creature', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Planeswalker', 'Land']) {
+    if (normalized.includes(type.toLowerCase())) {
+      return type;
+    }
+  }
+  return 'Other';
+}
+
+function normalizedCardName(name?: string): string {
+  return String(name ?? '').trim().toLowerCase();
+}
+
+function DeckLiveStatsPanel({ stats, onOpenDashboard }: { stats: DeckLiveStats; onOpenDashboard: () => void }) {
+  return (
+    <section className="deck-live-stats-panel" aria-label="Deck summary">
+      <div className="deck-live-stats-heading">
+        <span>Deck summary</span>
+        <strong>{formatCount(stats.totalCards, 'card')}</strong>
+      </div>
+      <div className="deck-live-stat-pills" aria-label="Deck board and collection checks">
+        {stats.sections.map((row) => (
+          <span key={row.label}>
+            <strong>{row.value}</strong>
+            {row.label}
+          </span>
+        ))}
+        {stats.unresolvedCards > 0 ? (
+          <span className="warning">
+            <strong>{stats.unresolvedCards}</strong>
+            unresolved
+          </span>
+        ) : null}
+        {stats.duplicateWarnings > 0 ? (
+          <span className="warning">
+            <strong>{stats.duplicateWarnings}</strong>
+            duplicate checks
+          </span>
+        ) : null}
+        {stats.collectionSourceCount > 0 ? (
+          <span>
+            <strong>{stats.collectionOwnedCards}/{stats.collectionNeededCards}</strong>
+            locally owned
+          </span>
+        ) : (
+          <span>
+            <strong>-</strong>
+            no binder data
+          </span>
+        )}
+        {stats.collectionMissingNames > 0 ? (
+          <span className="warning">
+            <strong>{stats.collectionMissingNames}</strong>
+            missing names
+          </span>
+        ) : null}
+      </div>
+      <button type="button" className="secondary-button compact deck-live-dashboard-button" onClick={onOpenDashboard}>
+        Dashboard
+      </button>
+    </section>
+  );
+}
+
 function activeVariantEntries(deck: DeckState | null): DeckState['entries'] {
   if (!deck) {
     return [];
@@ -1915,12 +2119,13 @@ function DecksWorkspace({
   const [activeDeckSection, setActiveDeckSection] = useState<DeckEntry['section']>('main');
   const [deckViewMode, setDeckViewMode] = useState<DeckViewMode>('board');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [deckFilters, setDeckFilters] = useState(() => defaultDeckFiltersForProject(selectedUniverseId));
+  const [deckFilters, setDeckFilters] = useState(() => defaultDeckFilters());
   const [deckEntryQuery, setDeckEntryQuery] = useState('');
   const [deckEntryFiltersOpen, setDeckEntryFiltersOpen] = useState(false);
   const [deckEntryFilters, setDeckEntryFilters] = useState<DeckEntryFilters>(DEFAULT_DECK_ENTRY_FILTERS);
   const [deckEntrySortState, setDeckEntrySortState] = useState<ListSortState<DeckEntrySortOptionId>>({ option: 'default', direction: 'asc' });
   const [groupBasicLands, setGroupBasicLands] = useState(() => readDeckGroupBasicsPreference());
+  const [deckCollectionStates, setDeckCollectionStates] = useState<CollectionState[]>([]);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const activeDeckFilterCount = countActiveFilters([
@@ -1931,7 +2136,7 @@ function DecksWorkspace({
     { value: deckFilters.colorIdentity, defaultValue: 'all' },
     { value: deckFilters.commanderBracket, defaultValue: 'all' },
     { value: deckFilters.commander, defaultValue: '' },
-    { value: deckFilters.linkedUniverseId, defaultValue: selectedUniverseId || 'all' },
+    { value: deckFilters.linkedUniverseId, defaultValue: 'all' },
     { value: deckFilters.linkedSetCode, defaultValue: 'all' },
     { value: deckFilters.unresolved, defaultValue: 'all' },
     { value: deckFilters.mainCount, defaultValue: '' },
@@ -1951,7 +2156,7 @@ function DecksWorkspace({
 
   useEffect(() => {
     void loadDecks(activeDeckId || undefined);
-  }, [deckRefreshToken, selectedUniverseId]);
+  }, [deckRefreshToken, activeDeckId]);
 
   useEffect(() => {
     if (!saveShortcutToken) {
@@ -1973,20 +2178,34 @@ function DecksWorkspace({
   }, [saveShortcutToken]);
 
   useEffect(() => {
-    setDeckFilters((current) => ({ ...current, linkedUniverseId: selectedUniverseId || 'all' }));
-  }, [selectedUniverseId]);
-
-  useEffect(() => {
     writeDeckGroupBasicsPreference(groupBasicLands);
   }, [groupBasicLands]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchCollections()
+      .then((summaries) => Promise.all(summaries.map((summary) => fetchCollection(summary.collectionId).catch(() => null))))
+      .then((states) => {
+        if (!cancelled) {
+          setDeckCollectionStates(states.filter((state): state is CollectionState => Boolean(state)));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDeckCollectionStates([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function loadDecks(nextDeckId?: string) {
     try {
       const loaded = await fetchDecks();
       setDecks(loaded);
-      const projectDecks = selectedUniverseId ? loaded.filter((candidate) => candidate.linkedUniverseId === selectedUniverseId) : loaded;
-      const currentDeckStillInProject = deck && (!selectedUniverseId || deck.metadata.linkedUniverseId === selectedUniverseId);
-      const targetId = nextDeckId ?? (currentDeckStillInProject ? deck.metadata.deckId : undefined) ?? projectDecks[0]?.deckId ?? loaded[0]?.deckId;
+      const currentDeckStillAvailable = deck && loaded.some((candidate) => candidate.deckId === deck.metadata.deckId);
+      const targetId = nextDeckId ?? (currentDeckStillAvailable ? deck.metadata.deckId : undefined) ?? loaded[0]?.deckId;
       if (targetId) {
         setDeck(await fetchDeck(targetId));
       } else {
@@ -2239,7 +2458,7 @@ function DecksWorkspace({
 
   const filteredDecks = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return decks.filter((candidate) => {
+    return decks.map((candidate, index) => ({ candidate, index })).filter(({ candidate }) => {
       const searchableMetadata = [
         candidate.name,
         candidate.description,
@@ -2284,8 +2503,15 @@ function DecksWorkspace({
         matchesNumberQuery(candidate.sideCount, deckFilters.sideCount) &&
         matchesNumberQuery(candidate.maybeCount, deckFilters.maybeCount)
       );
-    });
-  }, [deckFilters, decks, query]);
+    }).sort((left, right) => {
+      const leftCurrent = selectedUniverseId && left.candidate.linkedUniverseId === selectedUniverseId ? 1 : 0;
+      const rightCurrent = selectedUniverseId && right.candidate.linkedUniverseId === selectedUniverseId ? 1 : 0;
+      if (leftCurrent !== rightCurrent) {
+        return rightCurrent - leftCurrent;
+      }
+      return left.index - right.index;
+    }).map(({ candidate }) => candidate);
+  }, [deckFilters, decks, query, selectedUniverseId]);
 
   const selectedDeckEntry = selectedDeckEntryIndex === null ? undefined : deck?.entries[selectedDeckEntryIndex];
   const previewDeckEntry = previewDeckEntryIndex === null ? undefined : deck?.entries[previewDeckEntryIndex];
@@ -2352,6 +2578,12 @@ function DecksWorkspace({
     [groupBasicLands, sortedDeckRows]
   );
   const deckRoleSummary = useMemo(() => buildDeckRoleSummary(activeDeckEntries), [activeDeckEntries]);
+  const deckLiveStats = useMemo(() => buildDeckLiveStats(deck, activeDeckEntries, deckCollectionStates), [activeDeckEntries, deck, deckCollectionStates]);
+  const scopedProject = deckFilters.linkedUniverseId === 'all' ? null : library?.universes.find((universe) => universe.id === deckFilters.linkedUniverseId) ?? null;
+  const hiddenByProjectScope =
+    deckFilters.linkedUniverseId === 'all'
+      ? 0
+      : decks.filter((candidate) => candidate.linkedUniverseId !== deckFilters.linkedUniverseId).length;
   const deckMetricItems = useMemo(() => {
     const items: Array<{ label: string; value: ReactNode; note?: string; icon?: IconName }> = [
       { label: 'Total', value: deckMetrics.totalCards, icon: 'cards' },
@@ -2394,6 +2626,17 @@ function DecksWorkspace({
             </label>
           }
         >
+          {scopedProject ? (
+            <div className="scope-chip-row" role="status" aria-live="polite">
+              <span className="scope-chip">
+                Project: {scopedProject.name}
+                {hiddenByProjectScope > 0 ? ` hides ${formatCount(hiddenByProjectScope, 'deck')}` : ''}
+              </span>
+              <button type="button" className="text-button compact" onClick={() => setDeckFilters((current) => ({ ...current, linkedUniverseId: 'all' }))}>
+                Show all
+              </button>
+            </div>
+          ) : null}
           <div className="entity-list">
             {filteredDecks.map((candidate) => (
               <button key={candidate.deckId} type="button" className={`entity-row clickable ${candidate.deckId === deck?.metadata.deckId ? 'selected' : ''}`} onClick={() => void handleSelectDeck(candidate.deckId)}>
@@ -2401,6 +2644,11 @@ function DecksWorkspace({
                 <span>
                   <strong>{candidate.name}</strong>
                   <small className="entity-row-source-line">
+                    {selectedUniverseId && candidate.linkedUniverseId === selectedUniverseId ? (
+                      <StatusPill tone="info" className="workspace-source-pill">
+                        Current project
+                      </StatusPill>
+                    ) : null}
                     <StatusPill tone={candidate.unresolvedCount ? 'warning' : toneForDeckStatus(candidate.status)} className="workspace-source-pill">
                       {candidate.unresolvedCount ? 'Review' : candidate.status || 'draft'}
                     </StatusPill>
@@ -2459,7 +2707,7 @@ function DecksWorkspace({
                 <button type="button" className="secondary-button" onClick={onOpenCardBrowser}>
                   Compare
                 </button>
-                <button type="button" className="secondary-button" onClick={onOpenDashboard}>
+                <button type="button" className="secondary-button" onClick={() => onOpenDashboard(deckDashboardScope(deck))}>
                   Dashboard
                 </button>
                 <button type="button" className="primary-button" disabled={busy || !dirty} onClick={() => void handleSaveDeck()}>
@@ -2469,6 +2717,8 @@ function DecksWorkspace({
             </div>
 
             <WorkModeNote mode={workMode} section="decks" />
+
+            <DeckCommanderZone deck={deck} activeVariant={activeVariant} onOpenCard={onOpenCard} />
 
             {deck.warnings.length > 0 ? (
               <div className="deck-warning-list">
@@ -2489,9 +2739,9 @@ function DecksWorkspace({
               </div>
             ) : null}
 
-            <DeckCommanderSlots deck={deck} />
+            <DeckLiveStatsPanel stats={deckLiveStats} onOpenDashboard={() => onOpenDashboard(deckDashboardScope(deck))} />
 
-            <div className="deck-stat-grid">
+            <div className="deck-stat-grid compact">
               {deckMetricItems.map((item) => (
                 <WorkspaceMetric key={item.label} label={item.label} value={item.value} note={item.note} icon={item.icon} />
               ))}
@@ -2596,7 +2846,7 @@ function DecksWorkspace({
             onClearEntry={() => setSelectedDeckEntryIndex(null)}
             onOpenCard={onOpenCard}
             onOpenCardBrowser={onOpenCardBrowser}
-            onOpenDashboard={onOpenDashboard}
+            onOpenDashboard={deck ? () => onOpenDashboard(deckDashboardScope(deck)) : () => onOpenDashboard()}
           />
         </aside>
       ) : (
@@ -2611,7 +2861,7 @@ function DecksWorkspace({
           resultsLabel={`${filteredDecks.length} matching decks`}
           activeFilterCount={activeDeckFilterCount}
           onClose={() => setFiltersOpen(false)}
-          onResetFilters={() => setDeckFilters(defaultDeckFiltersForProject(selectedUniverseId))}
+          onResetFilters={() => setDeckFilters(defaultDeckFilters())}
           results={
             <div className="filter-result-list">
               {filteredDecks.length ? (
@@ -2625,7 +2875,7 @@ function DecksWorkspace({
                   </button>
                 ))
               ) : (
-                <FilteredEmptyState title="No decks match" detail="Reset filters or clear the deck search." showClearSearch={Boolean(query.trim())} showResetFilters={activeDeckFilterCount > 0} onClearSearch={() => setQuery('')} onResetFilters={() => setDeckFilters(defaultDeckFiltersForProject(selectedUniverseId))} />
+                <FilteredEmptyState title="No decks match" detail="Reset filters or clear the deck search." showClearSearch={Boolean(query.trim())} showResetFilters={activeDeckFilterCount > 0} onClearSearch={() => setQuery('')} onResetFilters={() => setDeckFilters(defaultDeckFilters())} />
               )}
             </div>
           }
@@ -2823,6 +3073,73 @@ function DeckSectionList({
       </div>
     </section>
   );
+}
+
+function DeckCommanderZone({
+  deck,
+  activeVariant,
+  onOpenCard
+}: {
+  deck: DeckState;
+  activeVariant?: DeckState['variants'][number];
+  onOpenCard: (setCode: string, cardId: string, variantId?: string) => Promise<void> | void;
+}) {
+  const commanderReferences = deckCommanderReferences(deck, activeVariant);
+  if (!commanderReferences.length) {
+    return (
+      <section className="deck-commander-zone empty" aria-label="Commander zone">
+        <div className="deck-section-heading">
+          <h3>Commander zone</h3>
+          <span>Unset</span>
+        </div>
+        <p className="workspace-copy">Set a commander in the inspector to complete the Commander deck structure.</p>
+      </section>
+    );
+  }
+  return (
+    <section className="deck-commander-zone" aria-label="Commander zone">
+      <div className="deck-section-heading">
+        <h3>Commander zone</h3>
+        <span>{formatCount(commanderReferences.length, 'card')}</span>
+      </div>
+      <div className="deck-commander-card-row">
+        {commanderReferences.map(({ label, reference }) => {
+          const card = deckCardForReference(deck, reference);
+          const metadata = metadataFromDeckCard(card);
+          const imageSrc = imageUrlForMetadata(metadata, 'small');
+          const name = card?.name ?? reference.nameSnapshot ?? reference.cardId;
+          return (
+            <button key={`${label}-${reference.setCode}-${reference.cardId}`} type="button" className="deck-commander-card" onClick={() => void onOpenCard(reference.setCode, reference.cardId, reference.variantId)}>
+              <span className={`deck-entry-thumb ${imageSrc ? 'has-art' : ''}`} aria-hidden="true">
+                {imageSrc ? <img src={imageSrc} alt="" loading="lazy" /> : <span>{name.slice(0, 2).toUpperCase()}</span>}
+              </span>
+              <span>
+                <small>{label}</small>
+                <strong>{name}</strong>
+                <em>{metadata?.typeLine ?? 'Commander card'}</em>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function deckCommanderReferences(deck: DeckState, activeVariant?: DeckState['variants'][number]): Array<{ label: string; reference: NonNullable<DeckMetadata['commander']> }> {
+  const commander = activeVariant?.commander ?? deck.metadata.commander;
+  const partners = activeVariant?.partnerCommanders?.length ? activeVariant.partnerCommanders : deck.metadata.partnerCommanders;
+  return [
+    commander ? { label: 'Commander', reference: commander } : null,
+    ...(partners ?? []).map((reference, index) => ({ label: index === 0 ? 'Partner' : `Partner ${index + 1}`, reference }))
+  ].filter((slot): slot is { label: string; reference: NonNullable<DeckMetadata['commander']> } => Boolean(slot));
+}
+
+function deckCardForReference(deck: DeckState, reference: DeckMetadata['commander']): DeckCardOption | undefined {
+  if (!reference) {
+    return undefined;
+  }
+  return deck.availableCards.find((card) => card.setCode === reference.setCode && card.cardId === reference.cardId);
 }
 
 function DeckEntryThumb({ entry }: { entry: DeckState['entries'][number] }) {
@@ -3107,15 +3424,17 @@ function DeckCommanderSlots({ deck }: { deck: DeckState }) {
   const commander = deck.metadata.commander;
   const partner = deck.metadata.partnerCommanders[0];
   const cover = deck.metadata.coverCard ?? commander;
-  const slots = [
-    { label: 'Commander', value: commander?.nameSnapshot ?? 'Set in inspector' },
-    { label: 'Partner', value: partner?.nameSnapshot ?? 'None' },
-    { label: 'Cover', value: cover?.nameSnapshot ?? 'No cover card' }
-  ];
+  const slots = [{ label: 'Commander', value: commander?.nameSnapshot ?? 'Set in inspector' }];
+  if (partner?.nameSnapshot) {
+    slots.push({ label: 'Partner', value: partner.nameSnapshot });
+  }
+  if (cover?.nameSnapshot && cover.nameSnapshot !== commander?.nameSnapshot) {
+    slots.push({ label: 'Cover', value: cover.nameSnapshot });
+  }
   return (
     <div className="deck-commander-slots" aria-label="Commander and cover slots">
       {slots.map((slot) => (
-        <div key={slot.label} className={!slot.value || slot.value === 'Set in inspector' || slot.value === 'None' || slot.value === 'No cover card' ? 'empty' : ''}>
+        <div key={slot.label} className={!slot.value || slot.value === 'Set in inspector' ? 'empty' : ''}>
           <span>{slot.label}</span>
           <strong>{slot.value}</strong>
         </div>
@@ -3253,8 +3572,15 @@ function DeckInspectorPanel({
           </div>
         </div>
         <div className="export-actions">
-          <button type="button" className="secondary-button" onClick={() => onUpdateEntry(entryIndex, { starred: !entry.starred })}>
-            {entry.starred ? 'Unstar' : 'Star'}
+          <button
+            type="button"
+            className={`icon-button deck-entry-star-button ${entry.starred ? 'active' : ''}`}
+            aria-label={entry.starred ? 'Unstar deck entry' : 'Star deck entry'}
+            aria-pressed={Boolean(entry.starred)}
+            title={entry.starred ? 'Unstar' : 'Star'}
+            onClick={() => onUpdateEntry(entryIndex, { starred: !entry.starred })}
+          >
+            <Icon name="star" />
           </button>
           <button type="button" className="secondary-button" onClick={() => onUpdateEntry(entryIndex, { markedForDeletion: !entry.markedForDeletion, candidateStatus: entry.markedForDeletion ? entry.candidateStatus : 'cut' })}>
             {entry.markedForDeletion ? 'Keep' : 'Mark delete'}
@@ -3297,6 +3623,7 @@ function DeckInspectorPanel({
           </button>
         </div>
       </div>
+      <DeckCommanderSlots deck={deck} />
       <Field label="Variant name">
         <input value={currentVariant?.name ?? ''} onChange={(event) => onUpdateActiveVariant({ name: event.target.value || 'Untitled Variant' })} />
       </Field>
@@ -3544,8 +3871,14 @@ function ReferenceWorkspace({
   const [officialSort, setOfficialSort] = useState<OfficialCardSortOptionId>('auto');
   const [officialStatus, setOfficialStatus] = useState<OfficialCardCatalogStatus | null>(null);
   const [officialResult, setOfficialResult] = useState<OfficialCardSearchResult | null>(null);
+  const [officialVariants, setOfficialVariants] = useState<OfficialCardPrintVariantsResult | null>(null);
+  const [officialVariantsOpen, setOfficialVariantsOpen] = useState(false);
+  const [officialVariantsLoading, setOfficialVariantsLoading] = useState(false);
+  const [officialVariantQuery, setOfficialVariantQuery] = useState('');
+  const [officialVariantOffset, setOfficialVariantOffset] = useState(0);
   const [officialOffset, setOfficialOffset] = useState(0);
   const [selectedOfficialId, setSelectedOfficialId] = useState('');
+  const [selectedOfficialVariant, setSelectedOfficialVariant] = useState<OfficialCardSearchCard | null>(null);
   const [officialLoading, setOfficialLoading] = useState(false);
   const [officialSyncing, setOfficialSyncing] = useState(false);
   const [officialAutoSyncStarted, setOfficialAutoSyncStarted] = useState(false);
@@ -3614,7 +3947,8 @@ function ReferenceWorkspace({
   const officialCards = officialResult?.cards ?? [];
   const selected = displayedTerms.find((term) => term.id === selectedId) ?? displayedTerms[0];
   const selectedRule = displayedRules.find((rule) => rule.id === selectedRuleId) ?? displayedRules[0];
-  const selectedOfficial = officialCards.find((card) => card.id === selectedOfficialId) ?? officialCards[0];
+  const selectedOfficialBase = officialCards.find((card) => card.id === selectedOfficialId) ?? officialCards[0];
+  const selectedOfficial = selectedOfficialVariant ?? selectedOfficialBase;
   const selectedUsage = selected ? termUsageMatches(selected.id, usageIndex) : [];
   const ownerSuggestions = useMemo(() => collectionOwnerSuggestions(collections.flatMap((collection) => collection.ownerNames ?? [])), [collections]);
   const officialShowingStart = officialResult?.total ? officialResult.offset + 1 : 0;
@@ -3654,6 +3988,47 @@ function ReferenceWorkspace({
   }, [officialFilters, officialSort, officialView, query]);
 
   useEffect(() => {
+    setOfficialVariantOffset(0);
+  }, [officialVariantQuery, selectedOfficial?.id]);
+
+  useEffect(() => {
+    if (!officialVariantsOpen || !selectedOfficial) {
+      return;
+    }
+    let cancelled = false;
+    setOfficialVariantsLoading(true);
+    void fetchOfficialCardVariants({
+      cardId: selectedOfficial.view === 'prints' ? selectedOfficial.id : undefined,
+      oracleId: selectedOfficial.oracleId,
+      variantKey: selectedOfficial.variantKey,
+      name: selectedOfficial.name,
+      query: officialVariantQuery,
+      limit: REFERENCE_OFFICIAL_VARIANT_PAGE_SIZE,
+      offset: officialVariantOffset
+    })
+      .then((result) => {
+        if (!cancelled) {
+          setOfficialVariants(result);
+          setOfficialStatus(result.status);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setOfficialVariants(null);
+          onStatus(error instanceof Error ? error.message : String(error));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setOfficialVariantsLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [officialVariantOffset, officialVariantQuery, officialVariantsOpen, onStatus, selectedOfficial]);
+
+  useEffect(() => {
     if (!officialSetCode) {
       setOfficialSetCode(project?.setCode ?? library?.sets[0]?.setCode ?? '');
     }
@@ -3670,6 +4045,7 @@ function ReferenceWorkspace({
         if (!cancelled) {
           setOfficialResult(result);
           setOfficialStatus(result.status);
+          setSelectedOfficialVariant(null);
           setSelectedOfficialId((current) => current && result.cards.some((card) => card.id === current) ? current : result.cards[0]?.id ?? '');
         }
       })
@@ -3713,6 +4089,10 @@ function ReferenceWorkspace({
     setOfficialFilters(DEFAULT_OFFICIAL_CARD_FILTERS);
     setOfficialSort('auto');
     setQuery('');
+  };
+  const selectOfficialCard = (id: string) => {
+    setSelectedOfficialId(id);
+    setSelectedOfficialVariant(null);
   };
   const resetCurrentFilters = () => {
     if (mode === 'terms') {
@@ -3828,6 +4208,21 @@ function ReferenceWorkspace({
     onStatus('Opened Card Browser. Select two rows in compare mode to inspect cards side by side.');
   }
 
+  function openOfficialVariants(card = selectedOfficial) {
+    if (!card) {
+      onStatus('Choose an official card before browsing variants.');
+      return;
+    }
+    if (officialCards.some((candidate) => candidate.id === card.id)) {
+      selectOfficialCard(card.id);
+    } else {
+      setSelectedOfficialVariant(card);
+    }
+    setOfficialVariantQuery('');
+    setOfficialVariantOffset(0);
+    setOfficialVariantsOpen(true);
+  }
+
   return (
     <>
       <div className="management-workspace" style={{ gridTemplateColumns: buildManagementColumns(showLeftPanel, showRightPanel, leftPanelWidth, rightPanelWidth) }}>
@@ -3888,7 +4283,7 @@ function ReferenceWorkspace({
               : (
                 <OfficialCardReferenceList
                   cards={officialCards}
-                  selectedId={selectedOfficial?.id ?? ''}
+                  selectedId={selectedOfficialBase?.id ?? ''}
                   view={officialView}
                   browserView={officialBrowserView}
                   sortLabel={officialSortOption.label}
@@ -3901,7 +4296,7 @@ function ReferenceWorkspace({
                   query={query}
                   onViewChange={setOfficialView}
                   onBrowserViewChange={setOfficialBrowserView}
-                  onSelect={setSelectedOfficialId}
+                  onSelect={selectOfficialCard}
                   onPreviousPage={() => setOfficialOffset((offset) => Math.max(0, offset - REFERENCE_OFFICIAL_PAGE_SIZE))}
                   onNextPage={() => setOfficialOffset((offset) => offset + REFERENCE_OFFICIAL_PAGE_SIZE)}
                   onClearSearch={() => setQuery('')}
@@ -3930,7 +4325,7 @@ function ReferenceWorkspace({
                   ? `${resultCountLabel(filteredRules.length, displayedRules.length, 'rules')} from ${referenceCatalog.rules.effectiveDate ?? 'current rules'}`
                   : 'Rules snapshot not synced yet.'
                   : officialResult
-                    ? `${resultCountLabel(officialResult.total, officialCards.length, officialView === 'prints' ? 'prints' : 'Oracle cards')} from Scryfall`
+                    ? `${resultCountLabel(officialResult.total, officialCards.length, officialCatalogResultNoun(officialView))} from Scryfall`
                     : officialCatalogSubtitle(officialStatus, officialView)}
             </p>
           </div>
@@ -3971,7 +4366,7 @@ function ReferenceWorkspace({
         {mode === 'official-cards' ? (
           <OfficialCardReferenceCanvas
             cards={officialCards}
-            selectedId={selectedOfficial?.id ?? ''}
+            selectedId={selectedOfficialBase?.id ?? ''}
             selectedCard={selectedOfficial}
             browserView={officialBrowserView}
             catalogView={officialView}
@@ -3981,14 +4376,15 @@ function ReferenceWorkspace({
             query={query}
             result={officialResult}
             action={officialAction}
-            onSelect={setSelectedOfficialId}
+            onSelect={selectOfficialCard}
             onBrowserViewChange={setOfficialBrowserView}
-            onPreviousCard={() => selectAdjacentOfficialCard(officialCards, selectedOfficial?.id ?? '', -1, setSelectedOfficialId)}
-            onNextCard={() => selectAdjacentOfficialCard(officialCards, selectedOfficial?.id ?? '', 1, setSelectedOfficialId)}
+            onPreviousCard={() => selectAdjacentOfficialCard(officialCards, selectedOfficialBase?.id ?? '', -1, selectOfficialCard)}
+            onNextCard={() => selectAdjacentOfficialCard(officialCards, selectedOfficialBase?.id ?? '', 1, selectOfficialCard)}
             onAddToCollection={(card) => void addSelectedOfficialToCollection(card)}
             onAddToDeck={(card) => void addSelectedOfficialToDeck(card)}
             onAddToSet={(card) => void addSelectedOfficialToSet(card)}
             onOpenCompare={openOfficialCompareBrowser}
+            onOpenVariants={openOfficialVariants}
             onClearSearch={() => setQuery('')}
             onResetFilters={resetOfficialFilters}
           />
@@ -3997,7 +4393,7 @@ function ReferenceWorkspace({
             {displayedTerms.map((term) => (
               <button key={term.id} type="button" className={`reference-term-card ${selected?.id === term.id ? 'selected' : ''}`} onClick={() => setSelectedId(term.id)}>
                 <strong>{term.name}</strong>
-                <span>{labelForCategory(term.category)}</span>
+                {category === 'all' ? <span>{labelForCategory(term.category)}</span> : null}
                 <small>{term.reminderText ?? term.definition ?? 'Metadata pending review.'}</small>
               </button>
             ))}
@@ -4017,7 +4413,7 @@ function ReferenceWorkspace({
             {displayedRules.map((rule) => (
               <button key={rule.id} type="button" className={`reference-term-card rule-card ${selectedRule?.id === rule.id ? 'selected' : ''}`} onClick={() => setSelectedRuleId(rule.id)}>
                 <strong>{rule.number ? `${rule.number}. ${rule.title}` : rule.title}</strong>
-                <span>{labelForRuleKind(rule.kind)}</span>
+                {ruleKind === 'all' ? <span>{labelForRuleKind(rule.kind)}</span> : null}
                 <small>{rule.text}</small>
               </button>
             ))}
@@ -4066,6 +4462,7 @@ function ReferenceWorkspace({
               onAddToDeck={() => void addSelectedOfficialToDeck()}
               onAddToSet={() => void addSelectedOfficialToSet()}
               onOpenCompare={openOfficialCompareBrowser}
+              onOpenVariants={() => openOfficialVariants()}
             />
           ) : mode === 'terms' ? (
             <ReferenceTermDetail term={selected} catalog={referenceCatalog} usage={selectedUsage} />
@@ -4120,7 +4517,7 @@ function ReferenceWorkspace({
                       type="button"
                       className={`entity-row clickable ${card.id === selectedOfficial?.id ? 'selected' : ''}`}
                       onClick={() => {
-                        setSelectedOfficialId(card.id);
+                        selectOfficialCard(card.id);
                         setFiltersOpen(false);
                       }}
                     >
@@ -4134,7 +4531,7 @@ function ReferenceWorkspace({
                 ) : (
                   <FilteredEmptyState
                     title="No official cards match"
-                    detail="Reset filters, clear search, or switch between Prints and Oracle."
+                    detail="Reset filters, clear search, or switch between Prints, Unique, and Oracle."
                     showClearSearch={Boolean(query.trim())}
                     showResetFilters={activeReferenceFilterCount > 0}
                     onClearSearch={() => setQuery('')}
@@ -4157,7 +4554,7 @@ function ReferenceWorkspace({
                       <span>
                         <strong>{term.name}</strong>
                         <small>
-                          {labelForCategory(term.category)} - {term.status}
+                          {[category === 'all' ? labelForCategory(term.category) : '', term.status].filter(Boolean).join(' - ')}
                           {termUsageMatches(term.id, usageIndex).length ? ` - ${termUsageMatches(term.id, usageIndex).length} active-set uses` : ''}
                         </small>
                       </span>
@@ -4187,7 +4584,7 @@ function ReferenceWorkspace({
                     <Icon name="guide" />
                     <span>
                       <strong>{rule.number ? `${rule.number}. ${rule.title}` : rule.title}</strong>
-                      <small>{labelForRuleKind(rule.kind)}</small>
+                      {ruleKind === 'all' ? <small>{labelForRuleKind(rule.kind)}</small> : null}
                     </span>
                   </button>
                 ))
@@ -4225,6 +4622,27 @@ function ReferenceWorkspace({
             />
           )}
         </BrowseFilterOverlay>
+      ) : null}
+      {officialVariantsOpen ? (
+        <OfficialCardVariantsOverlay
+          result={officialVariants}
+          loading={officialVariantsLoading}
+          query={officialVariantQuery}
+          action={officialAction}
+          selectedCardId={selectedOfficialVariant?.id ?? selectedOfficial?.id ?? ''}
+          onQueryChange={setOfficialVariantQuery}
+          onPreviousPage={() => setOfficialVariantOffset((offset) => Math.max(0, offset - REFERENCE_OFFICIAL_VARIANT_PAGE_SIZE))}
+          onNextPage={() => setOfficialVariantOffset((offset) => offset + REFERENCE_OFFICIAL_VARIANT_PAGE_SIZE)}
+          onSelect={(card) => {
+            setSelectedOfficialVariant(card);
+            setOfficialVariantsOpen(false);
+            onStatus(`Selected ${card.name} ${[card.setCode, card.collectorNumber].filter(Boolean).join(' ')} as the active official print.`);
+          }}
+          onAddToCollection={(card) => void addSelectedOfficialToCollection(card)}
+          onAddToDeck={(card) => void addSelectedOfficialToDeck(card)}
+          onAddToSet={(card) => void addSelectedOfficialToSet(card)}
+          onClose={() => setOfficialVariantsOpen(false)}
+        />
       ) : null}
     </>
   );
@@ -4331,7 +4749,8 @@ function OfficialCardReferenceList({
   onResetFilters: () => void;
 }) {
   const source = officialStatusForView(status, view);
-  const pageLabel = result && result.total ? `${showingStart.toLocaleString()}-${showingEnd.toLocaleString()} of ${formatCount(result.total, view === 'prints' ? 'print' : 'card')}` : source.available ? `0 of ${formatCount(0, view === 'prints' ? 'print' : 'card')}` : 'Catalog not synced';
+  const noun = officialCatalogResultNoun(view);
+  const pageLabel = result && result.total ? `${showingStart.toLocaleString()}-${showingEnd.toLocaleString()} of ${formatCount(result.total, noun)}` : source.available ? `0 of ${formatCount(0, noun)}` : 'Catalog not synced';
   const hasPrevious = Boolean(result && result.offset > 0);
   const hasNext = Boolean(result && result.offset + result.cards.length < result.total);
   return (
@@ -4340,6 +4759,9 @@ function OfficialCardReferenceList({
         <div className="segmented-actions" role="group" aria-label="Official card catalog view">
           <button type="button" className={`secondary-button compact ${view === 'prints' ? 'active' : ''}`} onClick={() => onViewChange('prints')}>
             Prints
+          </button>
+          <button type="button" className={`secondary-button compact ${view === 'unique' ? 'active' : ''}`} onClick={() => onViewChange('unique')}>
+            Unique
           </button>
           <button type="button" className={`secondary-button compact ${view === 'oracle' ? 'active' : ''}`} onClick={() => onViewChange('oracle')}>
             Oracle
@@ -4430,6 +4852,7 @@ function OfficialCardReferenceCanvas({
   onAddToDeck,
   onAddToSet,
   onOpenCompare,
+  onOpenVariants,
   onClearSearch,
   onResetFilters
 }: {
@@ -4452,6 +4875,7 @@ function OfficialCardReferenceCanvas({
   onAddToDeck: (card: OfficialCardSearchCard) => void;
   onAddToSet: (card: OfficialCardSearchCard) => void;
   onOpenCompare: () => void;
+  onOpenVariants: (card?: OfficialCardSearchCard) => void;
   onClearSearch: () => void;
   onResetFilters: () => void;
 }) {
@@ -4501,7 +4925,7 @@ function OfficialCardReferenceCanvas({
     return (
       <div className="official-reference-results official-reference-results-list">
         {cards.map((card) => (
-          <OfficialCardResultRow key={card.id} card={card} selected={selectedId === card.id} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+          <OfficialCardResultRow key={card.id} card={card} selected={selectedId === card.id} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} onOpenVariants={onOpenVariants} />
         ))}
       </div>
     );
@@ -4511,14 +4935,14 @@ function OfficialCardReferenceCanvas({
     return (
       <div className="official-reference-results official-reference-results-grid">
         {cards.map((card) => (
-          <OfficialCardGridTile key={card.id} card={card} selected={selectedId === card.id} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+          <OfficialCardGridTile key={card.id} card={card} selected={selectedId === card.id} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} onOpenVariants={onOpenVariants} />
         ))}
       </div>
     );
   }
 
   if (browserView === 'table') {
-    return <OfficialCardTable cards={cards} selectedId={selectedId} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />;
+    return <OfficialCardTable cards={cards} selectedId={selectedId} action={action} onSelect={onSelect} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} onOpenVariants={onOpenVariants} />;
   }
 
   const card = selectedCard ?? cards[0];
@@ -4576,6 +5000,7 @@ function OfficialCardReferenceCanvas({
           onAddToDeck={onAddToDeck}
           onAddToSet={onAddToSet}
           onOpenCompare={onOpenCompare}
+          onOpenVariants={onOpenVariants}
         />
       ) : null}
     </div>
@@ -4589,7 +5014,8 @@ function OfficialCardResultRow({
   onSelect,
   onAddToCollection,
   onAddToDeck,
-  onAddToSet
+  onAddToSet,
+  onOpenVariants
 }: {
   card: OfficialCardSearchCard;
   selected: boolean;
@@ -4598,6 +5024,7 @@ function OfficialCardResultRow({
   onAddToCollection: (card: OfficialCardSearchCard) => void;
   onAddToDeck: (card: OfficialCardSearchCard) => void;
   onAddToSet: (card: OfficialCardSearchCard) => void;
+  onOpenVariants: (card?: OfficialCardSearchCard) => void;
 }) {
   return (
     <article className={`official-reference-result-row ${selected ? 'selected' : ''}`}>
@@ -4608,7 +5035,7 @@ function OfficialCardResultRow({
           <small>{officialCardListLine(card)}</small>
         </span>
       </button>
-      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} onOpenVariants={onOpenVariants} />
     </article>
   );
 }
@@ -4620,7 +5047,8 @@ function OfficialCardGridTile({
   onSelect,
   onAddToCollection,
   onAddToDeck,
-  onAddToSet
+  onAddToSet,
+  onOpenVariants
 }: {
   card: OfficialCardSearchCard;
   selected: boolean;
@@ -4629,6 +5057,7 @@ function OfficialCardGridTile({
   onAddToCollection: (card: OfficialCardSearchCard) => void;
   onAddToDeck: (card: OfficialCardSearchCard) => void;
   onAddToSet: (card: OfficialCardSearchCard) => void;
+  onOpenVariants: (card?: OfficialCardSearchCard) => void;
 }) {
   const imageUrl = officialCardImageUrl(card);
   return (
@@ -4639,9 +5068,9 @@ function OfficialCardGridTile({
       <button type="button" className="official-reference-grid-copy" onClick={() => onSelect(card.id)}>
         <strong>{card.name}</strong>
         <span>{officialCardListLine(card)}</span>
-        <small>{officialCardPriceLabel(card)}</small>
+        <small>{[officialCardPriceLabel(card), officialVariantCountLabel(card)].filter((item) => item && item !== '-').join(' - ') || '-'}</small>
       </button>
-      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} onOpenVariants={onOpenVariants} />
     </article>
   );
 }
@@ -4653,7 +5082,8 @@ function OfficialCardTable({
   onSelect,
   onAddToCollection,
   onAddToDeck,
-  onAddToSet
+  onAddToSet,
+  onOpenVariants
 }: {
   cards: OfficialCardSearchCard[];
   selectedId: string;
@@ -4662,6 +5092,7 @@ function OfficialCardTable({
   onAddToCollection: (card: OfficialCardSearchCard) => void;
   onAddToDeck: (card: OfficialCardSearchCard) => void;
   onAddToSet: (card: OfficialCardSearchCard) => void;
+  onOpenVariants: (card?: OfficialCardSearchCard) => void;
 }) {
   return (
     <div className="official-reference-table-wrap">
@@ -4693,7 +5124,7 @@ function OfficialCardTable({
               <td>{officialCardPriceLabel(card)}</td>
               <td>{card.view === 'prints' ? card.releasedAt || '-' : '-'}</td>
               <td>
-                <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+                <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} onOpenVariants={onOpenVariants} />
               </td>
             </tr>
           ))}
@@ -4708,13 +5139,15 @@ function OfficialCardInlineActions({
   action,
   onAddToCollection,
   onAddToDeck,
-  onAddToSet
+  onAddToSet,
+  onOpenVariants
 }: {
   card: OfficialCardSearchCard;
   action: OfficialCardActionTarget;
   onAddToCollection: (card: OfficialCardSearchCard) => void;
   onAddToDeck: (card: OfficialCardSearchCard) => void;
   onAddToSet: (card: OfficialCardSearchCard) => void;
+  onOpenVariants?: (card?: OfficialCardSearchCard) => void;
 }) {
   const disabled = card.view !== 'prints' || Boolean(action);
   return (
@@ -4728,6 +5161,11 @@ function OfficialCardInlineActions({
       <button type="button" className="secondary-button compact" disabled={disabled} onClick={() => onAddToSet(card)}>
         {action === 'set' ? 'Copying...' : 'Set'}
       </button>
+      {onOpenVariants && card.oracleId ? (
+        <button type="button" className="secondary-button compact" onClick={() => onOpenVariants(card)}>
+          Variants{card.variantCount && card.variantCount > 1 ? ` (${card.variantCount.toLocaleString()})` : ''}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -4738,7 +5176,8 @@ function OfficialCardQuickActions({
   onAddToCollection,
   onAddToDeck,
   onAddToSet,
-  onOpenCompare
+  onOpenCompare,
+  onOpenVariants
 }: {
   card: OfficialCardSearchCard;
   action: OfficialCardActionTarget;
@@ -4746,14 +5185,119 @@ function OfficialCardQuickActions({
   onAddToDeck: (card: OfficialCardSearchCard) => void;
   onAddToSet: (card: OfficialCardSearchCard) => void;
   onOpenCompare: () => void;
+  onOpenVariants: (card?: OfficialCardSearchCard) => void;
 }) {
   return (
     <div className="official-reference-quick-actions">
-      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+      <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} onOpenVariants={onOpenVariants} />
       <button type="button" className="secondary-button compact" onClick={onOpenCompare}>
         Compare
       </button>
     </div>
+  );
+}
+
+function OfficialCardVariantsOverlay({
+  result,
+  loading,
+  query,
+  action,
+  selectedCardId,
+  onQueryChange,
+  onPreviousPage,
+  onNextPage,
+  onSelect,
+  onAddToCollection,
+  onAddToDeck,
+  onAddToSet,
+  onClose
+}: {
+  result: OfficialCardPrintVariantsResult | null;
+  loading: boolean;
+  query: string;
+  action: OfficialCardActionTarget;
+  selectedCardId: string;
+  onQueryChange: (value: string) => void;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
+  onSelect: (card: OfficialCardPrintVariantsResult['cards'][number]) => void;
+  onAddToCollection: (card: OfficialCardSearchCard) => void;
+  onAddToDeck: (card: OfficialCardSearchCard) => void;
+  onAddToSet: (card: OfficialCardSearchCard) => void;
+  onClose: () => void;
+}) {
+  const cards = result?.cards ?? [];
+  const showingStart = result?.total ? result.offset + 1 : 0;
+  const showingEnd = result ? Math.min(result.offset + cards.length, result.total) : 0;
+  const hasPrevious = Boolean(result && result.offset > 0);
+  const hasNext = Boolean(result && result.offset + cards.length < result.total);
+  const title = result?.name ? `${result.name} Variants` : 'Official Card Variants';
+  const subtitle = result?.total
+    ? `${showingStart.toLocaleString()}-${showingEnd.toLocaleString()} of ${formatCount(result.total, 'print')} behind this card. Choose the exact print to import.`
+    : loading
+      ? 'Loading exact print variants from the local catalog.'
+      : 'No variants are available for this card yet.';
+  const footer = (
+    <>
+      <button type="button" className="secondary-button" disabled={loading || !hasPrevious} onClick={onPreviousPage}>
+        Previous
+      </button>
+      <button type="button" className="secondary-button" disabled={loading || !hasNext} onClick={onNextPage}>
+        Next
+      </button>
+      <button type="button" className="primary-button" onClick={onClose}>
+        Done
+      </button>
+    </>
+  );
+
+  return (
+    <OverlayShell title={title} eyebrow="Variants" subtitle={subtitle} dirty={false} footer={footer} onClose={onClose}>
+      <div className="official-variants-panel">
+        <div className="official-variants-toolbar">
+          <label className="search-field official-variants-search">
+            <Icon name="search" />
+            <input value={query} placeholder="Filter variants by set, language, collector number..." onChange={(event) => onQueryChange(event.target.value)} />
+          </label>
+          <div className="official-pagination" aria-live="polite">
+            <span>{loading ? 'Loading variants...' : result?.total ? `${showingStart.toLocaleString()}-${showingEnd.toLocaleString()} of ${formatCount(result.total, 'print')}` : '0 prints'}</span>
+            <button type="button" className="secondary-button compact" disabled={loading || !hasPrevious} onClick={onPreviousPage}>
+              Prev
+            </button>
+            <button type="button" className="secondary-button compact" disabled={loading || !hasNext} onClick={onNextPage}>
+              Next
+            </button>
+          </div>
+        </div>
+        {cards.length ? (
+          <div className="official-variant-grid">
+            {cards.map((card) => (
+              <article key={card.id} className={`official-variant-tile ${selectedCardId === card.id ? 'selected' : ''}`}>
+                <button type="button" className="official-reference-grid-image" onClick={() => onSelect(card)}>
+                  {officialCardImageUrl(card) ? <img src={officialCardImageUrl(card)} alt={`${card.name} ${officialCardLine(card)} official card image`} /> : <OfficialCardThumb card={card} />}
+                </button>
+                <div className="official-variant-copy">
+                  <strong>{card.name}</strong>
+                  <span>{officialCardListLine(card)}</span>
+                  <small>{[officialCardPriceLabel(card), card.lang ? card.lang.toUpperCase() : ''].filter((item) => item && item !== '-').join(' - ') || '-'}</small>
+                </div>
+                <div className="official-variant-actions">
+                  <button type="button" className="secondary-button compact" onClick={() => onSelect(card)}>
+                    Select
+                  </button>
+                  <OfficialCardInlineActions card={card} action={action} onAddToCollection={onAddToCollection} onAddToDeck={onAddToDeck} onAddToSet={onAddToSet} />
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="preview-empty official-reference-empty">
+            <strong>{loading ? 'Loading variants' : 'No variants match'}</strong>
+            <span>{query.trim() ? 'Clear the variant filter to see every print behind this card.' : 'The local print cache does not have variants for this card.'}</span>
+          </div>
+        )}
+      </div>
+    </OverlayShell>
   );
 }
 
@@ -4931,7 +5475,8 @@ function OfficialCardDetail({
   onAddToCollection,
   onAddToDeck,
   onAddToSet,
-  onOpenCompare
+  onOpenCompare,
+  onOpenVariants
 }: {
   card: OfficialCardSearchCard | undefined;
   mode: OfficialCardDetailMode;
@@ -4959,6 +5504,7 @@ function OfficialCardDetail({
   onAddToDeck: () => void;
   onAddToSet: () => void;
   onOpenCompare: () => void;
+  onOpenVariants: () => void;
 }) {
   if (!card) {
     return (
@@ -5123,6 +5669,11 @@ function OfficialCardDetail({
       <button type="button" className="secondary-button compact" onClick={onOpenCompare}>
         Compare in Card Browser
       </button>
+      {card.oracleId ? (
+        <button type="button" className="secondary-button compact" onClick={onOpenVariants}>
+          Browse Variants{card.variantCount && card.variantCount > 1 ? ` (${card.variantCount.toLocaleString()})` : ''}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -5141,36 +5692,45 @@ function resultCountLabel(total: number, displayed: number, noun: string): strin
 
 function officialPageSubtitle(result: OfficialCardSearchResult, view: OfficialCardCatalogView): string {
   if (!result.total) {
-    return `0 ${view === 'prints' ? 'prints' : 'Oracle cards'}`;
+    return `0 ${officialCatalogResultNoun(view)}s`;
   }
   const start = result.offset + 1;
   const end = Math.min(result.offset + result.cards.length, result.total);
-  return `${start.toLocaleString()}-${end.toLocaleString()} of ${formatCount(result.total, view === 'prints' ? 'print' : 'card')}`;
+  return `${start.toLocaleString()}-${end.toLocaleString()} of ${formatCount(result.total, officialCatalogResultNoun(view))}`;
 }
 
 function officialCatalogSubtitle(status: OfficialCardCatalogStatus | null, view: OfficialCardCatalogView): string {
   const source = officialStatusForView(status, view);
-  return source.available ? `${formatCount(source.count, view === 'prints' ? 'print' : 'card')} cached` : 'Official catalog not synced';
+  const noun = view === 'oracle' ? 'Oracle card' : 'print';
+  return source.available ? `${formatCount(source.count, noun)} cached` : 'Official catalog not synced';
 }
 
 function officialStatusForView(status: OfficialCardCatalogStatus | null, view: OfficialCardCatalogView) {
-  return view === 'prints'
-    ? status?.prints ?? { available: false, count: 0 }
-    : status?.oracle ?? { available: false, count: 0 };
+  return view === 'oracle'
+    ? status?.oracle ?? { available: false, count: 0 }
+    : status?.prints ?? { available: false, count: 0 };
+}
+
+function officialCatalogResultNoun(view: OfficialCardCatalogView): string {
+  return view === 'prints' ? 'print' : view === 'unique' ? 'unique card' : 'Oracle card';
 }
 
 function officialCardLine(card: OfficialCardSearchCard): string {
   if (card.view === 'prints') {
-    return [card.setCode, card.collectorNumber, card.rarity].filter(Boolean).join(' - ') || card.setName || 'Print';
+    return [[card.setCode, card.collectorNumber, card.rarity].filter(Boolean).join(' - ') || card.setName || 'Print', officialVariantCountLabel(card)].filter(Boolean).join(' - ');
   }
-  return card.typeLine || 'Oracle';
+  return [card.typeLine || 'Oracle', officialVariantCountLabel(card)].filter(Boolean).join(' - ');
 }
 
 function officialCardListLine(card: OfficialCardSearchCard): string {
   if (card.view === 'prints') {
-    return [card.setCode, card.collectorNumber, card.typeLine || card.setName].filter(Boolean).join(' - ');
+    return [[card.setCode, card.collectorNumber, card.typeLine || card.setName].filter(Boolean).join(' - '), officialVariantCountLabel(card)].filter(Boolean).join(' - ');
   }
-  return card.typeLine || card.oracleText || 'Oracle card';
+  return [card.typeLine || card.oracleText || 'Oracle card', officialVariantCountLabel(card)].filter(Boolean).join(' - ');
+}
+
+function officialVariantCountLabel(card: OfficialCardSearchCard): string {
+  return card.variantCount && card.variantCount > 1 ? `${card.variantCount.toLocaleString()} variants` : '';
 }
 
 function officialCardImageUrl(card: OfficialCardSearchCard): string {
@@ -5585,7 +6145,7 @@ function ProjectsWorkspace({
             <SetCoverTile
               key={set.setCode}
               set={set}
-              coverDraft={project?.setCode === set.setCode ? project.drafts[0] : undefined}
+              coverDraft={project && project.setCode === set.setCode ? project.drafts[0] : undefined}
               fallbackCoverUrl={activeProjectCoverUrl}
               detailOverride={set.cardCount
                 ? undefined
@@ -5800,7 +6360,7 @@ function SetsWorkspace({
     });
   }, [allSets, library?.universes, query, setFilters]);
   const selectedSet = sets.find((set) => set.setCode === selectedSetCode) ?? sets[0] ?? allSets.find((set) => set.setCode === selectedSetCode) ?? allSets[0];
-  const selectedSetDrafts = project?.setCode === selectedSet?.setCode ? project.drafts : [];
+  const selectedSetDrafts = project && selectedSet && project.setCode === selectedSet.setCode ? project.drafts : [];
 
   useEffect(() => {
     if (project?.setCode) {

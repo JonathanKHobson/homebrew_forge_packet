@@ -32,6 +32,10 @@ dependencies, or changing the editor shell/workspace chrome. The current
 decision is CSS/component-first: defer Tailwind/shadcn until the adoption gate
 passes, keep local-first behavior, and preserve
 Maker/Cards/Sets/Projects/Decks/Collections/Gallery/References distinctions.
+List-control and focused-layout cleanup lives in
+`docs/49_list_controls_focus_layout_backlog.md`; it is the source of truth for
+the shared search/sort/filter row-control pattern across Maker, Card Browser,
+Decks, Collections, Binders, and Lists.
 The Phase 3 shell extraction now lives in
 `packages/editor/src/components/shell/`: `AppShell`, `TopCommandBar`,
 `SidebarNav`, `WorkspaceFrame`, `CommandPalette`, and Workspace Health/status
@@ -40,9 +44,10 @@ The Phase 7 command palette is a non-destructive global action surface opened
 from the toolbar or `Cmd/Ctrl+K`; the Workspace Health panel is opened from the
 status strip and uses existing local runtime/source/preview/reference state.
 References Official Cards now uses the local Scryfall-backed official-card cache
-as a full browser surface: advanced local query/filter/sort logic lives in
-`packages/forge/src/officialCards/`, editor-side browser settings live in
-`packages/editor/src/domain/officialCardBrowser.ts`, and sync cadence/manual
+as a full browser surface: advanced local query/filter/sort logic, Unique
+mechanical-card grouping, and exact print variant lookup live in
+`packages/forge/src/officialCards/`; editor-side browser settings live in
+`packages/editor/src/domain/officialCardBrowser.ts`; and sync cadence/manual
 sync settings live in `packages/editor/src/domain/officialCardSyncSettings.ts`
 plus Settings > Official Card Catalog. Keep future official-card search UI in
 References/Card Browser wired to this local cache contract rather than adding
@@ -58,6 +63,36 @@ controls. The current implementation lane fixes clipping and renderer
 readability first, then ships scoped layout-zone selection while leaving
 section-level zoom and persistent name/type positioning in the backlog until
 their renderer/schema contracts are designed.
+
+External competitive/product research for the next-version planning lane lives
+in `external research/` and has been distilled into
+`docs/58_external_research_next_version_backlog.md` and
+`docs/59_next_version_phase_roadmap.md`. These are planning inputs only until
+Claude's resumed UXHC audit is merged. Use them to prioritize trust,
+import/export clarity, browse/list consistency, deck intelligence, collection
+review, asset/legal safety, and local share/package work; do not use them as a
+blanket authorization to implement P2/P3 strategic bets.
+
+Delivery-mode planning lives in
+`docs/superpowers/plans/2026-06-08-shared-delivery-modes.md`; tooling prep and
+storage/path decisions live in `docs/60_desktop_delivery_tooling_prep.md`. The
+current decision is one shared product UI with multiple delivery shells:
+`packages/editor` remains the shared source of truth for web, macOS desktop,
+and Windows desktop. Desktop code may own windowing, menus, local runtime
+startup, OS paths, packaging, and updates, but must not fork product screens,
+CSS, renderer behavior, workspaces, or app copy. Claude's pre-flight review
+promoted the runtime/API extraction to the first implementation gate: `/api/*`
+currently lives in Vite middleware, so a packaged desktop app is not real until
+that API is available through an embeddable local runtime service with explicit
+process ownership, port resilience, and repo/user-data model decisions. Before
+desktop/runtime implementation begins, create local and online backups and move
+the migration into a separate worktree so the current web app remains usable
+from this repo path. The planned desktop architecture serves the built editor
+SPA and `/api/*` from one local runtime origin, keeps the Chrome shim as fallback
+until green-pass cutover, and must verify macOS Intel plus Apple Silicon and
+Windows parity without forking the product UI. Use
+`scripts/codex/desktop-delivery-toolchain-check.mjs` to verify local desktop
+tool readiness before installing or packaging desktop dependencies.
 
 The project also keeps small planning manifests for practical tabletop print
 aids, such as `docs/20_commander_token_print_manifest.md`. These manifests are
@@ -122,14 +157,16 @@ assets/
 scripts/
   bootstrap-pnpm.sh       # Installs the repo-local pnpm wrapper for first-time setup
   launch-homebrew-forge-app.sh
-                          # Starts the local editor on a stable port and opens/reuses the Chrome app-style window
+                          # Starts the local editor on a stable port; desktop delivery should avoid Chrome app mode
   install-homebrew-forge-app-shortcut.sh
-                          # Installs the /Applications Homebrew Forge launcher with a direct support-launcher handoff
+                          # Installs the /Applications Homebrew Forge launcher; planned desktop replacement should open the shared editor in a real app shell
   run-homebrew-forge-editor.mjs
                           # Runs the Vite editor as a launcher-owned service process
   codex/
     homebrew-forge-launcher-health-hook.sh
-                          # Codex Stop hook target: repairs stale shortcut/support launcher and opens the current app for review
+                          # Codex Stop hook target: repairs stale shortcut/support launcher and opens the current app for review; planned desktop replacement should verify app process, not Chrome process
+    desktop-delivery-toolchain-check.mjs
+                          # Dependency-free desktop delivery readiness check for Node, pnpm, Apple tools, Xcode.app, and Electron package candidates
     import-signs-of-assassins.ts
                           # Deterministic Assassin import: owned ledger, batch-002 incoming orders, flags, recommendations, SOA shell, and six deck variants
     qa-signs-of-assassins.mjs
@@ -266,7 +303,7 @@ reference/
 - Let the renderer use linked reference terms as optional reminder text on normal and token rules boxes. The saved rules text stays clean; the SVG render tests a reminder-expanded candidate once and keeps it only when the rules box remains readable.
 - Keep card-text syntax visible from the Inspector Rules section. Rules/flavor text uses braced symbols such as `{T}`, `{2/W}`, and `{G/P}`; `~` renders as the current card name; `<i>...</i>` and parenthetical text render as italics; flavor `*...*` de-emphasizes text; and `\\` forces a new rendered line. Mana cost fields may use compact costs such as `2WU` without braces, but rules/flavor should require braces so ordinary letters are not interpreted as mana.
 - Keep References workspace content local and source-labeled. Kyle's Drive sheet seeds definitions; Scryfall catalog values broaden current term coverage; local Stargate/Cockatrice mechanics seed homebrew terms; user-created references are saved under `reference/custom/references.json`.
-- Use References > Official Cards and View > Card List Browser > Official catalog for opt-in local Scryfall-backed card lookup. Prints mode is for exact collection identity and Add to Collection, including chosen collection row owner; Oracle mode is read-only design/reference lookup. Official card images stay remote reference URLs and are not downloaded into repo source.
+- Use References > Official Cards and View > Card List Browser > Official catalog for opt-in local Scryfall-backed card lookup. Prints mode is for exact collection identity and Add to Collection, Unique mode collapses reprints/basic lands by mechanical card with variant counts and an exact-print variants browser, and Oracle mode is read-only design/reference lookup. Official card images stay remote reference URLs and are not downloaded into repo source.
 - Import local custom/homebrew references from File > Import > References as CSV.
   Imports skip duplicates and do not write directly into official reference
   snapshots.

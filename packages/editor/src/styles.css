@@ -198,8 +198,8 @@
   --fb-line-soft:   #e2d3bb;
   --fb-line-strong: #c5ad88;
   --fb-text:        #241f18;
-  --fb-text-muted:  #685b48;
-  --fb-label:       #83715a;
+  --fb-text-muted:  #574a35;
+  --fb-label:       #4f422e;
   --fb-accent:        #7f5f22;
   --fb-accent-strong: #624817;
   --fb-accent-ink:    #5b4112;
@@ -1114,7 +1114,7 @@ button {
 
 .primary-button:disabled {
   opacity: 0.58;
-  cursor: wait;
+  cursor: not-allowed;
 }
 
 .secondary-button:disabled {
@@ -4238,14 +4238,14 @@ button {
   place-items: center;
   align-content: center;
   gap: 10px;
-  border: 1px dashed #aeb9c9;
+  border: 1px dashed var(--fb-line-strong);
   border-radius: 10px;
-  color: #68778c;
+  color: var(--fb-text);
   text-align: center;
 }
 
 .preview-empty strong {
-  color: #17202c;
+  color: var(--fb-text);
 }
 
 .preview-loading {
@@ -6202,7 +6202,7 @@ button {
 
 .deck-commander-slots {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 8px;
 }
 
@@ -6230,8 +6230,75 @@ button {
 }
 
 .deck-commander-slots strong {
-  overflow: hidden;
   font-size: 13px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.deck-commander-zone {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #c8d6e8;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.deck-commander-zone.empty {
+  background: #f8fafc;
+}
+
+.deck-commander-card-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+}
+
+.deck-commander-card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid #c5d4e8;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #243044;
+  text-align: left;
+  cursor: pointer;
+}
+
+.deck-commander-card:hover,
+.deck-commander-card:focus-visible {
+  border-color: #2f66c7;
+  box-shadow: 0 0 0 3px rgba(47, 102, 199, 0.14);
+  outline: none;
+}
+
+.deck-commander-card span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.deck-commander-card small {
+  color: #607086;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.deck-commander-card strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.deck-commander-card em {
+  overflow: hidden;
+  color: #607086;
+  font-size: 12px;
+  font-style: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -6246,7 +6313,7 @@ button {
   display: flex;
   flex: 1 1 340px;
   align-items: end;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
 }
 
@@ -7816,6 +7883,83 @@ button {
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.official-variants-panel {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.official-variants-toolbar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.official-variants-search {
+  min-width: 0;
+}
+
+.official-variants-search input {
+  width: 100%;
+  min-width: 0;
+}
+
+.official-variant-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 12px;
+  overflow: auto;
+  padding: 2px;
+}
+
+.official-variant-tile {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #d9e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.official-variant-tile.selected {
+  border-color: #8aa9d6;
+  background: #f3f7fd;
+}
+
+.official-variant-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  color: #243044;
+}
+
+.official-variant-copy strong,
+.official-variant-copy span,
+.official-variant-copy small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.official-variant-copy span,
+.official-variant-copy small {
+  color: #5d6877;
+  font-size: 12px;
+}
+
+.official-variant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .table-link-button {
@@ -11109,6 +11253,14 @@ textarea::placeholder {
     align-items: stretch;
     flex-direction: column;
   }
+
+  .official-variants-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .official-variant-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
 }
 
 /* ============================================================================
@@ -11230,6 +11382,8 @@ textarea::placeholder {
 :root[data-theme="dark"] .deck-section,
 :root[data-theme="dark"] .deck-role-column,
 :root[data-theme="dark"] .deck-commander-slots div,
+:root[data-theme="dark"] .deck-commander-zone,
+:root[data-theme="dark"] .deck-commander-card,
 :root[data-theme="dark"] .deck-entry-row,
 :root[data-theme="dark"] .deck-entry-count,
 :root[data-theme="dark"] .deck-role-summary span,
@@ -11297,6 +11451,7 @@ textarea::placeholder {
 :root[data-theme="dark"] .overlay-card-option:hover,
 :root[data-theme="dark"] .collection-table-row:hover,
 :root[data-theme="dark"] .deck-entry-row.compact:hover,
+:root[data-theme="dark"] .deck-commander-card:hover,
 :root[data-theme="dark"] .set-cover-tile:hover,
 :root[data-theme="dark"] .card-image-tile:hover,
 :root[data-theme="dark"] .project-tile:hover,
@@ -11535,6 +11690,8 @@ textarea::placeholder {
 :root[data-theme="dark"] .transfer-scope-label,
 :root[data-theme="dark"] .deck-section-heading span,
 :root[data-theme="dark"] .deck-commander-slots span,
+:root[data-theme="dark"] .deck-commander-card small,
+:root[data-theme="dark"] .deck-commander-card em,
 :root[data-theme="dark"] .project-overview-copy p,
 :root[data-theme="dark"] .project-stat-strip small,
 :root[data-theme="dark"] .section-heading-row span,
@@ -11579,6 +11736,7 @@ textarea::placeholder {
 :root[data-theme="dark"] .deck-section-heading h3,
 :root[data-theme="dark"] .deck-entry-name strong,
 :root[data-theme="dark"] .deck-commander-slots strong,
+:root[data-theme="dark"] .deck-commander-card strong,
 :root[data-theme="dark"] .deck-board-tab strong,
 :root[data-theme="dark"] .collection-stat strong,
 :root[data-theme="dark"] .collection-table-row strong,
@@ -12097,6 +12255,7 @@ textarea:focus {
 :root[data-theme="dark"] .official-sort-summary,
 :root[data-theme="dark"] .official-reference-result-row,
 :root[data-theme="dark"] .official-reference-grid-tile,
+:root[data-theme="dark"] .official-variant-tile,
 :root[data-theme="dark"] .official-reference-table,
 :root[data-theme="dark"] .official-reference-table th,
 :root[data-theme="dark"] .official-reference-table td,
@@ -12111,6 +12270,7 @@ textarea:focus {
 :root[data-theme="dark"] .official-sort-summary strong,
 :root[data-theme="dark"] .official-reference-result-main,
 :root[data-theme="dark"] .official-reference-grid-copy,
+:root[data-theme="dark"] .official-variant-copy,
 :root[data-theme="dark"] .official-face-row strong {
   color: var(--fb-text);
 }
@@ -12120,6 +12280,8 @@ textarea:focus {
 :root[data-theme="dark"] .official-reference-result-main small,
 :root[data-theme="dark"] .official-reference-grid-copy span,
 :root[data-theme="dark"] .official-reference-grid-copy small,
+:root[data-theme="dark"] .official-variant-copy span,
+:root[data-theme="dark"] .official-variant-copy small,
 :root[data-theme="dark"] .official-face-row span,
 :root[data-theme="dark"] .official-face-row p {
   color: var(--fb-text-muted);
@@ -12127,6 +12289,7 @@ textarea:focus {
 
 :root[data-theme="dark"] .official-reference-result-row.selected,
 :root[data-theme="dark"] .official-reference-grid-tile.selected,
+:root[data-theme="dark"] .official-variant-tile.selected,
 :root[data-theme="dark"] .official-reference-table tr.selected {
   border-color: var(--fb-select-line);
   background: var(--fb-select);

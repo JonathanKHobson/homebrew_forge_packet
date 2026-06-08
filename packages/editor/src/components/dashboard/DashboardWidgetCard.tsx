@@ -5,8 +5,12 @@ export type DashboardWidgetId =
   | 'snapshot'
   | 'sources'
   | 'types'
+  | 'creatureTypes'
+  | 'subtypes'
+  | 'supertypes'
   | 'curve'
   | 'colors'
+  | 'landMana'
   | 'deckRatio'
   | 'keywords'
   | 'roles'
@@ -52,6 +56,30 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDefinition[] = [
     alternateVisualizations: ['donut']
   },
   {
+    id: 'creatureTypes',
+    title: 'Creature types',
+    eyebrow: 'Typal',
+    description: 'Creature subtypes in the selected scope, useful for checking Assassin density.',
+    defaultVisualization: 'bar',
+    alternateVisualizations: ['donut']
+  },
+  {
+    id: 'subtypes',
+    title: 'Subtype mix',
+    eyebrow: 'Taxonomy',
+    description: 'All card subtypes across creatures, artifacts, enchantments, lands, and spells.',
+    defaultVisualization: 'bar',
+    alternateVisualizations: ['donut']
+  },
+  {
+    id: 'supertypes',
+    title: 'Supertype mix',
+    eyebrow: 'Taxonomy',
+    description: 'Basic, legendary, snow, and other supertypes in the selected scope.',
+    defaultVisualization: 'bar',
+    alternateVisualizations: ['donut']
+  },
+  {
     id: 'curve',
     title: 'Mana curve',
     eyebrow: 'Deck shape',
@@ -64,6 +92,14 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDefinition[] = [
     title: 'Color mix',
     eyebrow: 'Color pressure',
     description: 'Resolved card colors only; unresolved rows are excluded from color counts.',
+    defaultVisualization: 'bar',
+    alternateVisualizations: ['donut']
+  },
+  {
+    id: 'landMana',
+    title: 'Land mana sources',
+    eyebrow: 'Mana base',
+    description: 'Colors and flexible sources produced by lands in the selected scope.',
     defaultVisualization: 'bar',
     alternateVisualizations: ['donut']
   },
@@ -103,7 +139,7 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDefinition[] = [
     id: 'collection',
     title: 'Collection value and review',
     eyebrow: 'Collector',
-    description: 'Value, purchase, review, and marked rows stay visible for collection scopes.',
+    description: 'Value, purchase, review, and marked rows stay visible for collection-backed scopes.',
     defaultVisualization: 'kpi',
     alternateVisualizations: ['bar', 'donut']
   },
@@ -201,11 +237,23 @@ function WidgetContent({ id, visualization, stats }: { id: DashboardWidgetId; vi
   if (id === 'types') {
     return visualization === 'donut' ? <Donut rows={stats.typeRows} /> : <BarList rows={stats.typeRows} />;
   }
+  if (id === 'creatureTypes') {
+    return visualization === 'donut' ? <Donut rows={stats.creatureTypeRows} emptyLabel="No creature types in this scope." /> : <BarList rows={stats.creatureTypeRows} emptyLabel="No creature types in this scope." />;
+  }
+  if (id === 'subtypes') {
+    return visualization === 'donut' ? <Donut rows={stats.subtypeRows} emptyLabel="No subtypes in this scope." /> : <BarList rows={stats.subtypeRows} emptyLabel="No subtypes in this scope." />;
+  }
+  if (id === 'supertypes') {
+    return visualization === 'donut' ? <Donut rows={stats.supertypeRows} emptyLabel="No supertypes in this scope." /> : <BarList rows={stats.supertypeRows} emptyLabel="No supertypes in this scope." />;
+  }
   if (id === 'curve') {
     return visualization === 'bar' ? <BarList rows={stats.manaRows} /> : <Histogram rows={stats.manaRows} />;
   }
   if (id === 'colors') {
     return visualization === 'donut' ? <Donut rows={stats.colorRows} /> : <BarList rows={stats.colorRows} />;
+  }
+  if (id === 'landMana') {
+    return visualization === 'donut' ? <Donut rows={stats.landManaRows} emptyLabel="No land mana sources in this scope." /> : <BarList rows={stats.landManaRows} emptyLabel="No land mana sources in this scope." />;
   }
   if (id === 'deckRatio') {
     return visualization === 'bar' ? <BarList rows={stats.deckRatioRows} /> : <Donut rows={stats.deckRatioRows} />;

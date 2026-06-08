@@ -40,12 +40,31 @@ const COMMANDER_NAME = "Altaïr Ibn-La'Ahad";
 const COMMANDER_SCRYFALL_ID = '358026de-ab7c-4a17-8cac-cfbee391b127';
 const KASSANDRA_NAME = 'Kassandra, Eagle Bearer';
 const SPEAR_NAME = 'The Spear of Leonidas';
+const DECK_COLOR_IDENTITY = 'WBR';
+const COMMANDER_BRACKET = 'Bracket 3 - Upgraded';
 const BATCH_TAGS = ['batch-001', 'assassin', 'commander', 'mardu', 'manabox', 'signs-of-assassins'];
-const ORDERED_TAGS = ['batch-002', 'incoming', 'ordered', 'delivery-pending', 'partner-purchase', 'signs-of-assassins'];
+const ORDERED_TAGS = ['batch-002', 'ordered', 'partner-order', 'assassin', 'commander', 'mardu', 'signs-of-assassins'];
 const COMMANDER_COLORS = new Set(['B', 'R', 'W']);
 const BASIC_LANDS = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']);
+const OWNED_BASIC_LAND_COUNTS: Record<string, number> = { Swamp: 7, Mountain: 5, Plains: 7 };
+const BASIC_LAND_POOL_NAMES = Object.keys(OWNED_BASIC_LAND_COUNTS);
+const EXTRA_OWNED_LANDS: Array<{ name: string; quantity: number; notes: string; tags: string[] }> = [
+  { name: 'Evolving Wilds', quantity: 1, notes: 'Additional owned copy not captured in the ManaBox scan.', tags: ['land', 'fixing', 'duplicate-name-review'] }
+];
 const KNOWN_OFF_COLOR = new Set(['Chishiro, the Shattered Blade', 'Eivor, Wolf-Kissed', 'Bountiful Landscape', 'Forest']);
-const EXPECTED_DELIVERY = 'around June 15, 2026';
+const DECK_PLAY_STYLE_TAGS = [
+  'evasive-combat',
+  'unblockable',
+  'cannot-block',
+  'combat-puzzle',
+  'graveyard-setup',
+  'exile-value',
+  'assassin-typal',
+  'freerunning',
+  'attack-triggers',
+  'mardu',
+  'toolbox'
+];
 
 const SET_HEADERS = ['set_code', 'set_name', 'set_type', 'version', 'default_language', 'default_asset_pack', 'default_export_profile', 'author', 'status', 'tags', 'notes'];
 const CARD_HEADERS = ['card_id', 'set_code', 'collector_number', 'name', 'layout', 'mode', 'source_card_name', 'source_set_code', 'rarity', 'color_identity', 'tags', 'status', 'print_count', 'export_name_override', 'notes'];
@@ -144,7 +163,7 @@ const ORDERED_CARDS: Array<{ name: string; quantity?: number; notes: string; tag
 ];
 
 const RECOMMENDATIONS: Array<{ name: string; roles: string[]; tags: string[]; notes: string; land?: boolean; basicCount?: number }> = [
-  { name: 'Command Tower', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'gap-filler'], notes: 'Commander staple fixing for BRW variants.', land: true },
+  { name: 'Command Tower', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'gap-filler'], notes: 'Commander staple fixing for Mardu variants.', land: true },
   { name: 'Nomad Outpost', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'mardu'], notes: 'Budget Mardu tri-land to stabilize colors.', land: true },
   { name: 'Path of Ancestry', roles: ['land', 'fixing', 'assassin'], tags: ['land', 'fixing', 'tribal'], notes: 'Fixes commander colors and scries when casting Assassins.', land: true },
   { name: "Rogue's Passage", roles: ['land', 'evasion'], tags: ['land', 'evasion'], notes: 'Gives key attackers a direct unblockable line.', land: true },
@@ -164,9 +183,6 @@ const RECOMMENDATIONS: Array<{ name: string; roles: string[]; tags: string[]; no
   { name: 'Orzhov Basilica', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'WB bounce land for budget fixing.', land: true },
   { name: 'Boros Garrison', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'RW bounce land for budget fixing.', land: true },
   { name: 'Rakdos Carnarium', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'BR bounce land for budget fixing.', land: true },
-  { name: 'Swamp', roles: ['land'], tags: ['land', 'basic-land'], notes: 'Ghost basic land slot for unscanned basics.', land: true, basicCount: 8 },
-  { name: 'Mountain', roles: ['land'], tags: ['land', 'basic-land'], notes: 'Ghost basic land slot for unscanned basics.', land: true, basicCount: 7 },
-  { name: 'Plains', roles: ['land'], tags: ['land', 'basic-land'], notes: 'Ghost basic land slot beyond scanned Plains copies.', land: true, basicCount: 5 },
   { name: 'Cover of Darkness', roles: ['evasion', 'assassin'], tags: ['evasion', 'tribal', 'gap-filler'], notes: 'Makes chosen creature type hard to block and fits Assassin pressure.' },
   { name: 'Reconnaissance', roles: ['protection', 'combat'], tags: ['combat', 'protection', 'puzzle'], notes: 'Lets attacks become safer and creates tricky combat sequencing.' },
   { name: 'Dolmen Gate', roles: ['protection', 'combat'], tags: ['combat', 'protection'], notes: 'Protects attacking creatures so evasion pressure is easier to commit to.' },
@@ -206,74 +222,74 @@ const VARIANTS: VariantDefinition[] = [
   {
     id: 'hidden-blade-core',
     name: 'Hidden Blade Core',
-    description: 'Owned-only baseline build using Kyle\'s scanned batch, with no ghost slots.',
+    description: 'Owned-only reality check for the Altaïr plan: Assassin density, evasive bodies, graveyard setup, and the cards Kyle can actually sleeve today.',
     status: 'testing',
-    tags: ['owned-only', 'baseline', 'assassin', 'mardu'],
+    tags: ['owned-only', 'baseline', 'assassin', 'mardu', 'graveyard-setup', 'evasive-combat'],
     ownedOnly: true,
     landTarget: 36,
     includeRecommendations: [],
     roleWeights: { assassin: 4, evasion: 4, graveyard: 3, exile: 3, removal: 2, draw: 2, ramp: 2, protection: 2, combat: 2 },
-    notes: 'Baseline comparison build. If it falls below 36 lands, keep the land-light flag visible instead of hiding missing basics.'
+    notes: 'Use this as the honest starting point. It shows whether the owned pool already has enough mana, evasive attackers, discard/mill, and interaction for Altaïr before any upgrades are added.'
   },
   {
     id: 'rooftop-evasion',
     name: 'Rooftop Evasion',
-    description: 'Owned-only combat build prioritizing flying, menace, unblockable lines, and attacks that are awkward to block.',
+    description: 'Owned-only pressure build for the "you cannot block me" fantasy: flying, menace, tap-downs, cannot-block effects, and awkward combat math.',
     status: 'testing',
-    tags: ['owned-only', 'evasion', 'combat', 'assassin'],
+    tags: ['owned-only', 'evasion', 'unblockable', 'cannot-block', 'combat-puzzle', 'assassin'],
     ownedOnly: true,
     landTarget: 36,
     includeRecommendations: [],
     roleWeights: { evasion: 6, assassin: 4, combat: 4, equipment: 3, protection: 3, draw: 2, removal: 2, graveyard: 1 },
-    notes: 'This variant tests the core feel of “you cannot block me” using only owned cards.'
+    notes: 'This is the owned-only combat puzzle build. It favors cards that make blocks impossible, bad, or irrelevant, then checks whether the deck can keep pressure up without leaning on unowned staples.'
   },
   {
     id: 'memory-corridor',
     name: 'Memory Corridor',
-    description: 'Graveyard/exile build with recommended setup pieces and ghost lands.',
+    description: 'Graveyard/exile engine build: stock the graveyard with Assassins, let Altaïr turn those memories into combat pressure, and avoid becoming generic reanimator.',
     status: 'draft',
-    tags: ['recommendation-enhanced', 'graveyard', 'exile', 'assassin'],
+    tags: ['recommendation-enhanced', 'graveyard', 'exile', 'assassin', 'altaïr-engine', 'discard-outlets'],
     ownedOnly: false,
     landTarget: 37,
     includeRecommendations: ['Buried Alive', 'Entomb', 'Unmarked Grave', 'Oriq Loremage', 'Dauthi Voidwalker', 'Key to the City', 'Command Tower', 'Path of Ancestry', 'Nomad Outpost', 'Rogue\'s Passage', 'Bojuka Bog', 'Arcane Signet', 'Fellwar Stone'],
     roleWeights: { graveyard: 7, exile: 6, assassin: 4, evasion: 4, tutor: 4, draw: 3, protection: 3, removal: 2, ramp: 2 },
-    notes: 'This variant loads the graveyard with useful Assassin bodies and uses exile/graveyard value without becoming a generic reanimator deck.'
+    notes: 'This variant is built around filling the graveyard on purpose, then using Altaïr and exile-adjacent pieces to borrow value temporarily. Cards that only return creatures permanently are treated as tension unless they also advance the exile/memory theme.'
   },
   {
     id: 'brotherhood-arsenal',
     name: 'Brotherhood Arsenal',
-    description: 'Equipment, artifact, and protection build with recommended support upgrades and ghost lands.',
+    description: 'Artifact and Equipment toolbelt build: protect Altaïr, suit up evasive Assassins, and turn relics into card flow or closing pressure.',
     status: 'draft',
-    tags: ['recommendation-enhanced', 'equipment', 'artifact', 'protection'],
+    tags: ['recommendation-enhanced', 'equipment', 'artifact', 'protection', 'toolbox', 'relics'],
     ownedOnly: false,
     landTarget: 36,
     includeRecommendations: ['Whispersilk Cloak', 'Trailblazer\'s Boots', 'Lightning Greaves', 'Swiftfoot Boots', 'Skullclamp', 'Maskwood Nexus', 'Herald\'s Horn', 'Vanquisher\'s Banner', 'Command Tower', 'Nomad Outpost', 'Path of Ancestry', 'Arcane Signet', 'Boros Signet', 'Orzhov Signet', 'Rakdos Signet'],
     roleWeights: { equipment: 7, artifact: 6, protection: 5, evasion: 4, assassin: 4, ramp: 4, draw: 3, removal: 2 },
-    notes: 'This variant asks whether the deck is better as a toolbelt: protect Altaïr, suit up evasive creatures, and let artifacts smooth the plan.'
+    notes: 'This variant asks whether the deck wants to be a relic toolbox. It prioritizes protection, Equipment, tribal artifacts, and the Kassandra plus Spear package over pure graveyard velocity.'
   },
   {
     id: 'nothing-is-true',
     name: 'Nothing Is True',
-    description: 'Stronger recommendation-enhanced build focused on fixing, efficient setup, protection, and clean interaction.',
+    description: 'Most practical upgraded build: better mana, cleaner setup, stronger protection, and removal that keeps the Altaïr plan alive.',
     status: 'draft',
-    tags: ['recommendation-enhanced', 'stronger-build', 'balanced', 'mardu'],
+    tags: ['recommendation-enhanced', 'stronger-build', 'balanced', 'mardu', 'fixing', 'protection'],
     ownedOnly: false,
     landTarget: 37,
     includeRecommendations: ['Command Tower', 'Nomad Outpost', 'Path of Ancestry', 'Exotic Orchard', 'Caves of Koilos', 'Battlefield Forge', 'Sulfurous Springs', 'Clifftop Retreat', 'Isolated Chapel', 'Dragonskull Summit', 'Buried Alive', 'Entomb', 'Cover of Darkness', 'Reconnaissance', 'Dolmen Gate', 'Lightning Greaves', 'Swiftfoot Boots', 'Boros Charm', 'Teferi\'s Protection', 'Anguished Unmaking', 'Feed the Swarm', 'Wear // Tear', 'Arcane Signet', 'Fellwar Stone'],
     roleWeights: { fixing: 7, land: 5, ramp: 5, protection: 5, removal: 5, graveyard: 4, evasion: 4, draw: 3, assassin: 3, combat: 3 },
-    notes: 'This is the cleanest “make the deck work” variant: stronger mana, setup, protection, and answers before more speculative packages.'
+    notes: 'This is the version to test when you want the deck to function first and express theme second. It spends recommendation slots on fixing, protection, graveyard setup, and flexible answers before adding cuter puzzle pieces.'
   },
   {
     id: 'everything-is-permitted',
     name: 'Everything Is Permitted',
-    description: 'Experimental puzzle/evasion build using the most playful recommendation package.',
+    description: 'Experimental puzzle-combat build: unblockable lines, attack-trigger multiplication, type manipulation, and temporary-token weirdness.',
     status: 'draft',
-    tags: ['recommendation-enhanced', 'experimental', 'puzzle', 'evasion'],
+    tags: ['recommendation-enhanced', 'experimental', 'puzzle', 'evasion', 'unblockable', 'attack-triggers', 'token-copy'],
     ownedOnly: false,
     landTarget: 36,
     includeRecommendations: ['Cover of Darkness', 'Reconnaissance', 'Dolmen Gate', 'Key to the City', 'Whispersilk Cloak', 'Trailblazer\'s Boots', 'Maskwood Nexus', 'Shared Animosity', 'Isshin, Two Heavens as One', 'The Master, Multiplied', 'Dauthi Voidwalker', 'Rogue\'s Passage', 'Unclaimed Territory', 'Secluded Courtyard', 'Path of Ancestry', 'Command Tower', 'Arcane Signet', 'Talisman of Conviction', 'Talisman of Hierarchy', 'Talisman of Indulgence'],
     roleWeights: { evasion: 8, combat: 6, puzzle: 5, assassin: 5, exile: 4, token: 4, equipment: 3, protection: 3, draw: 2, ramp: 2 },
-    notes: 'This variant is where the weird lines live: unblockable puzzles, attack-trigger multiplication, type manipulation, and temporary-token experiments.'
+    notes: 'This is the sandbox version. It keeps cards that create strange attack states, unblockable shortcuts, copied attack triggers, and creature-type hacks, even when those lines are less efficient than the practical build.'
   }
 ];
 
@@ -291,15 +307,22 @@ async function main(): Promise<void> {
 
   const importResult = await importCollectionCsv(REPO_ROOT, collectionImportRequest(sourceContent, false));
   const orderedCardsByName = await fetchScryfallCardsByName(ORDERED_CARDS.map((card) => card.name));
+  const ownedLandPoolByName = await fetchScryfallCardsByName([...BASIC_LAND_POOL_NAMES, ...EXTRA_OWNED_LANDS.map((land) => land.name)]);
   for (const ordered of ORDERED_CARDS) {
     const card = orderedCardsByName.get(normalizedName(ordered.name));
     if (card) {
       sourceRowsById.set(card.id.toLowerCase(), orderedSourceRow(ordered, now));
     }
   }
-  const baseOwnedEntries = upsertOrderedEntries(importResult.collection.entries, orderedCardsByName, now);
+  for (const card of ownedLandPoolByName.values()) {
+    sourceRowsById.set(card.id.toLowerCase(), basicLandPoolSourceRow(card, now));
+  }
+  const baseOwnedEntries = upsertOwnedLandPoolEntries(upsertOrderedEntries(importResult.collection.entries, orderedCardsByName, now), ownedLandPoolByName, now);
   const ownedCardsById = await fetchScryfallCardsById(baseOwnedEntries.map((entry) => entry.scryfallId).filter((id): id is string => Boolean(id)));
   for (const card of orderedCardsByName.values()) {
+    ownedCardsById.set(card.id.toLowerCase(), card);
+  }
+  for (const card of ownedLandPoolByName.values()) {
     ownedCardsById.set(card.id.toLowerCase(), card);
   }
   const duplicateCounts = countBy(baseOwnedEntries, (entry) => normalizedName(entry.cardName), (entry) => entry.quantity);
@@ -308,19 +331,19 @@ async function main(): Promise<void> {
     metadata: collectionMetadataSchema.parse({
       ...importResult.collection.metadata,
       name: "Assassin's Ledger",
-      description: "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and delivery-pending online orders.",
+      description: "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and ordered batch-002 additions.",
       linkedUniverseId: PROJECT_ID,
       gameId: 'mtg',
       purpose: 'owned',
       source: 'manabox',
       kind: 'binder',
       listCategory: 'general',
-      tags: uniqueTags([...importResult.collection.metadata.tags, ...BATCH_TAGS, 'batch-002', 'incoming', 'ordered', 'delivery-pending']),
+      tags: uniqueTags([...importResult.collection.metadata.tags, ...BATCH_TAGS, 'batch-002', 'ordered']),
       defaultEntryTags: BATCH_TAGS,
       defaultOwnershipStatus: 'owned',
       linkedSetCodes: uniqueTags([...(importResult.collection.metadata.linkedSetCodes ?? []), SET_CODE]),
       accentColor: '#9b2f3f',
-      acquisitionNotes: 'batch-001 import from Kyle\'s ManaBox Assassin deck CSV. batch-002 incoming partner-purchased online cards expected around June 15, 2026.',
+      acquisitionNotes: 'batch-001 import from Kyle\'s ManaBox Assassin deck CSV. batch-002 ordered cards were added as owned cards for deck-building evaluation.',
       updatedAt: now
     }),
     entries: enrichedOwnedEntries
@@ -329,9 +352,7 @@ async function main(): Promise<void> {
   await ensureSignsOfAssassinsSet(now, coverImageUrlForCard(ownedCardsById.get(COMMANDER_SCRYFALL_ID)));
   const flagged = await upsertFlaggedReviewList(binder.entries, now);
   const recommendations = await upsertRecommendations(binder.entries, now);
-  const deck = await buildDeck(binder.entries, recommendations.entries, now);
-
-  const totals = verifyDeck(deck.entries);
+  const { deck, totals } = await buildDeck(binder.entries, recommendations.entries, now);
   const offColorCount = binder.entries.filter((entry) => KNOWN_OFF_COLOR.has(entry.cardName)).length;
   console.log(JSON.stringify({
     binder: {
@@ -362,7 +383,7 @@ function collectionImportRequest(content: string, dryRun: boolean) {
   return {
 	    collectionId: BINDER_ID,
 	    name: "Assassin's Ledger",
-	    description: "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and delivery-pending online orders.",
+	    description: "Kyle's owned Assassin ledger for the Signs of Assassins Commander deck family, including scanned cards and ordered batch-002 additions.",
     linkedUniverseId: PROJECT_ID,
     gameId: 'mtg',
     purpose: 'owned' as const,
@@ -407,9 +428,9 @@ function upsertOrderedEntries(entries: CollectionEntry[], cardsByName: Map<strin
         quantity: existing.quantity + quantity,
         ownershipStatus: 'owned',
         ownerName: OWNER_NAME,
-        tags: uniqueTags([...existing.tags, ...ORDERED_TAGS, ...(ordered.tags ?? [])]),
+        tags: uniqueTags([...withoutLogisticsTags(existing.tags), ...ORDERED_TAGS, ...(ordered.tags ?? [])]),
         notes: uniqueSentences([existing.notes, orderedLedgerNote(ordered)]).join(' '),
-        reviewNotes: uniqueSentences([existing.reviewNotes, `Incoming batch-002 adds ${quantity} partner-purchased copy of ${card.name}; expected delivery ${EXPECTED_DELIVERY}.`]).join(' ')
+        reviewNotes: uniqueSentences([existing.reviewNotes, `batch-002 adds ${quantity} ordered copy of ${card.name} for Kyle.`]).join(' ')
       });
       continue;
     }
@@ -425,15 +446,15 @@ function upsertOrderedEntries(entries: CollectionEntry[], cardsByName: Map<strin
       collectorNumber: clean(card.collector_number),
       scryfallId: card.id,
       finish: 'normal',
-      condition: 'incoming',
+      condition: 'unknown',
       language: languageLabel(card.lang),
-      location: 'Incoming delivery',
+      location: 'Kyle collection',
       source: 'scryfall',
-      sourceRow: JSON.stringify({ source: 'partner-online-order', ordered, scryfall: card, expectedDelivery: EXPECTED_DELIVERY }),
+      sourceRow: JSON.stringify({ source: 'partner-online-order', ordered, scryfall: card }),
       matchKey: card.id,
       matchStrategy: 'scryfall_id',
       reviewStatus: 'matched',
-      reviewNotes: `Incoming batch-002 partner-purchased card; expected delivery ${EXPECTED_DELIVERY}.`,
+      reviewNotes: 'batch-002 ordered card for Kyle.',
       previewArtSource: 'scryfall',
       tags: uniqueTags([...ORDERED_TAGS, ...(ordered.tags ?? [])]),
       notes: orderedLedgerNote(ordered),
@@ -451,15 +472,124 @@ function orderedSourceRow(ordered: { name: string; quantity?: number; notes: str
     Quantity: String(Math.max(1, ordered.quantity ?? 1)),
     Source: 'partner-online-order',
     Batch: 'batch-002',
-    'Order status': 'incoming delivery',
-    'Expected delivery': EXPECTED_DELIVERY,
+    'Order status': 'owned',
     Added: now,
     Notes: ordered.notes
   };
 }
 
 function orderedLedgerNote(ordered: { name: string; notes: string }): string {
-  return `${ordered.notes} Partner-purchased online for Kyle; expected delivery ${EXPECTED_DELIVERY}.`;
+  return ordered.notes;
+}
+
+function withoutLogisticsTags(tags: string[] | undefined): string[] {
+  return (tags ?? []).filter((tag) => !['incoming', 'delivery-pending'].includes(tag));
+}
+
+function upsertOwnedLandPoolEntries(entries: CollectionEntry[], cardsByName: Map<string, ScryfallCard>, now: string): CollectionEntry[] {
+  const next = entries.map((entry) => collectionEntrySchema.parse({ ...entry }));
+  const scannedBasicCounts = countBy(next.filter((entry) => BASIC_LANDS.has(entry.cardName)), (entry) => entry.cardName, (entry) => entry.quantity);
+  for (const name of BASIC_LAND_POOL_NAMES) {
+    const card = cardsByName.get(normalizedName(name));
+    if (!card) {
+      console.warn(`Basic land pool skipped: ${name} was not found on Scryfall.`);
+      continue;
+    }
+    const quantity = Math.max(0, (OWNED_BASIC_LAND_COUNTS[name] ?? 0) - (scannedBasicCounts.get(name) ?? 0));
+    if (quantity <= 0) {
+      continue;
+    }
+    const entryId = `basic-land-pool-${slugify(card.name)}`;
+    const existingIndex = next.findIndex((entry) => entry.entryId === entryId);
+    const basicEntry = collectionEntrySchema.parse({
+      ...(existingIndex >= 0 ? next[existingIndex] : {}),
+      collectionId: BINDER_ID,
+      entryId,
+      quantity,
+      ownershipStatus: 'owned',
+      ownerName: OWNER_NAME,
+      cardName: card.name,
+      setCode: clean(card.set).toUpperCase(),
+      setName: clean(card.set_name),
+      collectorNumber: clean(card.collector_number),
+      scryfallId: card.id,
+      finish: 'normal',
+      condition: 'bulk',
+      language: languageLabel(card.lang),
+      location: 'Kyle basic lands',
+      source: 'generic',
+      sourceRow: JSON.stringify({ source: 'assumed-owned-basic-land-pool', scryfall: card }),
+      matchKey: card.id,
+      matchStrategy: 'scryfall_id',
+      reviewStatus: 'matched',
+      reviewNotes: `Owned basic land pool for Commander deck construction; ${quantity} unscanned ${card.name} ${quantity === 1 ? 'copy' : 'copies'} added to reach Kyle's stated owned total of ${OWNED_BASIC_LAND_COUNTS[name]}.`,
+      previewArtSource: 'scryfall',
+      tags: uniqueTags(['basic-land-pool', 'assumed-owned', 'owned-basic', 'land', 'basic-land', 'commander', 'mardu', 'signs-of-assassins']),
+      notes: `Kyle owns ${OWNED_BASIC_LAND_COUNTS[name]} total ${card.name} basic lands for this deck lane; this row adds the unscanned copies so Commander variants do not treat basics as missing cards.`,
+      flagged: false,
+      proxy: false,
+      homebrew: false
+    });
+    if (existingIndex >= 0) {
+      next[existingIndex] = basicEntry;
+    } else {
+      next.push(basicEntry);
+    }
+  }
+  for (const ownedLand of EXTRA_OWNED_LANDS) {
+    const card = cardsByName.get(normalizedName(ownedLand.name));
+    if (!card) {
+      console.warn(`Extra owned land skipped: ${ownedLand.name} was not found on Scryfall.`);
+      continue;
+    }
+    const entryId = `extra-owned-land-${slugify(card.name)}-${card.id.slice(0, 8)}`;
+    const existingIndex = next.findIndex((entry) => entry.entryId === entryId);
+    const extraEntry = collectionEntrySchema.parse({
+      ...(existingIndex >= 0 ? next[existingIndex] : {}),
+      collectionId: BINDER_ID,
+      entryId,
+      quantity: ownedLand.quantity,
+      ownershipStatus: 'owned',
+      ownerName: OWNER_NAME,
+      cardName: card.name,
+      setCode: clean(card.set).toUpperCase(),
+      setName: clean(card.set_name),
+      collectorNumber: clean(card.collector_number),
+      scryfallId: card.id,
+      finish: 'normal',
+      condition: 'unknown',
+      language: languageLabel(card.lang),
+      location: 'Kyle collection',
+      source: 'generic',
+      sourceRow: JSON.stringify({ source: 'extra-owned-land', scryfall: card, note: ownedLand.notes }),
+      matchKey: card.id,
+      matchStrategy: 'scryfall_id',
+      reviewStatus: 'matched',
+      reviewNotes: ownedLand.notes,
+      previewArtSource: 'scryfall',
+      tags: uniqueTags(['extra-owned-land', 'owned', 'commander', 'mardu', 'signs-of-assassins', ...ownedLand.tags]),
+      notes: ownedLand.notes,
+      flagged: false,
+      proxy: false,
+      homebrew: false
+    });
+    if (existingIndex >= 0) {
+      next[existingIndex] = extraEntry;
+    } else {
+      next.push(extraEntry);
+    }
+  }
+  return next;
+}
+
+function basicLandPoolSourceRow(card: ScryfallCard, now: string): CsvRow {
+  return {
+    Name: card.name,
+    Quantity: String(OWNED_BASIC_LAND_COUNTS[card.name] ?? EXTRA_OWNED_LANDS.find((land) => normalizedName(land.name) === normalizedName(card.name))?.quantity ?? 1),
+    Source: BASIC_LANDS.has(card.name) ? 'owned-basic-land-pool' : 'extra-owned-land',
+    Added: now,
+    Notes: BASIC_LANDS.has(card.name) ? 'Owned basic land pool for Commander deck construction.' : 'Extra owned nonbasic land copy.'
+  };
 }
 
 function enrichOwnedEntry(
@@ -471,12 +601,17 @@ function enrichOwnedEntry(
 ): CollectionEntry {
   const roles = inferRoles(card, entry.cardName);
   const isIncomingOrder = entry.tags.includes('batch-002') || entry.tags.includes('incoming') || entry.source === 'scryfall';
-  const importTags = isIncomingOrder ? ['assassin', 'commander', 'mardu', 'signs-of-assassins'] : BATCH_TAGS;
+  const isOwnedLandPool = entry.tags.includes('basic-land-pool') || entry.tags.includes('extra-owned-land');
+  const importTags = isOwnedLandPool
+    ? ['owned-land-pool', 'assumed-owned', 'commander', 'mardu', 'signs-of-assassins']
+    : isIncomingOrder
+      ? ['assassin', 'commander', 'mardu', 'signs-of-assassins']
+      : BATCH_TAGS;
   const tags = uniqueTags([...importTags, ...roles, ...entry.tags]);
   const duplicateCount = duplicateCounts.get(normalizedName(entry.cardName)) ?? entry.quantity;
   const reviewNotes: string[] = [];
   let needsImportReview = false;
-  if (duplicateCount > 1) {
+  if (duplicateCount > 1 && !BASIC_LANDS.has(entry.cardName)) {
     tags.push('duplicate-name-review', 'flagged', 'review-queue');
     reviewNotes.push(`Duplicate name review: ${entry.cardName} appears as ${duplicateCount} owned copies/prints across Assassin's Ledger. Commander variants should use only one nonbasic copy; the binder preserves every owned print.`);
     needsImportReview = true;
@@ -484,7 +619,7 @@ function enrichOwnedEntry(
   const colorIdentity = colorIdentityForCard(card);
   if (KNOWN_OFF_COLOR.has(entry.cardName) || !isCommanderLegal(colorIdentity)) {
     tags.push('off-color-review', 'flagged', 'review-queue');
-    reviewNotes.push('Color identity review: outside Altaïr\'s BRW Commander identity, so this card stays in the binder and is excluded from active variants.');
+    reviewNotes.push('Color identity review: outside Altaïr\'s Mardu Commander identity, so this card stays in the binder and is excluded from active variants.');
     needsImportReview = true;
   }
   if (entry.cardName === COMMANDER_NAME) {
@@ -492,7 +627,7 @@ function enrichOwnedEntry(
     reviewNotes.push('Commander and cover card for the Signs of Assassins deck family.');
   }
   const sourcePayload = {
-    source: isIncomingOrder ? 'partner-online-order' : 'manabox',
+    source: isOwnedLandPool ? 'owned-land-pool' : isIncomingOrder ? 'partner-online-order' : 'manabox',
     row: sourceRow ?? {},
     enrichment: card
   };
@@ -593,7 +728,7 @@ async function upsertRecommendations(ownedEntries: CollectionEntry[], now: strin
   }));
   const ownedNonbasicNames = new Set(ownedEntries.filter((entry) => !BASIC_LANDS.has(entry.cardName)).map((entry) => normalizedName(entry.cardName)));
   const cardsByName = await fetchRecommendedCards();
-  const existingById = new Map(existing.entries.map((entry) => [clean(entry.scryfallId).toLowerCase() || entry.entryId, entry]));
+  const existingById = new Map(existing.entries.filter((entry) => !entry.tags.includes('signs-of-assassins')).map((entry) => [clean(entry.scryfallId).toLowerCase() || entry.entryId, entry]));
   for (const recommendation of RECOMMENDATIONS) {
     if (ownedNonbasicNames.has(normalizedName(recommendation.name))) {
       continue;
@@ -692,7 +827,7 @@ async function buildDeck(ownedEntries: CollectionEntry[], recommendationEntries:
       name: definition.name,
       description: definition.description,
       status: definition.status,
-      colorIdentity: 'BRW',
+      colorIdentity: DECK_COLOR_IDENTITY,
       commander: commanderReference,
       tags: uniqueTags(['assassin', 'mardu', ...definition.tags]),
       notes: definition.notes,
@@ -709,23 +844,26 @@ async function buildDeck(ownedEntries: CollectionEntry[], recommendationEntries:
   const metadata = deckMetadataSchema.parse({
     deckId: DECK_ID,
     name: SET_NAME,
-    description: "Altaïr Commander deck-building workspace for Kyle's Assassin ledger, with owned-only and recommendation-enhanced variants.",
+    description: "Altaïr Mardu Commander deck built around evasive Assassin attacks, graveyard setup, and temporary exile-memory value instead of generic reanimation.",
     linkedUniverseId: PROJECT_ID,
     linkedSetCode: SET_CODE,
     format: 'Commander',
-    playStyleTags: ['evasion', 'unblockable', 'graveyard-setup', 'exile-value', 'assassin-typal', 'mardu', 'puzzle-combat'],
-    colorIdentity: 'BRW',
+    playStyleTags: DECK_PLAY_STYLE_TAGS,
+    colorIdentity: DECK_COLOR_IDENTITY,
     commander: commanderReference,
     coverCard: commanderReference,
+    commanderBracket: COMMANDER_BRACKET,
     status: 'draft',
     activeVariantId: 'hidden-blade-core',
     variants,
     tags: ['assassin', 'commander', 'mardu', 'signs-of-assassins', 'batch-001', 'deck-variants'],
-    notes: 'Imported owned cards are the source pool for this deck family, not a finalized 100. Ghost/recommended rows live in the Recommendations list and are visually marked as not owned in deck views. Owned-only variants intentionally keep missing land gaps visible.',
+    notes: 'Core thesis: make blocking awkward or impossible, put useful Assassins into the graveyard, then let Altaïr turn those cards into temporary combat value. Owned-only variants show the real pool; recommendation-enhanced variants show the upgrades, lands, and gap fillers to test next.',
     createdAt: now,
     updatedAt: now
   });
-  return saveDeck(REPO_ROOT, { metadata, entries: allEntries });
+  const totals = verifyDeck(allEntries);
+  const deck = await saveDeck(REPO_ROOT, { metadata, entries: allEntries });
+  return { deck, totals };
 }
 
 function buildVariantBuild(definition: VariantDefinition, ownedCandidates: Candidate[], recommendationCandidates: Candidate[], commanderCandidate: Candidate): VariantBuild {
@@ -769,13 +907,19 @@ function buildVariantPicks(definition: VariantDefinition, ownedCandidates: Candi
     return true;
   };
 
-  const ownedLands = allowedOwned.filter((candidate) => candidate.roles.includes('land')).sort((left, right) => scoreCandidate(right, definition) - scoreCandidate(left, definition));
+  const ownedNonbasicLands = allowedOwned
+    .filter((candidate) => candidate.roles.includes('land') && !BASIC_LANDS.has(candidate.name))
+    .sort((left, right) => scoreCandidate(right, definition) - scoreCandidate(left, definition) || left.name.localeCompare(right.name));
   if (definition.ownedOnly) {
-    for (const land of ownedLands) {
+    for (const land of ownedNonbasicLands) {
+      if (landCount >= definition.landTarget) {
+        break;
+      }
       add(land, Math.min(land.quantity, 1));
     }
+    fillOwnedBasicLands();
   } else {
-    for (const land of ownedLands) {
+    for (const land of ownedNonbasicLands) {
       if (landCount >= Math.max(26, definition.landTarget - 10)) {
         break;
       }
@@ -792,6 +936,7 @@ function buildVariantPicks(definition: VariantDefinition, ownedCandidates: Candi
       const count = recommendation?.basicCount && BASIC_LANDS.has(land.name) ? Math.min(recommendation.basicCount, definition.landTarget - landCount) : 1;
       add(land, count);
     }
+    fillOwnedBasicLands();
   }
 
   for (const name of definition.includeRecommendations) {
@@ -816,6 +961,54 @@ function buildVariantPicks(definition: VariantDefinition, ownedCandidates: Candi
     throw new Error(`${definition.name} generated ${totalCount(selected)} main-deck cards instead of 99.`);
   }
   return selected;
+
+  function fillOwnedBasicLands(): void {
+    if (landCount >= definition.landTarget) {
+      return;
+    }
+    const basicsByName = new Map<string, Candidate>();
+    for (const candidate of allowedOwned) {
+      if (!BASIC_LANDS.has(candidate.name)) {
+        continue;
+      }
+      const existing = basicsByName.get(candidate.name);
+      if (existing) {
+        const representative = candidate.tags.includes('basic-land-pool') ? candidate : existing;
+        basicsByName.set(candidate.name, { ...representative, quantity: existing.quantity + candidate.quantity, tags: uniqueTags([...existing.tags, ...candidate.tags]) });
+      } else {
+        basicsByName.set(candidate.name, candidate);
+      }
+    }
+    const desired = basicLandMix(definition.landTarget - landCount);
+    for (const [name, count] of desired) {
+      const candidate = basicsByName.get(name);
+      if (!candidate || landCount >= definition.landTarget) {
+        continue;
+      }
+      add(candidate, Math.min(count, candidate.quantity, definition.landTarget - landCount));
+    }
+    for (const name of BASIC_LAND_POOL_NAMES) {
+      const candidate = basicsByName.get(name);
+      if (!candidate || landCount >= definition.landTarget) {
+        continue;
+      }
+      add(candidate, Math.min(candidate.quantity, definition.landTarget - landCount));
+    }
+  }
+}
+
+function basicLandMix(needed: number): Array<[string, number]> {
+  if (needed <= 0) {
+    return [];
+  }
+  const swamps = Math.max(1, Math.ceil(needed * 0.5));
+  const mountains = Math.max(needed >= 3 ? 1 : 0, Math.floor(needed * 0.3));
+  const plains = Math.max(0, needed - swamps - mountains);
+  return [
+    ['Swamp', swamps],
+    ['Mountain', mountains],
+    ['Plains', plains]
+  ].filter(([, count]) => count > 0) as Array<[string, number]>;
 }
 
 function enforceKassandraSpearPackage(selected: PickedCard[], allowedOwned: Candidate[], definition: VariantDefinition, removedForPackage: MaybePickedCard[]): void {
@@ -878,24 +1071,25 @@ function buildMaybeBoardPicks(
     .filter((candidate) => candidate.tags.includes('batch-002') || candidate.tags.includes('incoming'))
     .sort((left, right) => scoreCandidate(right, definition) - scoreCandidate(left, definition) || left.name.localeCompare(right.name));
   for (const candidate of incomingOwned) {
-    addMaybe(candidate, incomingMaybeNote(candidate, definition));
+    addMaybe(candidate, maybeBoardNote(candidate, definition, replacementTargetFor(candidate, definition, main), 'owned-option'));
   }
   const recommendationMaybes = recommendationCandidates
     .filter((candidate) => !definition.ownedOnly && isCommanderLegal(candidate.colorIdentity) && !candidate.roles.includes('land'))
     .sort((left, right) => scoreCandidate(right, definition) - scoreCandidate(left, definition) || left.name.localeCompare(right.name))
     .slice(0, 8);
   for (const candidate of recommendationMaybes) {
-    addMaybe(candidate, `Recommended Maybeboard upgrade for ${definition.name}. Test as a replacement for a lower-impact ${candidate.roles[0] ?? 'utility'} slot before moving it into the 99.`);
+    addMaybe(candidate, maybeBoardNote(candidate, definition, replacementTargetFor(candidate, definition, main), 'recommended-upgrade'));
   }
   return maybe.slice(0, 18);
 }
 
-function incomingMaybeNote(candidate: Candidate, definition: VariantDefinition): string {
-  const replacementRole = candidate.roles.find((role) => role !== 'artifact' && role !== 'assassin') ?? candidate.roles[0] ?? 'utility';
+function maybeBoardNote(candidate: Candidate, definition: VariantDefinition, replacementTarget: string | undefined, mode: 'owned-option' | 'recommended-upgrade'): string {
   if (candidate.name === SPEAR_NAME) {
-    return `Incoming batch-002 package card. Keep this paired with ${KASSANDRA_NAME}; move it from Maybeboard to Main whenever Kassandra is in the 99.`;
+    return `Kassandra package card: move this into the 99 whenever ${KASSANDRA_NAME} is active. If the package feels too slow, cut both together instead of judging either card alone.`;
   }
-  return `Incoming batch-002 option for ${definition.name}. Test as a replacement or role upgrade for a ${replacementRole} slot; delivery is expected ${EXPECTED_DELIVERY}.`;
+  const label = mode === 'owned-option' ? 'Maybeboard test' : 'Recommended upgrade';
+  const target = replacementTarget ? ` Test against ${replacementTarget} first; that is the current lower-priority ${primaryRoleLabel(candidate)} slot.` : ' Test against the lowest-impact card with the same role before moving it into the 99.';
+  return `${label}: ${cardPurpose(candidate)} Variant fit: ${variantFit(candidate, definition)}${target}`;
 }
 
 function deckEntryFromPick(definition: VariantDefinition, pick: PickedCard, index: number, section: DeckEntry['section'], noteOverride?: string): DeckEntry {
@@ -905,7 +1099,7 @@ function deckEntryFromPick(definition: VariantDefinition, pick: PickedCard, inde
 	    definition.id,
     section === 'maybe' ? 'maybe-board' : '',
     section === 'maybe' ? 'replacement-candidate' : '',
-    pick.candidate.tags.includes('batch-002') ? 'incoming-option' : '',
+    pick.candidate.tags.includes('batch-002') ? 'ordered-option' : '',
 	    pick.candidate.owned ? 'owned' : 'recommended',
     pick.candidate.owned ? '' : 'ghost-slot',
     pick.candidate.owned ? '' : 'unowned',
@@ -915,7 +1109,6 @@ function deckEntryFromPick(definition: VariantDefinition, pick: PickedCard, inde
     definition.ownedOnly && pick.candidate.roles.includes('land') ? 'owned-only-land-pool' : '',
 	    !pick.candidate.owned ? 'ghost-slot' : '',
 	    !pick.candidate.owned ? 'unowned' : '',
-    pick.candidate.tags.includes('batch-002') ? 'incoming-delivery' : '',
     section === 'maybe' ? 'maybe-board' : '',
 	    definition.ownedOnly && roles.includes('land') ? landLightFlag(definition.id) : ''
 	  ]);
@@ -937,7 +1130,7 @@ function deckEntryFromPick(definition: VariantDefinition, pick: PickedCard, inde
     synergyRating: ratingFor(pick.candidate, definition, 'synergy'),
     qualityRating: ratingFor(pick.candidate, definition, 'quality'),
     entryTags: tags,
-	    entryNotes: noteOverride ?? entryNotesFor(pick.candidate, definition),
+	    entryNotes: noteOverride ?? entryNotesFor(pick.candidate, definition, section),
     flags,
     starred: !pick.candidate.owned && pick.candidate.roles.some((role) => ['fixing', 'graveyard', 'evasion', 'protection'].includes(role)),
     markedForDeletion: false
@@ -1042,18 +1235,258 @@ function ratingFor(candidate: Candidate, definition: VariantDefinition, kind: 'i
   return Math.max(1, Math.min(5, Math.round(score / 3)));
 }
 
-function entryNotesFor(candidate: Candidate, definition: VariantDefinition): string {
-  const source = candidate.owned
-    ? candidate.tags.includes('batch-002') || candidate.tags.includes('incoming')
-      ? 'Owned incoming batch-002 card'
-      : 'Owned batch-001 card'
-    : 'Recommended ghost slot';
-  const roleText = candidate.roles.join(', ');
-  return `${source} for ${definition.name}. Roles: ${roleText}. ${candidate.entry.notes ?? ''}`.trim();
+function entryNotesFor(candidate: Candidate, definition: VariantDefinition, section: DeckEntry['section'] = 'main'): string {
+  const prefix = section === 'maybe' ? 'Maybeboard lens' : 'Why it is here';
+  const recommendationNote = candidate.owned ? '' : ' Recommendation slot: keep it visually unowned until Kyle adds the card to the owned pool.';
+  return `${prefix}: ${cardPurpose(candidate)} Variant fit: ${variantFit(candidate, definition)} Role lens: ${roleSummary(candidate.roles)}.${recommendationNote}`.trim();
 }
 
 function noteForRoles(roles: string[]): string {
-  return `Signs of Assassins roles: ${roles.join(', ')}.`;
+  return `Deck-building lens: ${roleSummary(roles)}.`;
+}
+
+function replacementTargetFor(candidate: Candidate, definition: VariantDefinition, main: PickedCard[]): string | undefined {
+  const candidateIsLand = candidate.roles.includes('land');
+  const protectedNames = new Set([COMMANDER_NAME, KASSANDRA_NAME, SPEAR_NAME]);
+  const pool = main.filter((pick) => !protectedNames.has(pick.candidate.name) && pick.candidate.name !== candidate.name);
+  const roleMatches = pool.filter((pick) => pick.candidate.roles.includes('land') === candidateIsLand && pick.candidate.roles.some((role) => candidate.roles.includes(role)));
+  const fallback = pool.filter((pick) => pick.candidate.roles.includes('land') === candidateIsLand);
+  const candidates = (roleMatches.length ? roleMatches : fallback.length ? fallback : pool)
+    .slice()
+    .sort((left, right) => scoreCandidate(left.candidate, definition) - scoreCandidate(right.candidate, definition) || right.candidate.manaValue - left.candidate.manaValue || left.candidate.name.localeCompare(right.candidate.name));
+  return candidates[0]?.candidate.name;
+}
+
+function cardPurpose(candidate: Candidate): string {
+  const specific = cardSpecificPurpose(candidate);
+  if (specific) {
+    return specific;
+  }
+  const oracle = candidate.oracleText.toLowerCase();
+  if (candidate.roles.includes('land') && candidate.roles.includes('fixing')) {
+    return 'Stabilizes the Mardu mana base so Altaïr can come down on time and the deck can cast black, red, and white spells in the same game.';
+  }
+  if (candidate.roles.includes('land')) {
+    return 'Fills the mana base; in this deck, lands are also being watched because the owned-only builds are short on scanned basics.';
+  }
+  if (candidate.roles.includes('assassin') && candidate.roles.includes('evasion')) {
+    return 'Adds an Assassin body that can connect through blockers, which is the cleanest creature profile for Altaïr combat turns.';
+  }
+  if (candidate.roles.includes('graveyard') && candidate.roles.includes('draw')) {
+    return 'Filters cards while putting useful creatures or spells into the graveyard, setting up Altaïr without committing to full reanimation.';
+  }
+  if (candidate.roles.includes('graveyard') && candidate.roles.includes('tutor')) {
+    return 'Places the right graveyard card on purpose, turning Altaïr from a value commander into a planned combat engine.';
+  }
+  if (candidate.roles.includes('graveyard') && candidate.roles.includes('exile')) {
+    return 'Sits directly in the deck theme: graveyard resources become exile or temporary value instead of permanent graveyard recursion.';
+  }
+  if (candidate.roles.includes('evasion') && candidate.roles.includes('equipment')) {
+    return 'Turns one key attacker into a reliable connection point, which matters when Altaïr needs combat to convert setup into value.';
+  }
+  if (candidate.roles.includes('evasion')) {
+    if (oracle.includes("can't block") || oracle.includes('can\'t block')) {
+      return 'Creates a cannot-block window, making the attack step feel like a puzzle the opponent has already failed to solve.';
+    }
+    return 'Helps attackers connect through flying, menace, unblockable, or similar pressure instead of fighting fair through blockers.';
+  }
+  if (candidate.roles.includes('protection')) {
+    return 'Protects Altaïr or the attack board so the deck can commit to combat without losing its engine to the first answer.';
+  }
+  if (candidate.roles.includes('removal') || candidate.roles.includes('interaction')) {
+    return 'Clears blockers, engines, or problem permanents so the Assassin plan can keep attacking instead of stalling out.';
+  }
+  if (candidate.roles.includes('equipment') || candidate.roles.includes('artifact')) {
+    return 'Supports the relic/toolbelt side of the deck, where artifacts turn individual attackers into harder-to-answer threats.';
+  }
+  if (candidate.roles.includes('ramp') || candidate.roles.includes('fixing')) {
+    return 'Smooths early mana so the deck can move from setup into Altaïr combat turns without stumbling.';
+  }
+  if (candidate.roles.includes('draw')) {
+    return 'Keeps cards moving so the deck can find evasive attackers, graveyard setup, and protection in the same game.';
+  }
+  if (candidate.roles.includes('combat') || candidate.roles.includes('puzzle')) {
+    return 'Changes combat math in a way that supports the deck fantasy: attacks should be hard to block, punish blocks, or force awkward choices.';
+  }
+  return 'Utility card for the current variant; keep it under review against more focused evasion, graveyard, protection, or mana pieces.';
+}
+
+function cardSpecificPurpose(candidate: Candidate): string | undefined {
+  switch (candidate.keyName) {
+    case normalizedName(COMMANDER_NAME):
+      return 'Commander and engine: exile Assassins from the graveyard, then turn combat into temporary copied attackers and attack triggers.';
+    case normalizedName(KASSANDRA_NAME):
+      return 'Package attacker for The Spear of Leonidas; she should be tested as a pair, not as a standalone creature.';
+    case normalizedName(SPEAR_NAME):
+      return 'Required Kassandra package piece that converts her into a much more meaningful combat engine.';
+    case normalizedName("Staff of Eden, Vault's Key"):
+      return 'Legendary artifact value piece for the relic package; test it as top-end card flow or utility rather than as graveyard setup.';
+    case normalizedName('Apple of Eden, Isu Relic'):
+      return 'Assassin-flavored relic payoff that belongs in artifact/exile-value builds when the deck wants a bigger legendary artifact package.';
+    case normalizedName('The Animus'):
+      return 'Theme engine for Memory Corridor: it pushes the deck toward graveyard/exile play patterns instead of plain creature recursion.';
+    case normalizedName('Cathartic Reunion'):
+      return 'Excellent setup spell: discard Assassins or clunky cards, draw deeper, and make the graveyard useful for Altaïr.';
+    case normalizedName('Distract the Guards'):
+      return 'On-theme combat puzzle card that can open a turn where blocks stop mattering.';
+    case normalizedName('Fall of the First Civilization'):
+      return 'Long-game saga/wipe candidate; useful when the deck needs reset power, but it competes with faster setup and protection.';
+    case normalizedName('Hemlock Vial'):
+      return 'Cheap Assassin relic/intervention slot; test it where artifact count and interaction density both matter.';
+    case normalizedName('Mjolnir, Storm Hammer'):
+      return 'Top-end Equipment finisher for Brotherhood Arsenal, best when the deck is already protecting and connecting with one attacker.';
+    case normalizedName('Mortify'):
+      return 'Flexible removal that answers both creatures and enchantments, a useful Mardu gap-filler.';
+    case normalizedName('Roshan, Hidden Magister'):
+      return 'Assassin density and freerunning support; strongest when the variant wants more bodies that naturally fit the tribe.';
+    case normalizedName('Towering Viewpoint'):
+      return 'Land/setup card that supports freerunning and evasive attack sequencing while helping the mana count.';
+    case normalizedName('Yggdrasil, Rebirth Engine'):
+      return 'Powerful recursion/value engine, but it should be watched carefully because it can pull the deck toward normal reanimator play.';
+    case normalizedName("Rogue's Passage"):
+      return 'Deterministic unblockable line from the mana base; perfect for making Altaïr or one loaded Assassin connect.';
+    case normalizedName('Path of Ancestry'):
+      return 'Tribal fixer that also scries when casting Assassins, so it improves both mana and card quality.';
+    case normalizedName('Cover of Darkness'):
+      return 'One of the cleanest Assassin evasion upgrades: name Assassin and make blocking dramatically harder.';
+    case normalizedName('Reconnaissance'):
+      return 'Lets the deck attack more freely, then pull creatures out of bad combat after triggers or pressure are established.';
+    case normalizedName('Dolmen Gate'):
+      return 'Protects attacking creatures, encouraging the deck to commit to combat without trading off its engine pieces.';
+    case normalizedName('Buried Alive'):
+      return 'Premium Altaïr setup: choose the exact Assassins or graveyard cards that should become future combat value.';
+    case normalizedName('Entomb'):
+      return 'Fastest graveyard setup option, turning one card into the exact Altaïr target the game needs.';
+    case normalizedName('Unmarked Grave'):
+      return 'Budget graveyard tutor for nonlegendary setup pieces, useful when Memory Corridor needs redundancy.';
+    case normalizedName('Oriq Loremage'):
+      return 'Repeatable graveyard loader that turns later turns into deliberate Altaïr setup instead of random milling.';
+    case normalizedName('Dauthi Voidwalker'):
+      return 'Shadow evasion plus exile pressure; it attacks the graveyard axis while remaining hard to block.';
+    case normalizedName('Maskwood Nexus'):
+      return 'Creature-type glue: makes more bodies count as Assassins for Altaïr and tribal payoffs.';
+    case normalizedName("Herald's Horn"):
+      return 'Assassin cost reduction plus card selection, best in variants trying to keep creature density high.';
+    case normalizedName("Vanquisher's Banner"):
+      return 'Tribal payoff that turns Assassin casts into cards and makes the board hit harder.';
+    case normalizedName('Shared Animosity'):
+      return 'Turns a wide Assassin attack into lethal pressure, especially with copied or token attackers.';
+    case normalizedName('Isshin, Two Heavens as One'):
+      return 'Attack-trigger multiplier that rewards the deck for building around combat triggers instead of simple damage.';
+    case normalizedName('The Master, Multiplied'):
+      return 'Experimental token-copy piece that may bend temporary-token drawbacks into lasting pressure.';
+    case normalizedName('Key to the City'):
+      return 'Unblockable outlet that also discards cards, so it advances both evasion and graveyard setup.';
+    case normalizedName('Whispersilk Cloak'):
+      return 'Unblockable plus protection for the one attacker that absolutely needs to connect.';
+    case normalizedName("Trailblazer's Boots"):
+      return 'Often functions like unblockable in Commander because nonbasic lands are everywhere.';
+    case normalizedName('Lightning Greaves'):
+      return 'Protects Altaïr and gives haste, letting the deck convert commander recasts into immediate combat value.';
+    case normalizedName('Swiftfoot Boots'):
+      return 'Flexible commander protection that still allows targeted support because it grants hexproof instead of shroud.';
+    case normalizedName('Skullclamp'):
+      return 'Card-flow engine for small creatures and temporary bodies; strongest when the deck can turn deaths into cards.';
+    case normalizedName('Boros Charm'):
+      return 'Protects the board from sweepers or creates a surprise double-strike kill.';
+    case normalizedName("Teferi's Protection"):
+      return 'Premium safety valve for overcommitted combat turns and commander-board protection.';
+    case normalizedName('Anguished Unmaking'):
+      return 'Flexible answer to almost any problem permanent at instant speed.';
+    case normalizedName('Feed the Swarm'):
+      return 'Black enchantment answer, which covers a real Mardu interaction weakness.';
+    case normalizedName('Wear // Tear'):
+      return 'Efficient artifact/enchantment interaction with useful split-card flexibility.';
+    case normalizedName('Arcane Signet'):
+    case normalizedName('Fellwar Stone'):
+    case normalizedName('Rakdos Signet'):
+    case normalizedName('Boros Signet'):
+    case normalizedName('Orzhov Signet'):
+    case normalizedName('Talisman of Conviction'):
+    case normalizedName('Talisman of Hierarchy'):
+    case normalizedName('Talisman of Indulgence'):
+      return 'Two-mana acceleration and fixing, which this Mardu deck needs so Altaïr and the support pieces arrive on curve.';
+    default:
+      return undefined;
+  }
+}
+
+function variantFit(candidate: Candidate, definition: VariantDefinition): string {
+  switch (definition.id) {
+    case 'hidden-blade-core':
+      if (candidate.roles.includes('land')) return 'Keeps the owned-only mana count visible, even when the current pool is land-light.';
+      if (candidate.roles.includes('graveyard')) return 'Tests whether the owned pool can load Altaïr targets without recommended tutors.';
+      if (candidate.roles.includes('evasion')) return 'Shows how much unblockable pressure Kyle already owns.';
+      return 'Included to measure the real owned pool before upgrade decisions.';
+    case 'rooftop-evasion':
+      if (candidate.roles.includes('evasion') || candidate.roles.includes('puzzle')) return 'Directly supports the cannot-block combat plan.';
+      if (candidate.roles.includes('equipment')) return 'Helps one evasive attacker become the threat that must be answered.';
+      return 'Kept only if it helps the owned-only combat build stay interactive or consistent.';
+    case 'memory-corridor':
+      if (candidate.roles.includes('graveyard') || candidate.roles.includes('exile')) return 'This is one of the cards that makes the memory/exile engine feel intentional.';
+      if (candidate.roles.includes('draw')) return 'Finds setup pieces while keeping the graveyard stocked.';
+      return 'Supports the graveyard plan by protecting, fixing, or clearing the way for Altaïr turns.';
+    case 'brotherhood-arsenal':
+      if (candidate.roles.includes('equipment') || candidate.roles.includes('artifact')) return 'Fits the relic/toolbelt identity of this variant.';
+      if (candidate.roles.includes('protection')) return 'Protects the suited-up attacker or Altaïr engine.';
+      return 'Included if it helps the artifact package survive long enough to matter.';
+    case 'nothing-is-true':
+      if (candidate.roles.includes('fixing') || candidate.roles.includes('ramp')) return 'Raises the deck floor by making the mana work.';
+      if (candidate.roles.includes('removal') || candidate.roles.includes('protection')) return 'Keeps the practical build from folding to common Commander interaction.';
+      return 'Chosen for functional reliability more than flavor.';
+    case 'everything-is-permitted':
+      if (candidate.roles.includes('puzzle') || candidate.roles.includes('token') || candidate.roles.includes('combat')) return 'Belongs in the weird-line sandbox where combat rules and triggers get bent.';
+      if (candidate.roles.includes('evasion')) return 'Pushes the variant toward clever unblockable turns.';
+      return 'Included as a speculative piece if it creates unusual sequencing or supports those experiments.';
+    default:
+      return `Supports ${definition.name}'s main role package.`;
+  }
+}
+
+function roleSummary(roles: string[]): string {
+  const labels = uniqueTags(roles).slice(0, 4).map(roleLabel);
+  return labels.length ? humanList(labels) : 'utility';
+}
+
+function primaryRoleLabel(candidate: Candidate): string {
+  return roleLabel(candidate.roles.find((role) => role !== 'artifact' && role !== 'assassin') ?? candidate.roles[0] ?? 'utility');
+}
+
+function roleLabel(role: string): string {
+  const labels: Record<string, string> = {
+    land: 'land',
+    fixing: 'mana fixing',
+    assassin: 'Assassin density',
+    evasion: 'evasion',
+    graveyard: 'graveyard setup',
+    exile: 'exile value',
+    ramp: 'ramp',
+    draw: 'card flow',
+    removal: 'removal',
+    wipe: 'board reset',
+    protection: 'protection',
+    recursion: 'recursion',
+    equipment: 'Equipment',
+    artifact: 'artifact support',
+    combat: 'combat pressure',
+    tutor: 'tutor/setup',
+    token: 'token/copy line',
+    puzzle: 'combat puzzle',
+    finisher: 'finisher',
+    interaction: 'interaction',
+    haste: 'haste'
+  };
+  return labels[role] ?? role;
+}
+
+function humanList(items: string[]): string {
+  if (items.length <= 1) {
+    return items[0] ?? '';
+  }
+  if (items.length === 2) {
+    return `${items[0]} and ${items[1]}`;
+  }
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 }
 
 async function ensureSignsOfAssassinsSet(now: string, coverImageUrl?: string): Promise<void> {
@@ -1268,21 +1701,26 @@ function countBy<T>(values: T[], keyFor: (value: T) => string, countFor: (value:
   return counts;
 }
 
-function verifyDeck(entries: DeckEntry[]): Record<string, { count: number; ghost: number; duplicateNonbasicNames: string[] }> {
-  const totals: Record<string, { count: number; ghost: number; duplicateNonbasicNames: string[] }> = {};
+function verifyDeck(entries: DeckEntry[]): Record<string, { count: number; land: number; ghost: number; duplicateNonbasicNames: string[] }> {
+  const totals: Record<string, { count: number; land: number; ghost: number; duplicateNonbasicNames: string[] }> = {};
   for (const variant of VARIANTS) {
     const variantEntries = entries.filter((entry) => entry.deckVariantId === variant.id && entry.section === 'main');
     const nameCounts = countBy(variantEntries, (entry) => normalizedName(entry.nameSnapshot ?? entry.cardId), (entry) => entry.count);
     const duplicateNonbasicNames = [...nameCounts.entries()]
       .filter(([name, count]) => count > 1 && ![...BASIC_LANDS].map(normalizedName).includes(name))
       .map(([name]) => name);
+    const land = variantEntries.filter((entry) => entry.roles?.includes('land')).reduce((sum, entry) => sum + entry.count, 0);
     totals[variant.id] = {
       count: variantEntries.reduce((sum, entry) => sum + entry.count, 0),
+      land,
       ghost: variantEntries.filter((entry) => entry.entryTags?.includes('ghost-slot')).reduce((sum, entry) => sum + entry.count, 0),
       duplicateNonbasicNames
     };
     if (totals[variant.id].count !== 99) {
       throw new Error(`${variant.name} has ${totals[variant.id].count} main-deck cards, expected 99.`);
+    }
+    if (land < variant.landTarget) {
+      throw new Error(`${variant.name} has ${land} lands, expected at least ${variant.landTarget}.`);
     }
     if (duplicateNonbasicNames.length) {
       throw new Error(`${variant.name} has duplicate nonbasic names: ${duplicateNonbasicNames.join(', ')}`);

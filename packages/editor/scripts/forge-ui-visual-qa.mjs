@@ -36,49 +36,58 @@ if (!baseUrl) {
   await server.close();
   throw new Error('Vite did not expose a local URL.');
 }
-
-const browser = await playwright.chromium.launch({ headless: true });
 const results = [];
+let browser = null;
 let currentPage = null;
+console.log(`[visual-qa] server ready ${baseUrl}`);
 
 try {
   await captureWorkspace('light', { width: 1440, height: 900 }, [
     ['cards', null],
-    ['decks', () => clickRail('Decks')]
+    ['decks', () => openDecksWithDeckSelected()]
+  ]);
+  await captureWorkspace('parchment', { width: 1440, height: 900 }, [
+    ['decks', () => openDecksWithDeckSelected()]
+  ]);
+  await captureWorkspace('parchment-laptop', { width: 1280, height: 900 }, [
+    ['decks', () => openDecksWithDeckSelected()]
   ]);
   await captureWorkspace('dark', { width: 1440, height: 900 }, [
     ['cards', null],
-    ['decks', () => clickRail('Decks')],
+    ['decks', () => openDecksWithDeckSelected()],
     ['collections', () => clickRail('Collections')],
     ['dashboard', () => chooseFocusedLayout(/Card Dashboard/)],
-    ['card-browser', () => chooseFocusedLayout(/Card List Browser/)]
+    ['card-browser', () => chooseFocusedLayout(/Card Browser/)]
   ]);
   await captureWorkspace('dark-laptop', { width: 1024, height: 768 }, [
     ['cards', null],
-    ['decks', () => clickRail('Decks')]
+    ['decks', () => openDecksWithDeckSelected()]
   ]);
   await captureWorkspace('dark-compact', { width: 900, height: 720 }, [
     ['cards', null]
   ]);
   await captureWorkspace('dark-mobile', { width: 390, height: 844 }, [
     ['cards', null],
-    ['decks', () => clickRail('Decks')]
+    ['decks', () => openDecksWithDeckSelected()]
   ]);
   await captureOverlayStates('dark-overlays', { width: 1440, height: 900 });
   await captureShellOverlayStates('dark-shell', { width: 1440, height: 900 });
 } finally {
-  await browser.close();
+  if (browser?.isConnected()) {
+    await browser.close();
+  }
   await server.close();
 }
 
 await writeFile(resolve(outDir, 'qa-results.json'), `${JSON.stringify(results, null, 2)}\n`);
 
-const failures = results.filter((result) => result.error || result.textFailureCount || result.lightSurfaceCount || result.horizontalOverflow || result.clippedElementCount);
-console.log(JSON.stringify(results.map(({ name, textFailureCount, lightSurfaceCount, horizontalOverflow, clippedElementCount, error }) => ({ name, textFailureCount, lightSurfaceCount, horizontalOverflow, clippedElementCount, error })), null, 2));
+const failures = results.filter((result) => result.error || result.textFailureCount || result.lightSurfaceCount || result.horizontalOverflow || result.clippedElementCount || result.deckLayoutFailureCount);
+console.log(JSON.stringify(results.map(({ name, textFailureCount, lightSurfaceCount, horizontalOverflow, clippedElementCount, deckLayoutFailureCount, error }) => ({ name, textFailureCount, lightSurfaceCount, horizontalOverflow, clippedElementCount, deckLayoutFailureCount, error })), null, 2));
 if (failures.length) process.exit(1);
 
 async function captureWorkspace(theme, viewport, states) {
-  const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
+  const activeBrowser = await ensureBrowser();
+  const context = await activeBrowser.newContext({ viewport, deviceScaleFactor: 1 });
   await context.addInitScript((selectedTheme) => {
     localStorage.setItem('homebrew-forge.theme', selectedTheme.startsWith('dark') ? 'dark' : selectedTheme);
     localStorage.setItem('homebrew-forge.orientation.dismissed', 'true');
@@ -93,26 +102,50 @@ async function captureWorkspace(theme, viewport, states) {
       currentPage = page;
       if (setup) await setup();
       await page.waitForTimeout(450);
+      console.log(`[visual-qa] capturing ${theme}-${stateName}`);
       await capture(page, `${theme}-${stateName}`, theme.startsWith('dark'));
     } catch (error) {
       results.push({ name: `${theme}-${stateName}`, error: String(error.message ?? error) });
     }
   }
 
-  await context.close();
+  await context.close().catch(() => {});
+}
+
+async function ensureBrowser() {
+  if (!browser || !browser.isConnected()) {
+    browser = await playwright.chromium.launch({ headless: true });
+    console.log('[visual-qa] browser ready');
+  }
+  return browser;
 }
 
 async function waitForApp(page) {
+  console.log('[visual-qa] loading app');
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
   await page.waitForFunction(() => {
     const text = document.body?.innerText ?? '';
     return text.includes('Loaded 10 cards') || text.includes('10 cards') || text.includes('Demo Project');
   }, { timeout: 25000 });
+  console.log('[visual-qa] app ready');
 }
 
 async function clickRail(label) {
   await currentPage.locator('.rail-button').filter({ hasText: label }).first().click({ timeout: 10000 });
+}
+
+async function openDecksWithDeckSelected() {
+  await clickRail('Decks');
+  const deckRows = currentPage.locator('.entity-list .entity-row.clickable');
+  await deckRows.first().waitFor({ timeout: 15000 });
+  const preferredDeck = deckRows.filter({ hasText: /Signs of Assassins|Squirrel Away|Demo Showcase Deck/ }).first();
+  await preferredDeck.click({ timeout: 10000 });
+  await currentPage.locator('.deck-workspace').waitFor({ timeout: 15000 });
+  await currentPage.waitForFunction(() => {
+    const text = (document.body?.innerText ?? '').toLowerCase();
+    return text.includes('main board') && text.includes('save deck') && text.includes('deck summary');
+  }, { timeout: 15000 });
 }
 
 async function chooseFocusedLayout(labelPattern) {
@@ -124,7 +157,8 @@ async function chooseFocusedLayout(labelPattern) {
 }
 
 async function captureOverlayStates(theme, viewport) {
-  const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
+  const activeBrowser = await ensureBrowser();
+  const context = await activeBrowser.newContext({ viewport, deviceScaleFactor: 1 });
   await context.addInitScript((selectedTheme) => {
     localStorage.setItem('homebrew-forge.theme', selectedTheme.startsWith('dark') ? 'dark' : selectedTheme);
     localStorage.setItem('homebrew-forge.orientation.dismissed', 'true');
@@ -137,28 +171,32 @@ async function captureOverlayStates(theme, viewport) {
     await waitForApp(page);
     await page.locator('button[title="New card"], button[aria-label="New card"]').first().click({ timeout: 10000 });
     await page.getByRole('dialog', { name: /New Card/ }).waitFor({ timeout: 10000 });
+    console.log(`[visual-qa] capturing ${theme}-create-card`);
     await capture(page, `${theme}-create-card`, true);
     await closeActiveDialog(page);
 
     await openFileMenuItem(/Import/);
     await page.getByRole('dialog', { name: /Import/ }).waitFor({ timeout: 10000 });
+    console.log(`[visual-qa] capturing ${theme}-import`);
     await capture(page, `${theme}-import`, true);
     await closeActiveDialog(page);
 
     await openFileMenuItem(/Export/);
     await page.getByRole('dialog', { name: /Export/ }).waitFor({ timeout: 10000 });
+    console.log(`[visual-qa] capturing ${theme}-export`);
     await capture(page, `${theme}-export`, true);
     await closeActiveDialog(page);
   } catch (error) {
     results.push({ name: `${theme}-overlays`, error: String(error.message ?? error) });
   } finally {
-    await context.close();
+    await context.close().catch(() => {});
     currentPage = null;
   }
 }
 
 async function captureShellOverlayStates(theme, viewport) {
-  const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
+  const activeBrowser = await ensureBrowser();
+  const context = await activeBrowser.newContext({ viewport, deviceScaleFactor: 1 });
   await context.addInitScript((selectedTheme) => {
     localStorage.setItem('homebrew-forge.theme', selectedTheme.startsWith('dark') ? 'dark' : selectedTheme);
     localStorage.setItem('homebrew-forge.orientation.dismissed', 'true');
@@ -171,17 +209,19 @@ async function captureShellOverlayStates(theme, viewport) {
     await waitForApp(page);
     await page.getByRole('button', { name: /Open command palette/ }).first().click({ timeout: 10000 });
     await page.getByRole('dialog', { name: /Command Palette/ }).waitFor({ timeout: 10000 });
+    console.log(`[visual-qa] capturing ${theme}-command-palette`);
     await capture(page, `${theme}-command-palette`, true);
     await closeActiveDialog(page);
 
     await page.getByRole('button', { name: /^Health$/ }).first().click({ timeout: 10000 });
     await page.getByRole('dialog', { name: /Workspace Health/ }).waitFor({ timeout: 10000 });
+    console.log(`[visual-qa] capturing ${theme}-workspace-health`);
     await capture(page, `${theme}-workspace-health`, true);
     await closeActiveDialog(page);
   } catch (error) {
     results.push({ name: `${theme}-shell-overlays`, error: String(error.message ?? error) });
   } finally {
-    await context.close();
+    await context.close().catch(() => {});
     currentPage = null;
   }
 }
@@ -200,7 +240,7 @@ async function closeActiveDialog(page) {
 
 async function capture(page, name, isDark) {
   const file = resolve(outDir, `${name}.png`);
-  await page.screenshot({ path: file, fullPage: false });
+  await page.screenshot({ path: file, fullPage: false, timeout: 90000 });
   const scan = await page.evaluate(scanVisibleContrast, isDark);
   results.push({ name, file, ...scan });
 }
@@ -236,8 +276,11 @@ function scanVisibleContrast(isDark) {
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
   }
   function visible(element) {
+    if (element.closest('.sr-only')) return false;
+    if (element.matches('.linked-textarea-input')) return false;
     const style = getComputedStyle(element);
     if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+    if (style.clip === 'rect(0px, 0px, 0px, 0px)' || style.clipPath === 'inset(50%)') return false;
     const rect = element.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth;
   }
@@ -320,6 +363,46 @@ function scanVisibleContrast(isDark) {
     }
   }
 
+  const deckLayoutFailures = [];
+  const deckWorkspace = document.querySelector('.deck-workspace');
+  if (deckWorkspace && visible(deckWorkspace)) {
+    for (const selector of ['.deck-live-stats-panel', '.deck-view-toolbar', '.deck-workspace .list-controls-bar', '.deck-view-mode']) {
+      for (const element of document.querySelectorAll(selector)) {
+        if (!visible(element)) continue;
+        if (element.scrollWidth > element.clientWidth + 2) {
+          deckLayoutFailures.push({
+            selector,
+            issue: 'internal horizontal overflow',
+            scrollWidth: element.scrollWidth,
+            clientWidth: element.clientWidth
+          });
+        }
+      }
+    }
+
+    const toolbar = document.querySelector('.deck-view-toolbar');
+    const viewMode = document.querySelector('.deck-view-toolbar .list-controls-view');
+    if (toolbar && viewMode && visible(toolbar) && visible(viewMode) && window.innerWidth > 760) {
+      const toolbarRect = toolbar.getBoundingClientRect();
+      const viewRect = viewMode.getBoundingClientRect();
+      if (toolbarRect.right - viewRect.right > 24) {
+        deckLayoutFailures.push({
+          selector: '.deck-view-toolbar .list-controls-view',
+          issue: 'view selector is not anchored to the right edge',
+          toolbarRight: Math.round(toolbarRect.right),
+          viewRight: Math.round(viewRect.right)
+        });
+      }
+      if (viewRect.height > 58) {
+        deckLayoutFailures.push({
+          selector: '.deck-view-mode',
+          issue: 'view selector wrapped into multiple rows',
+          height: Math.round(viewRect.height)
+        });
+      }
+    }
+  }
+
   return {
     textFailureCount: textFailures.length,
     textFailures: textFailures.slice(0, 30),
@@ -327,6 +410,8 @@ function scanVisibleContrast(isDark) {
     lightSurfaces: lightSurfaces.slice(0, 20),
     clippedElementCount: clippedElements.length,
     clippedElements: clippedElements.slice(0, 20),
+    deckLayoutFailureCount: deckLayoutFailures.length,
+    deckLayoutFailures: deckLayoutFailures.slice(0, 20),
     horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
   };
 }

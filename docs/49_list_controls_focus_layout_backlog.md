@@ -30,13 +30,13 @@ The interaction should feel recognizable to users of document editors, design to
 
 | Slice | Status | Owner Surface | Evidence |
 | --- | --- | --- | --- |
-| Docs/tracker | in_progress | `docs/` | `docs/49_list_controls_focus_layout_backlog.md`, `docs/47_forge_ui_phase_tracker.md` |
-| Shared list controls | planned | `packages/editor/src/domain/listControls.ts`, `components/forge-ui/` | typecheck + list-control unit test |
-| Maker sort | planned | `CardList.tsx` | unit + UX gate |
-| Card Browser controls and previews | planned | `CardBrowserView.tsx` | card browser regression/unit + Playwright |
-| Deck card controls | planned | `WorkspaceView.tsx`, `DeckEntryViews.tsx` | deck row sort/filter/group tests |
-| Collections row controls | planned | `WorkspaceView.tsx`, `CollectionEntryViews.tsx` | collection row sort/filter tests |
-| Focused layout entry | planned | `App.tsx`, `EditorToolbar.tsx` | UX gate focused-layout smoke |
+| Docs/tracker | verified | `docs/` | `docs/49_list_controls_focus_layout_backlog.md`, `docs/47_forge_ui_phase_tracker.md` |
+| Shared list controls | verified | `packages/editor/src/domain/listControls.ts`, `components/forge-ui/` | editor tests + typecheck/build |
+| Maker sort | verified | `CardList.tsx` | shared Sort control + visual QA |
+| Card Browser controls and previews | verified | `CardBrowserView.tsx` | saved preview cache + Card Browser visual QA |
+| Deck card controls | verified | `WorkspaceView.tsx` | search/filter/sort + group basics toggle |
+| Collections row controls | verified | `WorkspaceView.tsx` | compact search/sort/filter bar + Select shown |
+| Focused layout entry | verified | `App.tsx`, `EditorToolbar.tsx` | UX gate focused-layout smoke |
 
 ## UXH Compass Notes
 
@@ -54,3 +54,24 @@ The interaction should feel recognizable to users of document editors, design to
 - Deck rows can be searched, filtered, sorted, and basic lands are grouped by default without changing deck storage.
 - Collection/Binder/List row controls are compact and consistent.
 - Focused layouts are reachable from any workspace.
+
+## Decks Follow-Up Backlog
+
+These are deliberate next-slice items captured during the June 8 Decks UX review. They should not be half-implemented as visual-only controls.
+
+| Priority | Request | Decision |
+| --- | --- | --- |
+| P1 | Multi-select deck card rows with checkboxes and obvious deselect behavior. | Add real selection state, keyboard support, selected-count affordance, and safe bulk actions before showing row checkboxes. |
+| P1 | Quickly move selected cards between Main, Sideboard, and Maybeboard. | Pair with multi-select; expose board move as a toolbar action and context action. |
+| P2 | Manual deck order and drag/reorder, including dragging cards between boards. | Add a manual sort mode only after row identity and persistence rules are explicit. |
+| P2 | Commander, partner, and cover quick editing from the visible inspector/cover area. | Convert display slots/cover art into clear edit affordances backed by the existing metadata selectors or a focused picker overlay. |
+| P3 | Shuffle and sample hand/draw simulator. | Treat as a Decks testing mode or Dashboard widget; do not mix it into the primary deck editing controls. |
+
+## Verification Evidence
+
+- `node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/editor test`
+- `node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/editor typecheck`
+- `node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/editor build`
+- `node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/editor run test:ux-gate`
+- `node packages/editor/scripts/forge-ui-visual-qa.mjs --phase list-controls-focus-layouts`
+- `output/playwright/forge-ui-phase-list-controls-focus-layouts/qa-results.json`

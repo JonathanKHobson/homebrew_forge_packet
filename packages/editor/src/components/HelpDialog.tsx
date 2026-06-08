@@ -67,13 +67,19 @@ export function HelpDialog({ onStatus, onClose }: HelpDialogProps) {
         <section className="help-section">
           <h3>Concepts</h3>
           <div className="help-concept-grid">
-            <ConceptTerm term="Project" definition="A universe or product line that can hold multiple sets." />
-            <ConceptTerm term="Set" definition="A card release with cards, variants, art, and export state." />
-            <ConceptTerm term="Card" definition="The authored game object shared by its variants." />
-            <ConceptTerm term="Variant" definition="A print, art, treatment, or export version of a card." />
-            <ConceptTerm term="Deck" definition="A playtest list that references cards across sets." />
-            <ConceptTerm term="Collection" definition="A physical-card inventory kept separate from authored sets." />
-            <ConceptTerm term="Gallery" definition="Shared project assets, art, and set/project records." />
+            <ConceptTerm term="Maker" definition="The authoring workspace for creating and editing saved card records." />
+            <ConceptTerm term="Project" definition="A universe or product line that can group related sets, decks, binders, and lists." />
+            <ConceptTerm term="Set" definition="A card release with authored cards, variants, art, and export state." />
+            <ConceptTerm term="Card" definition="The authored game object. Frame and layout settings change presentation, not card identity." />
+            <ConceptTerm term="Variant" definition="A saved treatment of a card, such as alternate art, print metadata, or an export version." />
+            <ConceptTerm term="Deck" definition="A playable list that can reference cards across projects and sets." />
+            <ConceptTerm term="Build" definition="The active deck variant you are tuning, usually a draft, testing, locked, or final list." />
+            <ConceptTerm term="Bracket" definition="A Commander power-level label used for deck expectation setting." />
+            <ConceptTerm term="Collection" definition="A card inventory or planning space kept separate from authored sets and decks." />
+            <ConceptTerm term="Binder" definition="A collection-style space for owned physical or proxy cards." />
+            <ConceptTerm term="List" definition="A lightweight collection-style space for wishlists, recommendations, flags, and references." />
+            <ConceptTerm term="Gallery" definition="Shared local project assets and artwork records." />
+            <ConceptTerm term="References" definition="Rules terms, glossary entries, and official-card lookup support." />
           </div>
         </section>
         <section className="help-section">
