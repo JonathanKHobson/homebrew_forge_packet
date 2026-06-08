@@ -258,7 +258,12 @@ bootstrap_launch_agent() {
 start_direct_editor_server() {
   local node_bin="$1"
   log "Starting Homebrew Forge editor directly because LaunchAgent did not start"
-  /usr/bin/nohup /usr/bin/env HOMEBREW_FORGE_PORT="$PORT" "$node_bin" "$REPO_ROOT/scripts/run-homebrew-forge-editor.mjs" >> "$LOG_FILE" 2>&1 &
+  (
+    trap '' HUP
+    cd "$REPO_ROOT"
+    export HOMEBREW_FORGE_PORT="$PORT"
+    exec "$node_bin" "$REPO_ROOT/scripts/run-homebrew-forge-editor.mjs" </dev/null >> "$LOG_FILE" 2>&1
+  ) &
   local pid="$!"
   print -r -- "$pid" > "$APP_SUPPORT/editor-server.pid"
   log "Started direct Homebrew Forge editor pid=$pid on $URL"
@@ -345,31 +350,62 @@ open_chrome_app_window() {
   /bin/mkdir -p "$CHROME_PROFILE"
 
   local chrome_bin=""
+  local chrome_app=""
   if [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
     chrome_bin="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    chrome_app="/Applications/Google Chrome.app"
   elif [[ -x "$HOME/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
     chrome_bin="$HOME/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-  fi
-
-  if [[ -n "$chrome_bin" ]] && /bin/ps -axo args= | /usr/bin/awk -v chrome="$chrome_bin" -v profile="--user-data-dir=$CHROME_PROFILE" -v app="--app=$URL" 'index($0, chrome) == 1 && index($0, profile) > 0 && index($0, app) > 0 { found = 1 } END { exit found ? 0 : 1 }'; then
-    log "Dedicated Chrome app profile already running for $URL; activating Chrome"
-    /usr/bin/open -a "Google Chrome" >/dev/null 2>&1 || true
-    return 0
+    chrome_app="$HOME/Applications/Google Chrome.app"
   fi
 
   if [[ -n "$chrome_bin" ]]; then
+    reopen_chrome_app_window "$chrome_bin"
     log "Opening dedicated Chrome app window at $URL"
-    "$chrome_bin" \
+    /usr/bin/open -na "$chrome_app" --args \
       --user-data-dir="$CHROME_PROFILE" \
       --app="$URL" \
       --no-first-run \
       --no-default-browser-check \
-      >/dev/null 2>&1 &
+      >/dev/null 2>&1
     return 0
   fi
 
   log "Google Chrome not found; opening default browser at $URL"
   /usr/bin/open "$URL"
+}
+
+chrome_app_main_pids() {
+  local chrome_bin="$1"
+  /bin/ps -axo pid=,args= | /usr/bin/awk -v chrome="$chrome_bin" -v profile="--user-data-dir=$CHROME_PROFILE" -v app="--app=$URL" '
+    index($0, chrome) > 0 && index($0, profile) > 0 && index($0, app) > 0 { print $1 }
+  '
+}
+
+reopen_chrome_app_window() {
+  local chrome_bin="$1"
+  local pids
+  pids="$(chrome_app_main_pids "$chrome_bin")"
+  if [[ -z "$pids" ]]; then
+    return 0
+  fi
+
+  log "Restarting existing dedicated Chrome app profile before opening $URL"
+  local pid
+  while IFS= read -r pid; do
+    if [[ "$pid" =~ '^[0-9]+$' ]] && /bin/kill -0 "$pid" 2>/dev/null; then
+      /bin/kill -TERM "$pid" 2>/dev/null || true
+    fi
+  done <<< "$pids"
+
+  /bin/sleep 1
+
+  while IFS= read -r pid; do
+    if [[ "$pid" =~ '^[0-9]+$' ]] && /bin/kill -0 "$pid" 2>/dev/null; then
+      log "Existing dedicated Chrome app profile pid=$pid did not exit after TERM; sending KILL"
+      /bin/kill -KILL "$pid" 2>/dev/null || true
+    fi
+  done <<< "$pids"
 }
 
 main() {

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { addOfficialCardToCollection, readCollectionState } from '../src/collections/collectionStore.js';
 import { addOfficialCardToDeck, createDeck } from '../src/decks/deckStore.js';
-import { searchOfficialCards, syncOfficialCards, writeOfficialCardCacheForTest } from '../src/officialCards/officialCardStore.js';
+import { listOfficialCardPrintVariants, searchOfficialCards, syncOfficialCards, writeOfficialCardCacheForTest } from '../src/officialCards/officialCardStore.js';
 import type { OfficialCardOracle, OfficialCardPrint } from '../src/officialCards/officialCardModel.js';
 
 describe('Official card catalog', () => {
@@ -58,6 +58,126 @@ describe('Official card catalog', () => {
     assert.equal(oracle.cards[0]?.view, 'oracle');
     assert.equal(prints.cards[0]?.id, '33333333-3333-3333-3333-333333333333');
     assert.equal(oracle.cards[0]?.id, '44444444-4444-4444-4444-444444444444');
+  });
+
+  it('collapses reprints into unique mechanical card rows with variant counts', async () => {
+    const rootDir = await createFixtureRoot();
+    await writeOfficialCardCacheForTest(rootDir, {
+      prints: [
+        officialPrint({
+          id: '10101010-1010-4010-8010-101010101010',
+          oracleId: 'sol-ring-oracle',
+          name: 'Sol Ring',
+          setCode: 'LEA',
+          collectorNumber: '269',
+          releasedAt: '1993-08-05'
+        }),
+        officialPrint({
+          id: '20202020-2020-4020-8020-202020202020',
+          oracleId: 'sol-ring-oracle',
+          name: 'Sol Ring',
+          setCode: 'LCC',
+          collectorNumber: '310',
+          releasedAt: '2023-11-17',
+          imageUris: { normal: 'https://img.example/sol-ring-new.jpg' }
+        }),
+        officialPrint({
+          id: '30303030-3030-4030-8030-303030303030',
+          oracleId: 'forest-oracle',
+          name: 'Forest',
+          typeLine: 'Basic Land - Forest',
+          setCode: 'LTR',
+          collectorNumber: '271',
+          releasedAt: '2023-06-23'
+        }),
+        officialPrint({
+          id: '40404040-4040-4040-8040-404040404040',
+          oracleId: 'forest-oracle',
+          name: 'Forest',
+          typeLine: 'Basic Land - Forest',
+          setCode: 'WHO',
+          collectorNumber: '199',
+          releasedAt: '2023-10-13'
+        }),
+        officialPrint({
+          id: '45454545-4545-4045-8045-454545454545',
+          oracleId: 'ring-story-oracle',
+          name: 'Ring Story',
+          oracleText: 'Search your library for a card named Sol Ring.',
+          setCode: 'TST',
+          collectorNumber: '99',
+          releasedAt: '2026-01-01'
+        })
+      ]
+    });
+
+    const solRing = await searchOfficialCards(rootDir, { view: 'unique', query: 'sol ring', limit: 10 });
+    const forest = await searchOfficialCards(rootDir, { view: 'unique', query: 'forest', limit: 10 });
+
+    assert.equal(solRing.total, 1);
+    assert.equal(solRing.cards[0]?.id, '20202020-2020-4020-8020-202020202020');
+    assert.equal(solRing.cards[0]?.variantCount, 2);
+    assert.equal(solRing.cards[0]?.filteredVariantCount, 2);
+    assert.equal(forest.total, 1);
+    assert.equal(forest.cards[0]?.name, 'Forest');
+    assert.equal(forest.cards[0]?.variantCount, 2);
+  });
+
+  it('lists exact print variants for a unique official card', async () => {
+    const rootDir = await createFixtureRoot();
+    await writeOfficialCardCacheForTest(rootDir, {
+      prints: [
+        officialPrint({
+          id: '50505050-5050-4050-8050-505050505050',
+          oracleId: 'bolt-oracle',
+          name: 'Lightning Bolt',
+          setCode: 'LEA',
+          collectorNumber: '161',
+          releasedAt: '1993-08-05'
+        }),
+        officialPrint({
+          id: '60606060-6060-4060-8060-606060606060',
+          oracleId: 'bolt-oracle',
+          name: 'Lightning Bolt',
+          setCode: 'STA',
+          collectorNumber: '42',
+          releasedAt: '2021-04-23',
+          lang: 'ja'
+        }),
+        officialPrint({
+          id: '70707070-7070-4070-8070-707070707070',
+          oracleId: 'bolt-oracle',
+          name: 'Lightning Bolt',
+          setCode: 'SLD',
+          collectorNumber: '675',
+          releasedAt: '2024-02-01'
+        })
+      ]
+    });
+
+    const variants = await listOfficialCardPrintVariants(rootDir, {
+      cardId: '50505050-5050-4050-8050-505050505050',
+      limit: 2,
+      offset: 0
+    });
+    const secondPage = await listOfficialCardPrintVariants(rootDir, {
+      oracleId: 'bolt-oracle',
+      limit: 2,
+      offset: 2
+    });
+    const filtered = await listOfficialCardPrintVariants(rootDir, {
+      oracleId: 'bolt-oracle',
+      query: 'sld 675',
+      limit: 10
+    });
+
+    assert.equal(variants.total, 3);
+    assert.equal(variants.cards[0]?.id, '70707070-7070-4070-8070-707070707070');
+    assert.equal(variants.cards[0]?.variantCount, 3);
+    assert.equal(secondPage.cards.length, 1);
+    assert.equal(secondPage.cards[0]?.id, '60606060-6060-4060-8060-606060606060');
+    assert.equal(filtered.total, 1);
+    assert.equal(filtered.cards[0]?.id, '70707070-7070-4070-8070-707070707070');
   });
 
   it('ranks exact official card names before broad rules-text matches', async () => {

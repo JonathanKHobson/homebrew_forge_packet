@@ -12,13 +12,15 @@ import type {
   OfficialCardOracle,
   OfficialCardPrices,
   OfficialCardPriceCurrency,
+  OfficialCardPrintVariantsResult,
   OfficialCardPrint,
   OfficialCardSearchCard,
   OfficialCardSearchFilters,
   OfficialCardSearchResult,
   OfficialCardSortDirection,
   OfficialCardSortKey,
-  OfficialCardSyncOptions
+  OfficialCardSyncOptions,
+  OfficialCardSyncView
 } from './officialCardModel.js';
 
 const OFFICIAL_CARD_CACHE_VERSION = 1;
@@ -148,9 +150,27 @@ export async function searchOfficialCards(rootDir: string, filters: OfficialCard
   const parsedQuery = parseOfficialCardQuery(query);
   const sort = normalizeSort(filters.sort, parsedQuery);
   const sortDirection = normalizeSortDirection(filters.sortDirection, sort);
-  const file = await readCacheFileForView(rootDir, view);
+  const file = view === 'unique' ? await readPrintCacheFile(rootDir) : await readCacheFileForView(rootDir, view);
   const allCards = file?.cards ?? [];
   const filtered = allCards.filter((card) => officialCardMatches(card, filters, parsedQuery));
+  if (view === 'unique') {
+    const uniqueSource = exactNameMatchesForUniqueQuery(filtered as OfficialCardPrint[], parsedQuery);
+    const grouped = uniqueOfficialCards(uniqueSource, allCards as OfficialCardPrint[]);
+    grouped.sort((left, right) => compareOfficialCards(left, right, { sort, sortDirection, query: rankQueryForParsedQuery(parsedQuery), priceCurrency: normalizePriceCurrency(filters.priceCurrency) }));
+    const cards = grouped.slice(offset, offset + limit);
+    return {
+      view,
+      query,
+      total: grouped.length,
+      limit,
+      offset,
+      sort,
+      sortDirection,
+      unsupportedQueryTerms: parsedQuery.unsupportedQueryTerms,
+      cards,
+      status: await buildStatus(rootDir)
+    };
+  }
   filtered.sort((left, right) => compareOfficialCards(left, right, { sort, sortDirection, query: rankQueryForParsedQuery(parsedQuery), priceCurrency: normalizePriceCurrency(filters.priceCurrency) }));
   const cards = filtered.slice(offset, offset + limit);
   return {
@@ -163,6 +183,42 @@ export async function searchOfficialCards(rootDir: string, filters: OfficialCard
     sortDirection,
     unsupportedQueryTerms: parsedQuery.unsupportedQueryTerms,
     cards,
+    status: await buildStatus(rootDir)
+  };
+}
+
+export async function listOfficialCardPrintVariants(
+  rootDir: string,
+  args: { cardId?: string; oracleId?: string; variantKey?: string; name?: string; query?: string; limit?: number; offset?: number } = {}
+): Promise<OfficialCardPrintVariantsResult> {
+  const file = await readPrintCacheFile(rootDir);
+  const cards = file?.cards ?? [];
+  const target = findVariantTarget(cards, args);
+  const variantKey = target ? officialCardVariantKey(target) : clean(args.variantKey).toLowerCase();
+  if (!variantKey) {
+    throw new Error('Choose an official card before browsing variants.');
+  }
+  const queryTerms = clean(args.query).toLowerCase().split(/\s+/).filter(Boolean);
+  const limit = clampNumber(args.limit ?? MAX_SEARCH_LIMIT, 1, MAX_SEARCH_LIMIT);
+  const offset = Math.max(0, Math.floor(args.offset ?? 0));
+  const variantTotal = cards.filter((candidate) => officialCardVariantKey(candidate) === variantKey).length;
+  const variants = cards
+    .filter((card) => officialCardVariantKey(card) === variantKey)
+    .filter((card) => {
+      const text = searchText(card);
+      return queryTerms.every((term) => text.includes(term));
+    })
+    .sort(compareRepresentativePrints)
+    .map((card) => withVariantSummary(card, variantKey, variantTotal));
+  const representative = target ?? variants[0];
+  return {
+    variantKey,
+    oracleId: representative?.oracleId,
+    name: representative?.name ?? (clean(args.name) || 'Official card variants'),
+    total: variants.length,
+    limit,
+    offset,
+    cards: variants.slice(offset, offset + limit),
     status: await buildStatus(rootDir)
   };
 }
@@ -251,8 +307,8 @@ export async function writeOfficialCardCacheForTest(rootDir: string, args: { pri
   await writeStatus(rootDir, await buildStatus(rootDir));
 }
 
-function bulkTargets(bulk: ScryfallBulkDataResponse, view: OfficialCardCatalogView | 'both'): Array<ScryfallBulkDataResponse['data'][number] & { view: OfficialCardCatalogView }> {
-  const targets: Array<ScryfallBulkDataResponse['data'][number] & { view: OfficialCardCatalogView }> = [];
+function bulkTargets(bulk: ScryfallBulkDataResponse, view: OfficialCardSyncView): Array<ScryfallBulkDataResponse['data'][number] & { view: Exclude<OfficialCardCatalogView, 'unique'> }> {
+  const targets: Array<ScryfallBulkDataResponse['data'][number] & { view: Exclude<OfficialCardCatalogView, 'unique'> }> = [];
   if (view === 'prints' || view === 'both') {
     const prints = bulk.data.find((item) => item.type === 'default_cards');
     if (!prints) {
@@ -529,6 +585,109 @@ async function readStoredStatus(rootDir: string): Promise<OfficialCardCatalogSta
 async function writeStatus(rootDir: string, status: OfficialCardCatalogStatus): Promise<void> {
   await mkdir(officialCardsCacheDir(rootDir), { recursive: true });
   await writeFile(join(officialCardsCacheDir(rootDir), OFFICIAL_STATUS_FILE), `${JSON.stringify(status, null, 2)}\n`, 'utf8');
+}
+
+function uniqueOfficialCards(filteredCards: OfficialCardPrint[], allCards: OfficialCardPrint[]): OfficialCardPrint[] {
+  const allGroups = groupPrintsByVariantKey(allCards);
+  const filteredGroups = groupPrintsByVariantKey(filteredCards);
+  return [...filteredGroups.entries()].map(([variantKey, filteredGroup]) => {
+    const fullGroup = allGroups.get(variantKey) ?? filteredGroup;
+    const representative = [...filteredGroup].sort(compareRepresentativePrints)[0]!;
+    return withVariantSummary(representative, variantKey, fullGroup.length, filteredGroup.length);
+  });
+}
+
+function exactNameMatchesForUniqueQuery(cards: OfficialCardPrint[], parsedQuery: ParsedOfficialCardQuery): OfficialCardPrint[] {
+  const exactName = parsedQuery.freeTerms.join(' ').trim().toLowerCase();
+  if (!exactName) {
+    return cards;
+  }
+  const exactCardNames = cards.filter((card) => card.name.toLowerCase() === exactName);
+  if (exactCardNames.length) {
+    return exactCardNames;
+  }
+  const exactFaceNames = cards.filter((card) => (card.cardFaces ?? []).some((face) => clean(face.name).toLowerCase() === exactName));
+  return exactFaceNames.length ? exactFaceNames : cards;
+}
+
+function groupPrintsByVariantKey(cards: OfficialCardPrint[]): Map<string, OfficialCardPrint[]> {
+  const groups = new Map<string, OfficialCardPrint[]>();
+  for (const card of cards) {
+    const key = officialCardVariantKey(card);
+    groups.set(key, [...(groups.get(key) ?? []), card]);
+  }
+  return groups;
+}
+
+function withVariantSummary(card: OfficialCardPrint, variantKey = officialCardVariantKey(card), variantCount = 1, filteredVariantCount?: number): OfficialCardPrint {
+  return {
+    ...card,
+    variantKey,
+    variantCount,
+    filteredVariantCount
+  };
+}
+
+function findVariantTarget(cards: OfficialCardPrint[], args: { cardId?: string; oracleId?: string; variantKey?: string; name?: string }): OfficialCardPrint | undefined {
+  const cardId = clean(args.cardId).toLowerCase();
+  const oracleId = clean(args.oracleId).toLowerCase();
+  const variantKey = clean(args.variantKey).toLowerCase();
+  const name = clean(args.name).toLowerCase();
+  if (cardId) {
+    return cards.find((card) => card.id.toLowerCase() === cardId);
+  }
+  if (oracleId) {
+    return cards.find((card) => clean(card.oracleId).toLowerCase() === oracleId);
+  }
+  if (variantKey) {
+    return cards.find((card) => officialCardVariantKey(card) === variantKey);
+  }
+  if (name) {
+    return cards.find((card) => card.name.toLowerCase() === name);
+  }
+  return undefined;
+}
+
+function officialCardVariantKey(card: OfficialCardSearchCard): string {
+  const oracleId = clean(card.oracleId).toLowerCase();
+  if (oracleId) {
+    return oracleId;
+  }
+  return [card.name, card.manaCost, card.typeLine, card.oracleText, card.layout].map((value) => clean(value).toLowerCase()).join('|');
+}
+
+function compareRepresentativePrints(left: OfficialCardPrint, right: OfficialCardPrint): number {
+  return (
+    compareEnglishFirst(left, right) ||
+    compareImageFirst(left, right) ||
+    compareCategoryFirst(left, right) ||
+    compareNullableString(left.releasedAt, right.releasedAt, 'desc') ||
+    compareSetPrint(left, right, 'desc') ||
+    left.name.localeCompare(right.name)
+  );
+}
+
+function compareEnglishFirst(left: OfficialCardPrint, right: OfficialCardPrint): number {
+  const leftEnglish = clean(left.lang).toLowerCase() === 'en';
+  const rightEnglish = clean(right.lang).toLowerCase() === 'en';
+  return leftEnglish === rightEnglish ? 0 : leftEnglish ? -1 : 1;
+}
+
+function compareImageFirst(left: OfficialCardPrint, right: OfficialCardPrint): number {
+  const leftImage = Boolean(officialCardImageUrl(left));
+  const rightImage = Boolean(officialCardImageUrl(right));
+  return leftImage === rightImage ? 0 : leftImage ? -1 : 1;
+}
+
+function compareCategoryFirst(left: OfficialCardPrint, right: OfficialCardPrint): number {
+  const rank = new Map([
+    ['normal', 0],
+    ['extra', 1],
+    ['token', 2],
+    ['art', 3],
+    ['funny', 4]
+  ]);
+  return (rank.get(officialCardCategory(left)) ?? 9) - (rank.get(officialCardCategory(right)) ?? 9);
 }
 
 function officialCardMatches(card: OfficialCardSearchCard, filters: OfficialCardSearchFilters, parsedQuery: ParsedOfficialCardQuery): boolean {
@@ -1036,11 +1195,11 @@ function colorIdentityMatches(identity: string[], filter: string): boolean {
 }
 
 function cachePath(rootDir: string, view: OfficialCardCatalogView): string {
-  return join(officialCardsCacheDir(rootDir), view === 'prints' ? OFFICIAL_PRINTS_FILE : OFFICIAL_ORACLE_FILE);
+  return join(officialCardsCacheDir(rootDir), view === 'oracle' ? OFFICIAL_ORACLE_FILE : OFFICIAL_PRINTS_FILE);
 }
 
 function normalizeView(view: unknown): OfficialCardCatalogView {
-  return view === 'oracle' ? 'oracle' : 'prints';
+  return view === 'oracle' || view === 'unique' ? view : 'prints';
 }
 
 function stringArray(value: unknown): string[] {

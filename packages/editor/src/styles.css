@@ -198,8 +198,8 @@
   --fb-line-soft:   #e2d3bb;
   --fb-line-strong: #c5ad88;
   --fb-text:        #241f18;
-  --fb-text-muted:  #685b48;
-  --fb-label:       #83715a;
+  --fb-text-muted:  #574a35;
+  --fb-label:       #4f422e;
   --fb-accent:        #7f5f22;
   --fb-accent-strong: #624817;
   --fb-accent-ink:    #5b4112;
@@ -1114,7 +1114,7 @@ button {
 
 .primary-button:disabled {
   opacity: 0.58;
-  cursor: wait;
+  cursor: not-allowed;
 }
 
 .secondary-button:disabled {
@@ -4238,14 +4238,14 @@ button {
   place-items: center;
   align-content: center;
   gap: 10px;
-  border: 1px dashed #aeb9c9;
+  border: 1px dashed var(--fb-line-strong);
   border-radius: 10px;
-  color: #68778c;
+  color: var(--fb-text);
   text-align: center;
 }
 
 .preview-empty strong {
-  color: #17202c;
+  color: var(--fb-text);
 }
 
 .preview-loading {
@@ -6202,7 +6202,7 @@ button {
 
 .deck-commander-slots {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 8px;
 }
 
@@ -6230,10 +6230,9 @@ button {
 }
 
 .deck-commander-slots strong {
-  overflow: hidden;
   font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .deck-stat-grid {
@@ -6246,7 +6245,7 @@ button {
   display: flex;
   flex: 1 1 340px;
   align-items: end;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
 }
 
@@ -7816,6 +7815,83 @@ button {
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.official-variants-panel {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.official-variants-toolbar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.official-variants-search {
+  min-width: 0;
+}
+
+.official-variants-search input {
+  width: 100%;
+  min-width: 0;
+}
+
+.official-variant-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 12px;
+  overflow: auto;
+  padding: 2px;
+}
+
+.official-variant-tile {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #d9e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.official-variant-tile.selected {
+  border-color: #8aa9d6;
+  background: #f3f7fd;
+}
+
+.official-variant-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  color: #243044;
+}
+
+.official-variant-copy strong,
+.official-variant-copy span,
+.official-variant-copy small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.official-variant-copy span,
+.official-variant-copy small {
+  color: #5d6877;
+  font-size: 12px;
+}
+
+.official-variant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .table-link-button {
@@ -11109,6 +11185,14 @@ textarea::placeholder {
     align-items: stretch;
     flex-direction: column;
   }
+
+  .official-variants-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .official-variant-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
 }
 
 /* ============================================================================
@@ -12097,6 +12181,7 @@ textarea:focus {
 :root[data-theme="dark"] .official-sort-summary,
 :root[data-theme="dark"] .official-reference-result-row,
 :root[data-theme="dark"] .official-reference-grid-tile,
+:root[data-theme="dark"] .official-variant-tile,
 :root[data-theme="dark"] .official-reference-table,
 :root[data-theme="dark"] .official-reference-table th,
 :root[data-theme="dark"] .official-reference-table td,
@@ -12111,6 +12196,7 @@ textarea:focus {
 :root[data-theme="dark"] .official-sort-summary strong,
 :root[data-theme="dark"] .official-reference-result-main,
 :root[data-theme="dark"] .official-reference-grid-copy,
+:root[data-theme="dark"] .official-variant-copy,
 :root[data-theme="dark"] .official-face-row strong {
   color: var(--fb-text);
 }
@@ -12120,6 +12206,8 @@ textarea:focus {
 :root[data-theme="dark"] .official-reference-result-main small,
 :root[data-theme="dark"] .official-reference-grid-copy span,
 :root[data-theme="dark"] .official-reference-grid-copy small,
+:root[data-theme="dark"] .official-variant-copy span,
+:root[data-theme="dark"] .official-variant-copy small,
 :root[data-theme="dark"] .official-face-row span,
 :root[data-theme="dark"] .official-face-row p {
   color: var(--fb-text-muted);
@@ -12127,6 +12215,7 @@ textarea:focus {
 
 :root[data-theme="dark"] .official-reference-result-row.selected,
 :root[data-theme="dark"] .official-reference-grid-tile.selected,
+:root[data-theme="dark"] .official-variant-tile.selected,
 :root[data-theme="dark"] .official-reference-table tr.selected {
   border-color: var(--fb-select-line);
   background: var(--fb-select);

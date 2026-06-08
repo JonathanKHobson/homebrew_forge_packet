@@ -81,7 +81,7 @@ if [[ ! -x "\$SUPPORT_LAUNCHER" ]]; then
   exit 1
 fi
 
-HOMEBREW_FORGE_LAUNCH_CONTEXT="app-shortcut" /bin/zsh "\$SUPPORT_LAUNCHER" >> "\$LOG_FILE" 2>&1 &
+HOMEBREW_FORGE_LAUNCH_CONTEXT="app-shortcut" /bin/zsh "\$SUPPORT_LAUNCHER" >> "\$LOG_FILE" 2>&1
 LAUNCHER
 
 /bin/chmod 755 "$EXEC_PATH"

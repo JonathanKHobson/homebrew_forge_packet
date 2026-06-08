@@ -83,7 +83,7 @@ export function WorkspaceStatusBar({
   const runtimeLabel = health ? (health.stale ? 'Runtime stale' : 'Runtime fresh') : 'Runtime checking';
   const runtimeTone = health ? (health.stale ? 'warning' : 'ok') : 'pending';
   const workspaceLabel = workspaceStatusLabel(activeWorkspace);
-  const projectLabel = projectName && setCode ? `${projectName} / ${setCode}` : projectName || setCode || 'No project loaded';
+  const projectLabel = projectName && setCode ? `${projectName} / ${setCode}` : projectName || setCode || (/^Loading /i.test(status) ? 'Project loading' : 'No project loaded');
   const showAuthoredSetCounts = activeWorkspace === 'maker' || activeWorkspace === 'sets' || activeWorkspace === 'cards';
   const statusMessage = !showAuthoredSetCounts && /^Loaded \d+ cards? \/ \d+ variants? from /i.test(status)
     ? `${workspaceLabel} workspace ready.`

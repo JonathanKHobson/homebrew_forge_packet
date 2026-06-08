@@ -6,6 +6,7 @@ import {
   computeDashboardStats,
   filterDashboardFacts,
   type DashboardCardFact,
+  type DashboardScope,
   type DashboardScopeKind
 } from '../../domain/dashboardFacts.js';
 import {
@@ -39,9 +40,15 @@ interface DashboardViewProps {
   library: LibraryState | null;
   project: EditorProject | null;
   cardsForList: CardSummary[];
+  scopeRequest?: DashboardScopeRequest | null;
   onOpenCard: (setCode: string, cardId: string, variantId?: string) => Promise<void> | void;
   onExit: () => void;
   onStatus: (status: string) => void;
+}
+
+interface DashboardScopeRequest {
+  scope: DashboardScope;
+  token: number;
 }
 
 const DEFAULT_WIDGET_ORDER = DASHBOARD_WIDGETS.map((widget) => widget.id);
@@ -237,7 +244,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
-export function DashboardView({ library, project, cardsForList, onOpenCard, onExit, onStatus }: DashboardViewProps) {
+export function DashboardView({ library, project, cardsForList, scopeRequest, onOpenCard, onExit, onStatus }: DashboardViewProps) {
   const [initialDashboardStore] = useState(() => loadDashboardSettingsStore<DashboardAdvancedFilters, DashboardWidgetId, DashboardVisualization>(createDefaultDashboardSnapshot(), normalizeDashboardSnapshot));
   const initialDashboardSettings = initialDashboardStore.lastSettings;
   const [scopeKind, setScopeKind] = useState<DashboardScopeKind>(initialDashboardSettings.scopeKind);
@@ -344,6 +351,20 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
     return () => document.removeEventListener('fullscreenchange', syncFullscreen);
   }, []);
 
+  useEffect(() => {
+    if (!scopeRequest) {
+      return;
+    }
+    const { scope } = scopeRequest;
+    setScopeKind(scope.kind);
+    setScopeId(scope.id);
+    setQuery('');
+    setAdvancedFilters(DEFAULT_DASHBOARD_FILTERS);
+    setSelectedCustomKeys(new Set(scope.customKeys ?? []));
+    setSelectedDashboardPresetId('');
+    onStatus(`Dashboard scoped to ${scope.label}.`);
+  }, [onStatus, scopeRequest]);
+
   const allFacts = useMemo(
     () => buildDashboardFacts({ library, projectsBySet, currentProject: project, currentCards: cardsForList, decks, deckStates, collections, collectionStates }),
     [cardsForList, collectionStates, collections, deckStates, decks, library, project, projectsBySet]
@@ -357,6 +378,13 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
     () => collectionOwnerSuggestions(collections.flatMap((collection) => collection.ownerNames ?? []), allFacts.map((fact) => fact.ownerName)),
     [allFacts, collections]
   );
+  const requestedScopeLabel = scopeRequest?.scope.kind === scopeKind && scopeRequest.scope.id === scopeId ? scopeRequest.scope.label : '';
+  const visibleScopeOptions = useMemo(() => {
+    if (!scopeId || !requestedScopeLabel || scopeKind === 'all' || scopeKind === 'custom' || scopeOptions.some((option) => option.value === scopeId)) {
+      return scopeOptions;
+    }
+    return [{ value: scopeId, label: requestedScopeLabel, detail: 'Selected scope' }, ...scopeOptions];
+  }, [requestedScopeLabel, scopeId, scopeKind, scopeOptions]);
   const scopeLabel = useMemo(() => {
     if (scopeKind === 'all') {
       return 'All cards, decks, and collections';
@@ -364,8 +392,8 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
     if (scopeKind === 'custom') {
       return selectedCustomKeys.size ? `${selectedCustomKeys.size} selected dashboard rows` : 'Custom selection';
     }
-    return scopeOptions.find((option) => option.value === scopeId)?.label ?? allScopeEntityLabel(scopeKind);
-  }, [scopeId, scopeKind, scopeOptions, selectedCustomKeys.size]);
+    return visibleScopeOptions.find((option) => option.value === scopeId)?.label ?? (requestedScopeLabel || allScopeEntityLabel(scopeKind));
+  }, [requestedScopeLabel, scopeId, scopeKind, selectedCustomKeys.size, visibleScopeOptions]);
   const sourceScopedFacts = useMemo(
     () => filterDashboardFacts(allFacts, { kind: scopeKind, id: scopeId, label: scopeLabel, customKeys: selectedCustomKeys }, query),
     [allFacts, query, scopeId, scopeKind, scopeLabel, selectedCustomKeys]
@@ -625,7 +653,7 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
                   <span>Filter</span>
                   <select value={scopeId} disabled={scopeKind === 'all' || scopeKind === 'custom'} onChange={(event) => setScopeId(event.target.value)}>
                     <option value="">{scopeKind === 'all' ? 'Everything' : allScopeEntityLabel(scopeKind)}</option>
-                    {scopeOptions.map((option) => (
+                    {visibleScopeOptions.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
@@ -698,7 +726,7 @@ export function DashboardView({ library, project, cardsForList, onOpenCard, onEx
                 <span>{scopeEntityLabel(scopeKind)}</span>
                 <select value={scopeId} onChange={(event) => setScopeId(event.target.value)}>
                   <option value="">{allScopeEntityLabel(scopeKind)}</option>
-                  {scopeOptions.map((option) => (
+                  {visibleScopeOptions.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>

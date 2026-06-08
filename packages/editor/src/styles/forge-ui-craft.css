@@ -555,6 +555,12 @@ textarea,
   color: var(--fb-text-muted);
 }
 
+.card-row.selected small,
+.card-row.selected .collector,
+.card-row.selected .card-row-identity {
+  color: var(--fb-text);
+}
+
 /* Forge UI primitives ------------------------------------------------------ */
 
 .forge-button {
@@ -613,7 +619,8 @@ textarea,
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 6px;
+  gap: 6px 8px;
+  flex-wrap: wrap;
 }
 
 .card-row-badges {
@@ -624,6 +631,7 @@ textarea,
 .dashboard-row-source-line span:not(.forge-status-pill),
 .entity-row-source-line span:not(.forge-status-pill) {
   min-width: 0;
+  flex: 1 1 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -798,12 +806,17 @@ textarea,
   gap: 8px;
 }
 
+.deck-stat-grid.compact {
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+}
+
 .collection-stat.workspace-metric {
   min-height: 60px;
   padding: 10px;
   border-color: var(--fb-line);
   background: linear-gradient(180deg, var(--fb-craft-control-top) 0%, var(--fb-panel-2) 100%);
   color: var(--fb-text);
+  cursor: default;
   box-shadow:
     inset 0 1px 0 var(--fb-craft-highlight-soft),
     0 1px 1px var(--fb-craft-shadow-soft);
@@ -830,6 +843,32 @@ textarea,
 .collection-table-toolbar {
   grid-template-columns: minmax(180px, 1fr) auto auto;
   gap: 8px;
+}
+
+.scope-chip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+  padding: 7px 8px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.scope-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-chrome-2);
+  color: var(--fb-text);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .collection-table-toolbar,
@@ -1050,19 +1089,239 @@ textarea,
   color: var(--fb-text);
 }
 
+.deck-board-tab span {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .deck-board-tab.active strong {
   border-color: color-mix(in srgb, var(--fb-select-line) 80%, var(--fb-accent));
   background: color-mix(in srgb, var(--fb-select) 68%, var(--fb-panel-2));
   color: var(--fb-accent-ink);
 }
 
+.deck-live-stats-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.deck-live-stats-heading {
+  order: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.deck-live-stats-heading span,
+.deck-stat-chip-label {
+  color: var(--fb-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.deck-live-stats-heading strong {
+  color: var(--fb-text);
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.deck-live-stat-pills {
+  order: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.deck-live-stat-pills span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 2px 7px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-panel);
+  color: var(--fb-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.deck-live-stat-pills strong {
+  color: var(--fb-accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-live-stat-pills .warning {
+  border-color: var(--fb-warning-line);
+  background: var(--fb-warning-soft);
+  color: var(--fb-warning);
+}
+
+.deck-live-dashboard-button {
+  order: 2;
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.deck-live-breakdown[open] {
+  order: 4;
+  flex-basis: 100%;
+  margin-left: 0;
+}
+
+.deck-live-breakdown summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel);
+  color: var(--fb-text);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.deck-live-breakdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.deck-live-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.deck-stat-chip-group {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel);
+}
+
+.deck-stat-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.deck-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 2px 7px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-inset);
+  color: var(--fb-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.deck-stat-chip strong {
+  color: var(--fb-accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-stat-chip-empty {
+  color: var(--fb-text-muted);
+  font-size: 12px;
+}
+
 .deck-view-toolbar {
   gap: 8px;
 }
 
-.deck-view-mode {
-  max-width: 100%;
+.deck-workspace .deck-view-toolbar {
+  display: block;
+  padding: 8px 10px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel);
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-bar {
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  grid-template-areas:
+    "search results view"
+    "actions actions actions";
+  gap: 10px;
+  align-items: center;
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-search {
+  grid-area: search;
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-actions {
+  grid-area: actions;
+  justify-content: flex-start;
   flex-wrap: wrap;
+  padding-right: 0;
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-results {
+  grid-area: results;
+  align-self: center;
+  justify-self: end;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.deck-workspace .deck-view-toolbar .sort-menu-control {
+  gap: 5px;
+}
+
+.deck-workspace .deck-view-toolbar .sort-menu-control select {
+  min-width: 128px;
+}
+
+.deck-workspace .deck-view-toolbar .secondary-button.compact,
+.deck-workspace .deck-view-toolbar .list-toggle-pill {
+  min-height: 30px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 12px;
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-view {
+  grid-area: view;
+  justify-self: end;
+}
+
+.deck-view-mode {
+  max-width: none;
+  flex-wrap: nowrap;
   justify-content: flex-end;
 }
 
@@ -1276,6 +1535,18 @@ textarea,
     grid-template-columns: minmax(180px, 1fr) auto;
   }
 
+  .deck-live-breakdown-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .deck-workspace .deck-view-toolbar .list-controls-bar {
+    grid-template-columns: minmax(220px, 1fr) auto;
+    grid-template-areas:
+      "search view"
+      "actions actions"
+      "results results";
+  }
+
   .collection-table-toolbar .filter-count-note {
     grid-column: 1 / -1;
     justify-self: start;
@@ -1301,6 +1572,43 @@ textarea,
   .collection-view-mode,
   .deck-view-mode {
     justify-self: start;
+  }
+
+  .deck-live-stats-panel {
+    align-items: stretch;
+  }
+
+  .deck-live-stats-heading,
+  .deck-live-stat-pills,
+  .deck-live-dashboard-button {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  .deck-workspace .deck-view-toolbar .list-controls-bar {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "search"
+      "actions"
+      "results"
+      "view";
+  }
+
+  .deck-workspace .deck-view-toolbar .list-controls-results,
+  .deck-workspace .deck-view-toolbar .list-controls-view {
+    justify-self: start;
+  }
+
+  .deck-workspace .deck-view-toolbar .list-controls-actions {
+    justify-content: flex-start;
+    padding-right: 0;
+  }
+
+  .deck-board-tab {
+    align-items: flex-start;
+    flex-basis: 100%;
+    gap: 8px;
+    min-height: 44px;
   }
 
   .list-controls-bar {

@@ -39,6 +39,7 @@ import {
   listDecks,
   parseCsvRecords,
   findOfficialCardPrintByPrintKey,
+  listOfficialCardPrintVariants,
   searchOfficialCards,
   readDeckState,
   renderCardImage,
@@ -451,7 +452,7 @@ export function editorApiPlugin(options: EditorApiPluginOptions): Plugin {
         try {
           const params = new URL(req.url ?? '', 'http://editor.local').searchParams;
           const filters: OfficialCardSearchFilters = {
-            view: params.get('view') === 'oracle' ? 'oracle' : 'prints',
+            view: officialCatalogViewParam(params.get('view')),
             query: params.get('query') ?? '',
             setCode: params.get('setCode') ?? undefined,
             rarity: params.get('rarity') ?? undefined,
@@ -476,6 +477,31 @@ export function editorApiPlugin(options: EditorApiPluginOptions): Plugin {
             offset: numberParam(params.get('offset'))
           };
           sendJson(res, 200, await searchOfficialCards(options.repoRoot, filters));
+        } catch (error) {
+          sendJson(res, 500, { error: errorMessage(error) });
+        }
+      });
+
+      server.middlewares.use('/api/official-cards/variants', async (req, res) => {
+        if (req.method !== 'GET') {
+          sendJson(res, 405, { error: 'Method not allowed' });
+          return;
+        }
+        try {
+          const params = new URL(req.url ?? '', 'http://editor.local').searchParams;
+          sendJson(
+            res,
+            200,
+            await listOfficialCardPrintVariants(options.repoRoot, {
+              cardId: params.get('cardId') ?? undefined,
+              oracleId: params.get('oracleId') ?? undefined,
+              variantKey: params.get('variantKey') ?? undefined,
+              name: params.get('name') ?? undefined,
+              query: params.get('query') ?? undefined,
+              limit: numberParam(params.get('limit')),
+              offset: numberParam(params.get('offset'))
+            })
+          );
         } catch (error) {
           sendJson(res, 500, { error: errorMessage(error) });
         }
@@ -2724,6 +2750,10 @@ function numberParam(value: string | null): number | undefined {
   }
   const number = Number(value);
   return Number.isFinite(number) ? number : undefined;
+}
+
+function officialCatalogViewParam(value: string | null): OfficialCardSearchFilters['view'] {
+  return value === 'oracle' || value === 'unique' ? value : 'prints';
 }
 
 function officialPriceCurrencyParam(value: string | null): OfficialCardSearchFilters['priceCurrency'] {

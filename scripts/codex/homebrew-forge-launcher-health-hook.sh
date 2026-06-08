@@ -80,7 +80,6 @@ if node_bin="$(find_node)"; then
   current_chrome_count="$(chrome_app_main_count)"
   if [[ "$current_status" == "fresh" && "$current_chrome_count" == "1" ]]; then
     log "Fast-path pass: server fresh and one Chrome app process is running"
-    /usr/bin/open -a "Google Chrome" >/dev/null 2>&1 || true
     log "Codex Stop hook completed"
     exit 0
   fi

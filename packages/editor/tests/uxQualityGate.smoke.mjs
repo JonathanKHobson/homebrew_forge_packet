@@ -43,6 +43,7 @@ test('UX quality gate smoke covers Maker orientation, responsive layout, tabs, a
   });
 
   await verifyFirstRunMakerOnboarding(browser, baseUrl);
+  await verifyProjectLoadAndRailCrashGuard(browser, baseUrl);
   await verifyDemoOnlyMakerOnboarding(browser, baseUrl);
   await verifyZeroCardOnboarding(browser, baseUrl);
   await verifyNarrowMakerLayout(browser, baseUrl);
@@ -297,9 +298,13 @@ async function verifyCollectionFamilyAndDeckThemeSurfaces(browser, baseUrl) {
 
     await openRailSection(page, 'Decks');
     await page.locator('.deck-workspace').waitFor({ state: 'visible', timeout: 15000 });
+    assert.match(await page.locator('.entity-list-panel .panel-heading p').first().innerText(), /3 of 3 decks/i, 'Decks should show all decks globally by default');
+    assert.equal(await page.locator('.entity-list-panel .scope-chip-row').count(), 0, 'Decks should not show a hidden project scope chip by default');
     assert.equal(await page.locator('.deck-workspace .visual-management-header').getByRole('button', { name: /Export text|Export \.cod/ }).count(), 0, 'Decks should not duplicate export actions in the workspace header');
     await expectCount(page.locator('.deck-workspace .segmented-icon-control button'), 7, 'Decks should expose seven compact view buttons');
     await assertThemeSurfaceContrast(page, theme, 'Decks summary', [
+      '.deck-workspace .deck-live-stats-panel',
+      '.deck-workspace .deck-live-stat-pills span',
       '.deck-workspace .collection-stat.workspace-metric',
       '.deck-workspace .deck-role-summary span',
       '.deck-workspace .deck-role-summary strong',
@@ -315,6 +320,35 @@ async function verifyCollectionFamilyAndDeckThemeSurfaces(browser, baseUrl) {
 
 async function openRailSection(page, sectionName) {
   await page.getByRole('button', { name: sectionName, exact: true }).click();
+}
+
+async function verifyProjectLoadAndRailCrashGuard(browser, baseUrl) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await context.addInitScript(
+    ([firstRunKey, themeKey]) => {
+      localStorage.setItem(firstRunKey, 'true');
+      localStorage.setItem(themeKey, 'dark');
+    },
+    ['homebrew-forge.firstRunOrientationDismissed', 'homebrew-forge.theme']
+  );
+  const page = await context.newPage();
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+
+  await loadDemo(page, baseUrl);
+  const bootState = await readBootState(page);
+  assert.ok(bootState.cardTabs >= 1, 'project load should render saved card tabs');
+  assert.ok(bootState.cardRows >= 10, 'project load should render DEMO cards');
+  assert.match(bootState.statusBar, /Demo Project \/ DEMO/, 'status bar should expose the loaded project context');
+  assert.doesNotMatch(bootState.statusBar, /Loading DEMO|No project loaded/i, 'loaded project status should not look empty or stuck');
+
+  for (const sectionName of ['Sets', 'Decks', 'Collections', 'Binders', 'Lists', 'Projects', 'Gallery', 'References', 'Settings']) {
+    await openRailSection(page, sectionName);
+    await page.waitForFunction(() => (document.getElementById('root')?.textContent ?? '').trim().length > 0, undefined, { timeout: 5000 });
+    assert.equal(pageErrors.length, 0, `${sectionName} should not throw page errors`);
+  }
+
+  await context.close();
 }
 
 async function verifyPreviewAndToolsMenus(browser, baseUrl) {
@@ -415,7 +449,23 @@ async function waitForExpandedPreviewReady(page) {
 
 async function loadDemo(page, baseUrl) {
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.querySelector('.card-tabs') && document.querySelector('.card-tab:not(.new-tab)'), undefined, { timeout: 15000 });
+  await page.waitForFunction(() => {
+    const statusBar = document.querySelector('.app-status-bar')?.textContent ?? '';
+    return (
+      document.querySelector('.card-tabs') &&
+      document.querySelector('.card-tab:not(.new-tab)') &&
+      document.querySelectorAll('.card-row, .entity-row, [data-card-id]').length > 0 &&
+      !/Loading DEMO|No project loaded/i.test(statusBar)
+    );
+  }, undefined, { timeout: 15000 });
+}
+
+async function readBootState(page) {
+  return page.evaluate(() => ({
+    cardTabs: document.querySelectorAll('.card-tab:not(.new-tab)').length,
+    cardRows: document.querySelectorAll('.card-row, .entity-row, [data-card-id]').length,
+    statusBar: document.querySelector('.app-status-bar')?.textContent ?? ''
+  }));
 }
 
 async function readUxState(page) {
@@ -741,6 +791,30 @@ function buildManagementFixtures() {
       candidateCount: 0,
       cutCount: 0,
       unresolvedCount: 0
+    },
+    {
+      ...deckMetadata,
+      deckId: 'ux-gate-squirrel-away',
+      name: 'Squirrel Away',
+      linkedUniverseId: 'other-project',
+      linkedSetCode: 'SQUIR',
+      cardCount: 24,
+      mainCount: 24,
+      sideCount: 0,
+      maybeCount: 0,
+      activeVariantName: 'Testing Build'
+    },
+    {
+      ...deckMetadata,
+      deckId: 'ux-gate-signs-of-assassins',
+      name: 'Signs of Assassins',
+      linkedUniverseId: '',
+      linkedSetCode: '',
+      cardCount: 99,
+      mainCount: 99,
+      sideCount: 0,
+      maybeCount: 8,
+      activeVariantName: 'Commander Build'
     }
   ];
   return {
