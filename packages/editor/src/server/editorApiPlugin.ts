@@ -101,7 +101,7 @@ import type {
   UpdateUniverseRequest,
   UniverseSummary
 } from '../domain/editorTypes.js';
-import { buildRuntimeHealth, createSourceFingerprint } from './runtimeHealth.mjs';
+import { buildRuntimeHealth, buildRuntimeVersion, createSourceFingerprint } from './runtimeHealth.mjs';
 
 interface EditorApiPluginOptions {
   repoRoot: string;
@@ -379,6 +379,29 @@ export function editorApiPlugin(options: EditorApiPluginOptions): Plugin {
               startedAt,
               port: serverPort(server, configuredPort()),
               startupFingerprint: await startupFingerprintPromise
+            })
+          );
+        } catch (error) {
+          sendJson(res, 500, { error: errorMessage(error) });
+        }
+      });
+
+      server.middlewares.use('/api/version', (req, res) => {
+        if (req.method !== 'GET') {
+          sendJson(res, 405, { error: 'Method not allowed' });
+          return;
+        }
+        try {
+          sendJson(
+            res,
+            200,
+            buildRuntimeVersion({
+              repoRoot: options.repoRoot,
+              deliveryMode: 'web-dev',
+              selectedPort: serverPort(server, configuredPort()),
+              processId: process.pid,
+              parentProcessId: process.ppid,
+              startedAt
             })
           );
         } catch (error) {

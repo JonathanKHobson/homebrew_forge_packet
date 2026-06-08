@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 export const APP_LABEL = 'Homebrew Forge Editor';
 export const DEFAULT_PORT = 5177;
+export const RUNTIME_API_CONTRACT_VERSION = 'runtime-api-v1';
 
 export const DEFAULT_WATCHED_PATHS = [
   'package.json',
@@ -92,15 +93,37 @@ export async function buildRuntimeHealth(options) {
 
   return {
     appLabel: options.appLabel ?? APP_LABEL,
+    deliveryMode: options.deliveryMode ?? 'web-dev',
     repoRoot,
+    projectRoot: options.projectRoot ?? null,
     processId: options.processId,
+    parentProcessId: options.parentProcessId ?? process.ppid,
     startedAt: options.startedAt,
     port: options.port,
+    selectedPort: options.port,
     startupFingerprint,
     currentFingerprint,
     stale: staleReasons.length > 0,
     staleReasons,
     forgeDist
+  };
+}
+
+export function buildRuntimeVersion(options) {
+  return {
+    app: 'Homebrew Forge',
+    deliveryMode: options.deliveryMode ?? 'web-dev',
+    apiContractVersion: RUNTIME_API_CONTRACT_VERSION,
+    editorBuild: options.editorBuild ?? 'dev',
+    forgeBuild: options.forgeBuild ?? 'dev',
+    runtimeBuild: options.runtimeBuild ?? 'dev',
+    desktopBuild: options.desktopBuild ?? null,
+    repoRoot: resolve(options.repoRoot),
+    projectRoot: options.projectRoot ?? null,
+    selectedPort: Number(options.selectedPort || DEFAULT_PORT),
+    processId: options.processId ?? process.pid,
+    parentProcessId: options.parentProcessId ?? process.ppid,
+    startedAt: options.startedAt ?? new Date().toISOString()
   };
 }
 
@@ -256,8 +279,20 @@ async function runCli() {
     process.stdout.write(`${JSON.stringify(health, null, 2)}\n`);
     return;
   }
+  if (command === 'version') {
+    const repoRoot = args[0] ?? process.cwd();
+    const version = buildRuntimeVersion({
+      repoRoot,
+      selectedPort: Number(args[1] || DEFAULT_PORT),
+      processId: process.pid,
+      parentProcessId: process.ppid,
+      startedAt: new Date().toISOString()
+    });
+    process.stdout.write(`${JSON.stringify(version, null, 2)}\n`);
+    return;
+  }
 
-  process.stderr.write('Usage: runtimeHealth.mjs fingerprint|dist-stale|check-server|server-pid|health ...\n');
+  process.stderr.write('Usage: runtimeHealth.mjs fingerprint|dist-stale|check-server|server-pid|health|version ...\n');
   process.exitCode = 1;
 }
 

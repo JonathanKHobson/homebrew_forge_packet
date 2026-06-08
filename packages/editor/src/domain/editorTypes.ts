@@ -86,10 +86,14 @@ export interface LibraryState {
 
 export interface RuntimeHealth {
   appLabel: string;
+  deliveryMode?: 'web-dev' | 'runtime-dev' | 'desktop-dev' | 'mac-desktop' | 'win-desktop' | 'packaged';
   repoRoot: string;
+  projectRoot?: string | null;
   processId: number;
+  parentProcessId?: number;
   startedAt: string;
   port: number;
+  selectedPort?: number;
   startupFingerprint: string;
   currentFingerprint: string;
   stale: boolean;
