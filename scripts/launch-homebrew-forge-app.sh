@@ -255,16 +255,32 @@ bootstrap_launch_agent() {
   /bin/launchctl bootstrap "$LAUNCHCTL_TARGET" "$AGENT_PLIST" >> "$LOG_FILE" 2>&1
 }
 
+start_direct_editor_server() {
+  local node_bin="$1"
+  log "Starting Homebrew Forge editor directly because LaunchAgent did not start"
+  HOMEBREW_FORGE_PORT="$PORT" "$node_bin" "$REPO_ROOT/scripts/run-homebrew-forge-editor.mjs" >> "$LOG_FILE" 2>&1 &
+  local pid="$!"
+  print -r -- "$pid" > "$APP_SUPPORT/editor-server.pid"
+  log "Started direct Homebrew Forge editor pid=$pid on $URL"
+}
+
 kickstart_launch_agent() {
   local node_bin="$1"
   if ! /bin/launchctl print "${LAUNCHCTL_TARGET}/${AGENT_LABEL}" >/dev/null 2>&1; then
-    bootstrap_launch_agent "$node_bin"
+    if ! bootstrap_launch_agent "$node_bin"; then
+      log "LaunchAgent bootstrap failed; falling back to direct editor process"
+      start_direct_editor_server "$node_bin"
+      return 0
+    fi
   fi
 
   if ! /bin/launchctl kickstart -k "${LAUNCHCTL_TARGET}/${AGENT_LABEL}" >> "$LOG_FILE" 2>&1; then
     log "LaunchAgent kickstart failed; re-bootstrapping ${AGENT_LABEL}"
-    bootstrap_launch_agent "$node_bin"
-    /bin/launchctl kickstart -k "${LAUNCHCTL_TARGET}/${AGENT_LABEL}" >> "$LOG_FILE" 2>&1
+    if bootstrap_launch_agent "$node_bin" && /bin/launchctl kickstart -k "${LAUNCHCTL_TARGET}/${AGENT_LABEL}" >> "$LOG_FILE" 2>&1; then
+      return 0
+    fi
+    log "LaunchAgent kickstart still failed after bootstrap; falling back to direct editor process"
+    start_direct_editor_server "$node_bin"
   fi
 }
 
