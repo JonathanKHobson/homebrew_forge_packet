@@ -26,18 +26,18 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 | `/api/import-collection-to-set` | POST | collection-to-set copy workflow | Yes | High | temp collection/set | Copies selected rows, preserves collection isolation |
 | `/api/decks` | GET | deck storage list | No | Low | demo decks | Extracted to runtime-service; lists fixture and demo deck summaries |
 | `/api/deck` | GET | deck storage read | No | Medium | demo-showcase | Extracted to runtime-service; missing id is 400; valid id loads variants and entries |
-| `/api/create-deck` | POST | deck create service | Yes | High | temp decks | Creates deck folder in fixture and relists decks |
-| `/api/save-deck` | POST | deck save service | Yes | High | temp deck | Save/read/diff round trip preserves variant entries |
-| `/api/export-deck` | POST | text/Cockatrice deck export | Yes | High | temp output | Writes expected export artifact |
-| `/api/import-deck` | POST | deck import service | Yes | High | temp decks | Imports fixture text/.cod without live data mutation |
+| `/api/create-deck` | POST | deck create service | Yes | High | temp decks | Extracted to runtime-service; creates deck folder in fixture and relists decks |
+| `/api/save-deck` | POST | deck save service | Yes | High | temp deck | Extracted to runtime-service; save/read round trip preserves variant entries |
+| `/api/export-deck` | POST | text/Cockatrice deck export | Yes | High | temp output | Extracted to runtime-service; returns expected export artifact |
+| `/api/import-deck` | POST | deck import service | Yes | High | temp decks | Extracted to runtime-service; imports fixture CSV/text without live data mutation |
 | `/api/collections` | GET | collection storage list | No | Low | demo collections | Extracted to runtime-service; lists fixture and default collection summaries |
 | `/api/collection` | GET | collection storage read | No | Medium | demo-reference | Extracted to runtime-service; missing id is 400; valid id loads entries |
-| `/api/create-collection` | POST | collection create service | Yes | High | temp collections | Creates collection folder and relists |
-| `/api/save-collection` | POST | collection save service | Yes | High | temp collection | Save/read/diff round trip preserves row metadata |
-| `/api/import-collection` | POST | scanner/generic collection import | Yes | High | temp collections | Imports CSV fixture and reports summary |
+| `/api/create-collection` | POST | collection create service | Yes | High | temp collections | Extracted to runtime-service; creates collection folder and relists |
+| `/api/save-collection` | POST | collection save service | Yes | High | temp collection | Extracted to runtime-service; save/read round trip preserves row metadata |
+| `/api/import-collection` | POST | scanner/generic collection import | Yes | High | temp collections | Extracted to runtime-service; imports CSV fixture and reports summary |
 | `/api/collection-prices/refresh` | POST | local price refresh/snapshot | Yes | High | temp collection | Refresh writes only fixture snapshot |
 | `/api/collection-prices/import` | POST | price CSV import | Yes | High | temp collection | Imports fixture price rows and relists |
-| `/api/export-collection` | POST | CSV/text/Cockatrice collection export | Yes | High | temp output | Writes expected export artifact |
+| `/api/export-collection` | POST | CSV/text/Cockatrice collection export | Yes | High | temp output | Extracted to runtime-service; returns expected export artifact |
 | `/api/mana-symbol` | GET | asset-pack mana symbol read | No | Medium | DEMO asset pack | Extracted to runtime-service; serves known symbol, 404s missing symbol |
 | `/api/asset` | GET | repo-root path guard and file serving | No | High | DEMO art | Extracted to runtime-service; serves inside-root asset, rejects outside-root traversal |
 | `/api/project` | GET | `loadForgeProject`, editor draft normalization | No | High | DEMO/SOA | DEMO returns populated cards; invalid set errors visibly |
@@ -73,6 +73,7 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 ## Open Risks
 
 - `editorApiPlugin.ts` mixes route registration, body parsing, path guards, write helpers, preview rendering, and editor domain conversion in one file.
+- `/api/project` depends on editor-domain normalization (`draftFromRecords`, frame registry, `EditorProject`, and library asset summaries). Extract it through a shared adapter module before runtime-service owns the route; do not copy/paste the conversion logic into a second source of truth.
 - The current `/api/restart` route is dev-lifecycle behavior; desktop runtime should not inherit it blindly.
 - Preview and print routes can create false "app is broken" states if they hang without timeout or retry.
 - Save/import/export tests must never mutate live repo data.

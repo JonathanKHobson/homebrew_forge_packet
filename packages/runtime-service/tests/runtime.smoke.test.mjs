@@ -141,6 +141,14 @@ layout_maps: []
   );
 }
 
+function postJson(origin, pathname, body) {
+  return fetch(`${origin}${pathname}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+}
+
 test('runtime service serves health and version', async () => {
   const repoRoot = await makeFixtureRepo();
   const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
@@ -214,6 +222,95 @@ test('runtime service serves deck and collection read routes', async () => {
     const collectionState = await (await fetch(`${runtime.origin}/api/collection?id=${encodeURIComponent(collection.metadata.collectionId)}`)).json();
     assert.equal(collectionState.metadata.collectionId, collection.metadata.collectionId);
     assert.deepEqual(collectionState.entries, []);
+  } finally {
+    await runtime.close();
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test('runtime service writes deck routes against fixture data', async () => {
+  const repoRoot = await makeFixtureRepo();
+  const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
+  try {
+    const created = await (await postJson(runtime.origin, '/api/create-deck', {
+      name: 'Runtime API Deck',
+      linkedUniverseId: 'demo',
+      linkedSetCode: 'DEMO',
+      tags: ['runtime-api']
+    })).json();
+    assert.equal(created.deck.metadata.name, 'Runtime API Deck');
+    assert.ok(created.decks.some((summary) => summary.deckId === created.deck.metadata.deckId));
+
+    const saved = await (await postJson(runtime.origin, '/api/save-deck', {
+      metadata: { ...created.deck.metadata, name: 'Runtime API Deck Saved' },
+      entries: created.deck.entries
+    })).json();
+    assert.equal(saved.deck.metadata.name, 'Runtime API Deck Saved');
+
+    const exported = await (await postJson(runtime.origin, '/api/export-deck', {
+      deckId: saved.deck.metadata.deckId,
+      target: 'text'
+    })).json();
+    assert.equal(exported.mimeType, 'text/plain');
+    assert.ok(exported.filename.endsWith('.txt'));
+
+    const imported = await (await postJson(runtime.origin, '/api/import-deck', {
+      deckId: 'runtime-imported-deck',
+      name: 'Runtime Imported Deck',
+      linkedUniverseId: 'demo',
+      linkedSetCode: 'DEMO',
+      sourceFormat: 'csv',
+      content: 'count,section,set_code,card_id,name\n1,main,DEMO,card-001,Example Vanguard\n'
+    })).json();
+    assert.equal(imported.result.summary.importedEntries, 1);
+    assert.equal(imported.result.deck.metadata.name, 'Runtime Imported Deck');
+    assert.ok(imported.decks.some((summary) => summary.deckId === imported.result.deck.metadata.deckId));
+  } finally {
+    await runtime.close();
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test('runtime service writes collection routes against fixture data', async () => {
+  const repoRoot = await makeFixtureRepo();
+  const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
+  try {
+    const created = await (await postJson(runtime.origin, '/api/create-collection', {
+      collectionId: 'runtime-api-binder',
+      name: 'Runtime API Binder',
+      linkedUniverseId: 'demo',
+      kind: 'binder',
+      purpose: 'owned',
+      source: 'generic'
+    })).json();
+    assert.equal(created.collection.metadata.name, 'Runtime API Binder');
+    assert.ok(created.collections.some((summary) => summary.collectionId === created.collection.metadata.collectionId));
+
+    const saved = await (await postJson(runtime.origin, '/api/save-collection', {
+      metadata: { ...created.collection.metadata, description: 'Saved through runtime.' },
+      entries: created.collection.entries
+    })).json();
+    assert.equal(saved.collection.metadata.description, 'Saved through runtime.');
+
+    const imported = await (await postJson(runtime.origin, '/api/import-collection', {
+      collectionId: 'runtime-api-binder',
+      name: 'Runtime API Binder',
+      source: 'generic',
+      contentFormat: 'csv',
+      mode: 'replace',
+      content: 'quantity,card_name,set_code,collector_number\n2,Example Vanguard,DEMO,001\n'
+    })).json();
+    assert.equal(imported.summary.importedRows, 1);
+    assert.equal(imported.collection.entries[0].quantity, 2);
+    assert.ok(imported.collections.some((summary) => summary.collectionId === imported.collection.metadata.collectionId));
+
+    const exported = await (await postJson(runtime.origin, '/api/export-collection', {
+      collectionId: imported.collection.metadata.collectionId,
+      target: 'csv'
+    })).json();
+    assert.equal(exported.mimeType, 'text/csv');
+    assert.ok(exported.filename.endsWith('.csv'));
+    assert.match(exported.content, /Example Vanguard/);
   } finally {
     await runtime.close();
     await rm(repoRoot, { recursive: true, force: true });

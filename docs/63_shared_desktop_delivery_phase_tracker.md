@@ -20,6 +20,7 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 | 2 | Runtime read routes for decks and collections | Done | `packages/runtime-service/src/createRuntimeServer.ts` | runtime-service typecheck/build/test | local command output |
 | 2 | Runtime read routes for references and official cards | Done | `packages/runtime-service/src/routes/` | runtime-service typecheck/build/test | local command output |
 | 2 | Runtime asset and mana-symbol routes | Done | `packages/runtime-service/src/routes/assets.ts` | runtime-service typecheck/build/test | local command output |
+| 2 | Runtime deck and collection write routes | Done | `packages/runtime-service/src/routes/` | runtime-service typecheck/build/test | local command output |
 | 3 | Web `/api/version` parity endpoint | Done | `packages/editor/src/server` | editor tests, typecheck, build, Vite `/api/version` smoke | local command output |
 | 2 | Host-neutral API route registration | Pending | runtime-service/editor adapter | API smoke | pending |
 | 3 | Vite adapter preservation | Pending | `packages/editor/src/server` | web dev and API parity | pending |

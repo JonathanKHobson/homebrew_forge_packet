@@ -11,6 +11,9 @@ import {
   type RuntimeDeliveryMode
 } from './runtimeHealth.js';
 import { RuntimeAssetError, readRuntimeAsset, readRuntimeManaSymbol } from './routes/assets.js';
+import { createRuntimeCollection, exportRuntimeCollection, importRuntimeCollection, saveRuntimeCollection } from './routes/collections.js';
+import { createRuntimeDeck, exportRuntimeDeck, importRuntimeDeck, saveRuntimeDeck } from './routes/decks.js';
+import { RuntimeRouteError } from './routes/errors.js';
 import { readRuntimeLibrary } from './routes/library.js';
 import { listRuntimeOfficialCardPrintVariants, readRuntimeOfficialCardStatus, searchRuntimeOfficialCards } from './routes/officialCards.js';
 import { readRuntimeReferenceCatalog } from './routes/reference.js';
@@ -266,6 +269,58 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
     return;
   }
 
+  if (url.pathname === '/api/create-deck') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await createRuntimeDeck(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/save-deck') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await saveRuntimeDeck(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/export-deck') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await exportRuntimeDeck(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/import-deck') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await importRuntimeDeck(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
   if (req.method === 'GET' && url.pathname === '/api/collections') {
     try {
       sendJson(res, 200, await listCollections(state.repoRoot));
@@ -285,6 +340,58 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
       sendJson(res, 200, await readCollectionState(state.repoRoot, collectionId));
     } catch (error) {
       sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/create-collection') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await createRuntimeCollection(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/save-collection') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await saveRuntimeCollection(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/import-collection') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await importRuntimeCollection(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/export-collection') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await exportRuntimeCollection(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
     }
     return;
   }
@@ -351,6 +458,25 @@ function sendAsset(res: ServerResponse, asset: { body: Buffer; contentType: stri
   res.statusCode = 200;
   res.setHeader('Content-Type', asset.contentType);
   res.end(asset.body);
+}
+
+function sendRouteErrorJson(res: ServerResponse, error: unknown): void {
+  sendJson(res, error instanceof RuntimeRouteError ? error.statusCode : 500, { error: error instanceof Error ? error.message : String(error) });
+}
+
+function readJsonBody<T>(req: IncomingMessage): Promise<T> {
+  return new Promise((resolveBody, rejectBody) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    req.on('end', () => {
+      try {
+        resolveBody(JSON.parse(Buffer.concat(chunks).toString('utf8')) as T);
+      } catch (error) {
+        rejectBody(error);
+      }
+    });
+    req.on('error', rejectBody);
+  });
 }
 
 function contentTypeFor(path: string): string {
