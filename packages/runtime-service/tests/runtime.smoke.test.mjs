@@ -114,6 +114,33 @@ async function writeOfficialCardFixture(root) {
   await writeFile(join(cacheDir, 'oracle.json'), `${JSON.stringify({ version: 1, view: 'oracle', syncedAt, count: oracle.length, cards: oracle })}\n`);
 }
 
+async function writeAssetFixture(root) {
+  const packRoot = join(root, 'assets/packs/basic-m15-local');
+  await mkdir(join(packRoot, 'symbols'), { recursive: true });
+  await mkdir(join(root, 'sets/DEMO/art'), { recursive: true });
+  await writeFile(join(packRoot, 'symbols/mana_sol_w.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  await writeFile(join(root, 'sets/DEMO/art/runtime-art.png'), Buffer.from([0x72, 0x75, 0x6e]));
+  await writeFile(
+    join(packRoot, 'manifest.yaml'),
+    `pack_id: basic-m15-local
+name: Runtime Asset Fixture
+version: 0.1.0
+source_summary: Test-only runtime fixture.
+license_status: local_test_fixture
+redistribution_allowed: false
+commit_allowed: false
+supported_layouts: []
+roles:
+  - id: mana-w
+    role: symbol.mana
+    symbol: w
+    required: true
+    path: symbols/mana_sol_w.png
+layout_maps: []
+`
+  );
+}
+
 test('runtime service serves health and version', async () => {
   const repoRoot = await makeFixtureRepo();
   const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
@@ -227,6 +254,32 @@ test('runtime service serves reference and official-card read routes', async () 
       variants.cards.map((card) => card.id),
       ['runtime-print-002', 'runtime-print-001']
     );
+  } finally {
+    await runtime.close();
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test('runtime service serves local assets with path guards', async () => {
+  const repoRoot = await makeFixtureRepo();
+  await writeAssetFixture(repoRoot);
+  const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
+  try {
+    const manaSymbol = await fetch(`${runtime.origin}/api/mana-symbol?symbol=%7BW%7D`);
+    assert.equal(manaSymbol.status, 200);
+    assert.equal(manaSymbol.headers.get('content-type'), 'image/png');
+    assert.deepEqual([...new Uint8Array(await manaSymbol.arrayBuffer())], [0x89, 0x50, 0x4e, 0x47]);
+
+    const asset = await fetch(`${runtime.origin}/api/asset?path=${encodeURIComponent('sets/DEMO/art/runtime-art.png')}`);
+    assert.equal(asset.status, 200);
+    assert.equal(asset.headers.get('content-type'), 'image/png');
+    assert.deepEqual([...new Uint8Array(await asset.arrayBuffer())], [0x72, 0x75, 0x6e]);
+
+    const missingPath = await fetch(`${runtime.origin}/api/asset`);
+    assert.equal(missingPath.status, 400);
+
+    const traversal = await fetch(`${runtime.origin}/api/asset?path=${encodeURIComponent('../outside.png')}`);
+    assert.equal(traversal.status, 403);
   } finally {
     await runtime.close();
     await rm(repoRoot, { recursive: true, force: true });

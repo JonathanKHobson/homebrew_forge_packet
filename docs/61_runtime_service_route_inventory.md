@@ -38,8 +38,8 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 | `/api/collection-prices/refresh` | POST | local price refresh/snapshot | Yes | High | temp collection | Refresh writes only fixture snapshot |
 | `/api/collection-prices/import` | POST | price CSV import | Yes | High | temp collection | Imports fixture price rows and relists |
 | `/api/export-collection` | POST | CSV/text/Cockatrice collection export | Yes | High | temp output | Writes expected export artifact |
-| `/api/mana-symbol` | GET | asset-pack mana symbol read | No | Medium | DEMO asset pack | Serves known symbol, 404s missing symbol |
-| `/api/asset` | GET | repo-root path guard and file serving | No | High | DEMO art | Serves inside-root asset, rejects outside-root traversal |
+| `/api/mana-symbol` | GET | asset-pack mana symbol read | No | Medium | DEMO asset pack | Extracted to runtime-service; serves known symbol, 404s missing symbol |
+| `/api/asset` | GET | repo-root path guard and file serving | No | High | DEMO art | Extracted to runtime-service; serves inside-root asset, rejects outside-root traversal |
 | `/api/project` | GET | `loadForgeProject`, editor draft normalization | No | High | DEMO/SOA | DEMO returns populated cards; invalid set errors visibly |
 | `/api/preview` | POST | render preview pipeline | No | High | DEMO draft | Returns preview image or structured render error in timeout window |
 | `/api/print-export` | POST | print/PDF/export pipeline | Yes | High | temp output | Writes expected print export to fixture output |

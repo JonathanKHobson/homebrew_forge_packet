@@ -10,6 +10,7 @@ import {
   createSourceFingerprint,
   type RuntimeDeliveryMode
 } from './runtimeHealth.js';
+import { RuntimeAssetError, readRuntimeAsset, readRuntimeManaSymbol } from './routes/assets.js';
 import { readRuntimeLibrary } from './routes/library.js';
 import { listRuntimeOfficialCardPrintVariants, readRuntimeOfficialCardStatus, searchRuntimeOfficialCards } from './routes/officialCards.js';
 import { readRuntimeReferenceCatalog } from './routes/reference.js';
@@ -156,6 +157,32 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
       sendJson(res, 200, await readRuntimeLibrary(state.repoRoot, url.searchParams.get('set') ?? state.defaultSetCode));
     } catch (error) {
       sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/mana-symbol') {
+    if (req.method !== 'GET') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendAsset(res, await readRuntimeManaSymbol(state.repoRoot, url.searchParams.get('symbol') ?? ''));
+    } catch (error) {
+      sendJson(res, error instanceof RuntimeAssetError ? error.statusCode : 404, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/asset') {
+    if (req.method !== 'GET') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendAsset(res, await readRuntimeAsset(state.repoRoot, url.searchParams.get('path')));
+    } catch (error) {
+      sendJson(res, error instanceof RuntimeAssetError ? error.statusCode : 404, { error: error instanceof Error ? error.message : String(error) });
     }
     return;
   }
@@ -318,6 +345,12 @@ function sendJson(res: ServerResponse, status: number, payload: unknown): void {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(payload));
+}
+
+function sendAsset(res: ServerResponse, asset: { body: Buffer; contentType: string }): void {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', asset.contentType);
+  res.end(asset.body);
 }
 
 function contentTypeFor(path: string): string {
