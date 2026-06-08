@@ -167,8 +167,12 @@ scripts/
   bootstrap-pnpm.sh       # Installs the repo-local pnpm wrapper for first-time setup
   launch-homebrew-forge-app.sh
                           # Starts the local editor on a stable port; desktop delivery should avoid Chrome app mode
+  launch-homebrew-forge-desktop-dev.sh
+                          # Opens /Applications/Homebrew Forge Desktop Dev.app, a Vite-backed Electron dev shell on port 5187
   install-homebrew-forge-app-shortcut.sh
                           # Installs the /Applications Homebrew Forge launcher; planned desktop replacement should open the shared editor in a real app shell
+  install-homebrew-forge-desktop-dev-app.sh
+                          # Copies Electron.app to /Applications/Homebrew Forge Desktop Dev.app and symlinks its app payload to packages/desktop
   run-homebrew-forge-editor.mjs
                           # Runs the Vite editor as a launcher-owned service process
   codex/
@@ -243,6 +247,11 @@ packages/
       runtimeHealth.ts    # Runtime freshness, /api/health, /api/version, source fingerprint, and Forge dist freshness helpers
       cli.ts              # Local runtime process entry for future desktop ownership
     tests/                # Runtime smoke tests for health, version, and port fallback
+  desktop/              # Electron shell for local desktop delivery; no product UI lives here
+    src/
+      main.ts            # Secure BrowserWindow, native menu, Vite/runtime startup, navigation lock, and app lifecycle
+      preload.ts         # Narrow contextBridge surface for desktop runtime metadata
+    tests/               # Static shell/security checks for BrowserWindow defaults and shell-only boundaries
 output/                  # Generated renders and Cockatrice packages, ignored by Git
 reference/
   custom/                 # User-created and homebrew reference terms

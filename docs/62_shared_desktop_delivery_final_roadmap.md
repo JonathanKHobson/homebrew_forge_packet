@@ -23,7 +23,7 @@ North Star: `packages/editor` is the product UI. Web, macOS desktop, and Windows
 | 3 | Web preservation | Vite dev uses the shared route registration or adapter with no API drift |
 | 4 | Runtime resilience | Port fallback, startup metadata, shutdown cleanup, stale/version detection, retry/error behavior pass |
 | 5 | Electron shell | Desktop opens shared editor origin without Chrome and owns only shell concerns |
-| 6 | macOS local app | `/Applications/Homebrew Forge.app` opens the Electron app only after manual green pass |
+| 6 | macOS local app | `/Applications/Homebrew Forge Desktop Dev.app` opens the Electron dev app; `/Applications/Homebrew Forge.app` changes only after manual green pass |
 | 7 | Windows parity | Windows runtime and Electron smoke pass with paths containing spaces |
 | 8 | Packaged runtime | Built editor and `/api/*` run from one local runtime origin without Vite dev |
 | 9 | Packaging and updates | Manual GitHub Releases first; signing, notarization, and auto-update later |
@@ -41,7 +41,7 @@ packages/runtime-service
   Local HTTP runtime, /api routes, static editor serving, health/version, port/process ownership.
 
 packages/desktop
-  Electron shell only: lifecycle, window, menus, config paths, runtime child, preload IPC, packaging.
+  Electron shell only: lifecycle, window, menus, config paths, runtime child, preload IPC, packaging. Current first milestone supports a Vite-backed dev app for full API parity while packaged runtime extraction continues.
 ```
 
 ## Green-Pass Cutover
@@ -51,6 +51,7 @@ Desktop cannot become the default launcher until:
 - web mode still launches and passes baseline checks;
 - runtime service passes route smoke, save round trip, port collision, shutdown cleanup, and path-with-spaces tests;
 - Electron shell opens one desktop window without Chrome and loads the shared editor origin;
+- the Vite-backed desktop dev app has been reviewed separately from the future packaged runtime app;
 - macOS Intel and Apple Silicon smoke are green or split artifacts are explicitly accepted;
 - Windows runtime and Electron smoke pass or the deferral is documented and approved;
 - Kyle manually opens and reviews the desktop app successfully.

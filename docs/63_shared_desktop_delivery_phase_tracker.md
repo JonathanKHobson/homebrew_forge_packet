@@ -28,11 +28,13 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 | 3 | Web `/api/version` parity endpoint | Done | `packages/editor/src/server` | editor tests, typecheck, build, Vite `/api/version` smoke | local command output |
 | 2 | Host-neutral API route registration | Pending | runtime-service/editor adapter | API smoke | pending |
 | 3 | Vite adapter preservation | Pending | `packages/editor/src/server` | web dev and API parity | pending |
-| 4 | Port fallback and process metadata | Pending | runtime-service/scripts | busy-5177 smoke | pending |
+| 4 | Port fallback and process metadata | In progress | runtime-service/scripts | busy-5177 smoke plus desktop dev port 5187 health | local command output |
 | 4 | Shutdown cleanup and retry/error state | Pending | runtime-service/desktop | orphan listener smoke | pending |
-| 5 | Electron shell package | Pending | `packages/desktop` | shell typecheck/build | pending |
-| 5 | Electron security/static tests | Pending | desktop window/preload/ipc | no Node renderer, sandbox, origin lock | pending |
-| 6 | macOS local app replacement | Pending | app shortcut/scripts | real app opens without Chrome | pending |
+| 5 | Electron shell package | Done | `packages/desktop` | desktop typecheck/build/test | local command output |
+| 5 | Electron secure window and navigation guard | Done | `packages/desktop/src/main.ts` | desktop shell tests; process inspection shows sandboxed renderer | local command output |
+| 5 | Vite-backed desktop dev launch | Done | `packages/desktop`, `scripts/launch-homebrew-forge-desktop-dev.sh` | `/api/health` on port 5187; DEMO project loads 10 cards / 22 drafts | `output/playwright/desktop-delivery/electron-dev-screen.png` |
+| 6 | macOS desktop dev app installed | Done | `/Applications/Homebrew Forge Desktop Dev.app` | LaunchServices app opens without Chrome and owns Electron + Vite child | local command output |
+| 6 | macOS default app replacement | Pending | `/Applications/Homebrew Forge.app` | manual green-pass cutover only | pending |
 | 7 | Windows parity | Pending | desktop/runtime config | `windows-latest` smoke | pending |
 | 8 | Packaged runtime | Pending | runtime-service/desktop build | no Vite dev dependency | pending |
 | 9 | Packaging and release channel | Pending | electron-builder/release docs | manual release artifact smoke | pending |
@@ -40,5 +42,5 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 ## Current Blockers
 
 - None for Phase 0 import. The primary web checkout remains the working app lane and can continue changing independently; import future finished work before deeper route extraction if it affects API/data contracts.
-- Electron dependencies should not be installed until route inventory and runtime-service proof are complete.
+- Electron dev dependency is installed only in `packages/desktop`. Packaging dependencies remain deferred until the dev shell and runtime parity are green.
 - Current web checkout remains dirty and must not be used as the desktop implementation lane.
