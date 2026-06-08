@@ -16,9 +16,9 @@ The current web app remains the working app until every required item is checked
 ## Runtime Service
 
 - [ ] Route inventory complete.
-- [ ] `packages/runtime-service` exists and builds.
-- [ ] Standalone runtime serves `/api/health`.
-- [ ] Standalone runtime serves `/api/version`.
+- [x] `packages/runtime-service` exists and builds.
+- [x] Standalone runtime serves `/api/health`.
+- [x] Standalone runtime serves `/api/version`.
 - [ ] Standalone runtime serves `/api/library`.
 - [ ] Standalone runtime serves `/api/project?set=DEMO`.
 - [ ] Runtime save round-trip passes in fixture copy.

@@ -230,6 +230,13 @@ packages/
       domain/            # Editor draft model, local draft recovery, Magic terms, and frame registry
       server/            # Vite middleware plus runtime health/fingerprint checks for project load, preview render, CSV save/import, and Cockatrice sync
     tests/               # Editor structural tests plus UX quality-gate Playwright smoke coverage
+  runtime-service/       # Embeddable local HTTP runtime for shared web/desktop delivery
+    src/
+      createRuntimeServer.ts
+                          # Starts a 127.0.0.1 runtime with selected-port fallback, health/version routes, and optional built-editor static serving
+      runtimeHealth.ts    # Runtime freshness, /api/health, /api/version, source fingerprint, and Forge dist freshness helpers
+      cli.ts              # Local runtime process entry for future desktop ownership
+    tests/                # Runtime smoke tests for health, version, and port fallback
 output/                  # Generated renders and Cockatrice packages, ignored by Git
 reference/
   custom/                 # User-created and homebrew reference terms

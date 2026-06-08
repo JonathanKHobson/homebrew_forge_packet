@@ -13,7 +13,8 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 | 0 | Dirty tree triage and archive index | In progress | docs/data/source/scripts | `docs/64_repo_cleanup_archive_index.md` | pending |
 | 1 | Full route inventory | In progress | `editorApiPlugin.ts` | inventory seeded; acceptance checks listed | `docs/61_runtime_service_route_inventory.md` |
 | 1 | Runtime baseline measurements | Pending | current web/runtime | health, project load, preview timings | pending |
-| 2 | Runtime-service package scaffold | Pending | `packages/runtime-service` | typecheck/build | pending |
+| 2 | Runtime-service package scaffold | Done | `packages/runtime-service` | runtime-service build/test, repo typecheck/build | local command output |
+| 2 | Health/version/port fallback skeleton | Done | `packages/runtime-service` | runtime smoke tests for health, version, busy port | local command output |
 | 2 | Host-neutral API route registration | Pending | runtime-service/editor adapter | API smoke | pending |
 | 3 | Vite adapter preservation | Pending | `packages/editor/src/server` | web dev and API parity | pending |
 | 4 | Port fallback and process metadata | Pending | runtime-service/scripts | busy-5177 smoke | pending |
@@ -27,6 +28,6 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 
 ## Current Blockers
 
-- Runtime extraction should not begin until Phase 0 docs are committed in the migration lane.
+- The primary web checkout is actively changing for deck-building data; import/rebase those changes before deeper route extraction.
 - Electron dependencies should not be installed until route inventory and runtime-service proof are complete.
 - Current web checkout remains dirty and must not be used as the desktop implementation lane.
