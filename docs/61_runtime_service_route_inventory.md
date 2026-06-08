@@ -15,10 +15,10 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 | `/api/health` | GET | `runtimeHealth.mjs`, repo fingerprint, Forge dist freshness | No | Medium | repo root | Reports app label, repo root, port, PID, stale state |
 | `/api/restart` | POST | Vite/server process lifecycle | No | High | local dev | Remains dev-only or becomes explicit unsupported runtime action |
 | `/api/library` | GET | `sets/library.json`, discovered set folders, default set | No | Low | DEMO/SQM/SOA | Extracted to runtime-service; lists expected projects and set summaries |
-| `/api/reference` | GET/POST | reference catalog and custom reference creation | POST | Medium | reference/custom | GET loads catalog; POST writes one temp reference in fixture |
-| `/api/official-cards/status` | GET | official-card cache status | No | Low | reference/official | Returns sync/cache status |
-| `/api/official-cards/search` | GET | local official-card cache query | No | Medium | official cache | Prints/oracle/unique searches return stable rows |
-| `/api/official-cards/variants` | GET | official-card print variant lookup | No | Medium | official cache | Variant query returns stable print variants |
+| `/api/reference` | GET/POST | reference catalog and custom reference creation | POST | Medium | reference/custom | GET extracted to runtime-service; POST write route deferred with explicit 501 |
+| `/api/official-cards/status` | GET | official-card cache status | No | Low | reference/official | Extracted to runtime-service; returns sync/cache status |
+| `/api/official-cards/search` | GET | local official-card cache query | No | Medium | official cache | Extracted to runtime-service; prints/oracle/unique searches return stable rows |
+| `/api/official-cards/variants` | GET | official-card print variant lookup | No | Medium | official cache | Extracted to runtime-service; variant query returns stable print variants |
 | `/api/official-cards/sync` | POST | official-card cache sync | Yes | High | temp official cache | Sync writes only fixture cache and reports status |
 | `/api/official-cards/add-to-collection` | POST | official card to collection row service | Yes | High | temp collection | Adds row, reloads collection, no schema drift |
 | `/api/official-cards/add-to-deck` | POST | official card to deck entry service | Yes | High | temp deck | Adds entry, reloads deck, active variant intact |

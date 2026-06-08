@@ -11,6 +11,8 @@ import {
   type RuntimeDeliveryMode
 } from './runtimeHealth.js';
 import { readRuntimeLibrary } from './routes/library.js';
+import { listRuntimeOfficialCardPrintVariants, readRuntimeOfficialCardStatus, searchRuntimeOfficialCards } from './routes/officialCards.js';
+import { readRuntimeReferenceCatalog } from './routes/reference.js';
 
 export interface RuntimeServerOptions {
   repoRoot: string;
@@ -152,6 +154,62 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
   if (req.method === 'GET' && url.pathname === '/api/library') {
     try {
       sendJson(res, 200, await readRuntimeLibrary(state.repoRoot, url.searchParams.get('set') ?? state.defaultSetCode));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/reference') {
+    if (req.method === 'GET') {
+      try {
+        sendJson(res, 200, readRuntimeReferenceCatalog(state.repoRoot));
+      } catch (error) {
+        sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+      }
+      return;
+    }
+    if (req.method === 'POST') {
+      sendJson(res, 501, { error: 'Runtime route POST /api/reference has not been extracted yet.' });
+      return;
+    }
+    sendJson(res, 405, { error: 'Method not allowed' });
+    return;
+  }
+
+  if (url.pathname === '/api/official-cards/status') {
+    if (req.method !== 'GET') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await readRuntimeOfficialCardStatus(state.repoRoot));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/official-cards/search') {
+    if (req.method !== 'GET') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await searchRuntimeOfficialCards(state.repoRoot, url.searchParams));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/official-cards/variants') {
+    if (req.method !== 'GET') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await listRuntimeOfficialCardPrintVariants(state.repoRoot, url.searchParams));
     } catch (error) {
       sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
     }
