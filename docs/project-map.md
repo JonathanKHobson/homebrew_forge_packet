@@ -220,6 +220,12 @@ packages/
       validation/        # Cross-record validation
       utils/             # Filename, filesystem, and small shared helpers
     tests/               # Vertical-slice tests
+  editor-core/           # Shared editor contract and adapter logic consumed by web and standalone runtime
+    src/
+      editorTypes.ts      # Editor-facing project, draft, runtime, deck, collection, print, and official-card types
+      cardDraft.ts        # CSV/domain record to editable card draft conversion
+      projectAdapter.ts   # ForgeProject to EditorProject conversion used by Vite and runtime-service
+      frameRegistry.ts    # Shared frame option registry consumed by editor project payloads
   editor/                # Vite/React local editor for selecting cards, editing fields, and previewing frames
     src/
       api/               # Browser client calls into the Vite dev API
@@ -227,7 +233,7 @@ packages/
         shell/            # App shell wrappers, workspace frame, sidebar nav, top command bar, and workspace health/status chrome
         forge-ui/         # Dependency-free Forge UI primitives used during the CSS/component-first migration
         print/            # File > Print overlay and print settings surface
-      domain/            # Editor draft model, local draft recovery, Magic terms, and frame registry
+      domain/            # Editor-only domain helpers plus compatibility facades for shared editor-core modules
       server/            # Vite middleware plus runtime health/fingerprint checks for project load, preview render, CSV save/import, and Cockatrice sync
     tests/               # Editor structural tests plus UX quality-gate Playwright smoke coverage
   runtime-service/       # Embeddable local HTTP runtime for shared web/desktop delivery

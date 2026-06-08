@@ -13,6 +13,7 @@
     "visual:forge-ui": "node scripts/forge-ui-visual-qa.mjs"
   },
   "dependencies": {
+    "@homebrew-forge/editor-core": "workspace:*",
     "@homebrew-forge/forge": "workspace:*",
     "lucide-react": "^1.17.0",
     "react": "19.2.6",

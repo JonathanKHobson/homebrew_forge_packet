@@ -1,7 +1,8 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, relative, resolve, sep } from 'node:path';
-import { listCollections, listDecks, readCollectionState, readDeckState } from '@homebrew-forge/forge';
+import { listCollections, listDecks, loadForgeProject, readCollectionState, readDeckState } from '@homebrew-forge/forge';
+import { editorProjectFromForge } from '@homebrew-forge/editor-core/projectAdapter';
 import {
   APP_LABEL,
   DEFAULT_PORT,
@@ -171,6 +172,17 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
   if (req.method === 'GET' && url.pathname === '/api/library') {
     try {
       sendJson(res, 200, await readRuntimeLibrary(state.repoRoot, url.searchParams.get('set') ?? state.defaultSetCode));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/project') {
+    try {
+      const setCode = url.searchParams.get('set') ?? state.defaultSetCode;
+      const project = await loadForgeProject({ rootDir: state.repoRoot, setCode });
+      sendJson(res, 200, await editorProjectFromForge(state.repoRoot, project));
     } catch (error) {
       sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
     }

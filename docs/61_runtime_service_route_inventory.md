@@ -40,7 +40,7 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 | `/api/export-collection` | POST | CSV/text/Cockatrice collection export | Yes | High | temp output | Extracted to runtime-service; returns expected export artifact |
 | `/api/mana-symbol` | GET | asset-pack mana symbol read | No | Medium | DEMO asset pack | Extracted to runtime-service; serves known symbol, 404s missing symbol |
 | `/api/asset` | GET | repo-root path guard and file serving | No | High | DEMO art | Extracted to runtime-service; serves inside-root asset, rejects outside-root traversal |
-| `/api/project` | GET | `loadForgeProject`, editor draft normalization | No | High | DEMO/SOA | DEMO returns populated cards; invalid set errors visibly |
+| `/api/project` | GET | `loadForgeProject`, shared editor project adapter | No | High | DEMO/SOA | Extracted to runtime-service through `@homebrew-forge/editor-core`; DEMO returns populated cards/drafts/assets |
 | `/api/preview` | POST | render preview pipeline | No | High | DEMO draft | Returns preview image or structured render error in timeout window |
 | `/api/print-export` | POST | print/PDF/export pipeline | Yes | High | temp output | Writes expected print export to fixture output |
 | `/api/save-card` | POST | card/set CSV save pipeline | Yes | High | temp set | Save/read reloads same draft and variants |
@@ -73,7 +73,7 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 ## Open Risks
 
 - `editorApiPlugin.ts` mixes route registration, body parsing, path guards, write helpers, preview rendering, and editor domain conversion in one file.
-- `/api/project` depends on editor-domain normalization (`draftFromRecords`, frame registry, `EditorProject`, and library asset summaries). Extract it through a shared adapter module before runtime-service owns the route; do not copy/paste the conversion logic into a second source of truth.
+- Shared editor API contract now lives in `packages/editor-core`, with compatibility re-export facades in `packages/editor/src/domain/`. Keep future project-shape changes in `editor-core` so Vite web mode and standalone runtime do not drift.
 - The current `/api/restart` route is dev-lifecycle behavior; desktop runtime should not inherit it blindly.
 - Preview and print routes can create false "app is broken" states if they hang without timeout or retry.
 - Save/import/export tests must never mutate live repo data.

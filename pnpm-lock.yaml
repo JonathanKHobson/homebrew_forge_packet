@@ -24,6 +24,9 @@ importers:
 
   packages/editor:
     dependencies:
+      '@homebrew-forge/editor-core':
+        specifier: workspace:*
+        version: link:../editor-core
       '@homebrew-forge/forge':
         specifier: workspace:*
         version: link:../forge
@@ -52,6 +55,19 @@ importers:
       vite:
         specifier: ^4.5.5
         version: 4.5.5(@types/node@25.9.1)
+
+  packages/editor-core:
+    dependencies:
+      '@homebrew-forge/forge':
+        specifier: workspace:*
+        version: link:../forge
+    devDependencies:
+      '@types/node':
+        specifier: 25.9.1
+        version: 25.9.1
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/forge:
     dependencies:
@@ -104,6 +120,9 @@ importers:
 
   packages/runtime-service:
     dependencies:
+      '@homebrew-forge/editor-core':
+        specifier: workspace:*
+        version: link:../editor-core
       '@homebrew-forge/forge':
         specifier: workspace:*
         version: link:../forge

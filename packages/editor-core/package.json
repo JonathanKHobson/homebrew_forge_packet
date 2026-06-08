@@ -1,0 +1,58 @@
+{
+  "name": "@homebrew-forge/editor-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./borderColorRegistry": {
+      "types": "./dist/borderColorRegistry.d.ts",
+      "import": "./dist/borderColorRegistry.js"
+    },
+    "./cardDraft": {
+      "types": "./dist/cardDraft.d.ts",
+      "import": "./dist/cardDraft.js"
+    },
+    "./editorTypes": {
+      "types": "./dist/editorTypes.d.ts",
+      "import": "./dist/editorTypes.js"
+    },
+    "./frameRegistry": {
+      "types": "./dist/frameRegistry.d.ts",
+      "import": "./dist/frameRegistry.js"
+    },
+    "./frameSupportTypes": {
+      "types": "./dist/frameSupportTypes.d.ts",
+      "import": "./dist/frameSupportTypes.js"
+    },
+    "./magicTerms": {
+      "types": "./dist/magicTerms.d.ts",
+      "import": "./dist/magicTerms.js"
+    },
+    "./projectAdapter": {
+      "types": "./dist/projectAdapter.d.ts",
+      "import": "./dist/projectAdapter.js"
+    },
+    "./subtypeInferenceRegistry": {
+      "types": "./dist/subtypeInferenceRegistry.d.ts",
+      "import": "./dist/subtypeInferenceRegistry.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit --pretty false"
+  },
+  "dependencies": {
+    "@homebrew-forge/forge": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.1",
+    "typescript": "6.0.3"
+  }
+}

@@ -44,8 +44,53 @@ async function makeFixtureRepo() {
       2
     )}\n`
   );
-  await writeFile(join(root, 'sets/DEMO/sets.csv'), 'set_code,set_name,status,tags\nDEMO,Demo Set,draft,playtest\n');
-  await writeFile(join(root, 'sets/DEMO/cards.csv'), 'card_id,name\ncard-001,Example Vanguard\ncard-002,Clockwork Relic\n');
+  await writeFile(
+    join(root, 'sets/DEMO/sets.csv'),
+    `set_code,set_name,set_type,version,default_language,default_asset_pack,default_export_profile,author,status,tags,notes
+DEMO,Demo Set,custom,0.1.0,en,basic-m15-local,cockatrice,Runtime Fixture,draft,playtest,Runtime fixture set
+`
+  );
+  await writeFile(
+    join(root, 'sets/DEMO/cards.csv'),
+    `card_id,set_code,collector_number,name,layout,mode,source_card_name,source_set_code,rarity,color_identity,tags,status,print_count,export_name_override,notes
+DEMO-001,DEMO,001,Example Vanguard,normal,custom,,,rare,W,creature,review,1,,Runtime fixture card
+DEMO-002,DEMO,002,Clockwork Relic,normal,custom,,,uncommon,C,artifact,draft,1,,Runtime fixture artifact
+`
+  );
+  await writeFile(
+    join(root, 'sets/DEMO/card_faces.csv'),
+    `card_id,face_index,face_name,mana_cost,type_line,oracle_text,flavor_text,power,toughness,loyalty,defense,colors,frame_type,art_id,artist_display,watermark,rules_text_size_hint,rules_text_padding_top,rules_text_padding_right,rules_text_padding_bottom,rules_text_padding_left,rules_text_reminder_mode,layout_variant
+DEMO-001,0,Example Vanguard,{1}{W},Creature - Human Soldier,Vigilance.,Test flavor.,2,2,,,W,standard,ART-001,Fixture Artist,,,,,,,,
+DEMO-002,0,Clockwork Relic,{2},Artifact,{T}: Add {C}.,, ,,,,,standard,ART-002,Fixture Artist,,,,,,,,
+`
+  );
+  await writeFile(
+    join(root, 'sets/DEMO/card_variants.csv'),
+    `variant_id,card_id,display_name,kind,status,is_primary,export_policy,tags,notes,created_at,updated_at
+DEMO-001-V1,DEMO-001,Primary,mechanics_test,active,true,default,,,2026-06-08T00:00:00.000Z,2026-06-08T00:00:00.000Z
+DEMO-002-V1,DEMO-002,Primary,mechanics_test,active,true,default,,,2026-06-08T00:00:00.000Z,2026-06-08T00:00:00.000Z
+`
+  );
+  await writeFile(
+    join(root, 'sets/DEMO/card_variant_faces.csv'),
+    `variant_id,card_id,face_index,face_name,mana_cost,type_line,oracle_text,flavor_text,power,toughness,loyalty,defense,colors,frame_type,art_id,artist_display,watermark,rules_text_size_hint,rules_text_padding_top,rules_text_padding_right,rules_text_padding_bottom,rules_text_padding_left,rules_text_reminder_mode,layout_variant
+DEMO-001-V1,DEMO-001,0,Example Vanguard,{1}{W},Creature - Human Soldier,Vigilance.,Test flavor.,2,2,,,W,standard,ART-001,Fixture Artist,,,,,,,,
+DEMO-002-V1,DEMO-002,0,Clockwork Relic,{2},Artifact,{T}: Add {C}.,, ,,,,,standard,ART-002,Fixture Artist,,,,,,,,
+`
+  );
+  await writeFile(
+    join(root, 'sets/DEMO/art_manifest.csv'),
+    `art_id,file_path,source_url,source_type,artist,license,permission_status,checksum_sha256,position_x,position_y,scale,crop_x,crop_y,crop_w,crop_h,notes
+ART-001,sets/DEMO/art/runtime-art.png,,local,Fixture Artist,private,owned,,,,,,,,,Runtime fixture art
+ART-002,sets/DEMO/art/runtime-art-2.png,,local,Fixture Artist,private,owned,,,,,,,,,Runtime fixture art
+`
+  );
+  await writeFile(
+    join(root, 'sets/DEMO/export_profiles.csv'),
+    `profile_id,target,image_format,width_px,height_px,quality,include_bleed,bleed_px,include_crop_marks,include_playtest_watermark,watermark_text,allow_placeholder_art,filename_template
+cockatrice,cockatrice,png,745,1040,92,true,40,false,true,PLAYTEST,true,{set_code}-{collector_number}-{name}
+`
+  );
   await writeFile(join(root, 'sets/SOA/sets.csv'), 'set_code,set_name,status,tags\nSOA,Signs of Assassins,playtest,commander\n');
   await writeFile(join(root, 'sets/SOA/cards.csv'), 'card_id,name\nsoa-001,Assassin One\n');
   return root;
@@ -187,6 +232,26 @@ test('runtime service serves discovered library state', async () => {
         ['DEMO', 'Demo Set', 2, 'demo']
       ]
     );
+  } finally {
+    await runtime.close();
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test('runtime service serves editor project state through shared adapter', async () => {
+  const repoRoot = await makeFixtureRepo();
+  const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
+  try {
+    const response = await fetch(`${runtime.origin}/api/project?set=DEMO`);
+    assert.equal(response.status, 200);
+    const project = await response.json();
+    assert.equal(project.setCode, 'DEMO');
+    assert.equal(project.setName, 'Demo Set');
+    assert.equal(project.cards.length, 2);
+    assert.equal(project.drafts.length, 2);
+    assert.equal(project.cards[0].variants.length, 1);
+    assert.ok(project.libraryAssets.some((asset) => asset.artId === 'ART-001'));
+    assert.ok(project.frames.length > 0);
   } finally {
     await runtime.close();
     await rm(repoRoot, { recursive: true, force: true });

@@ -23,6 +23,8 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 | 2 | Runtime deck and collection write routes | Done | `packages/runtime-service/src/routes/` | runtime-service typecheck/build/test | local command output |
 | 2 | Runtime official-card add-to-deck/collection routes | Done | `packages/runtime-service/src/routes/officialCards.ts` | runtime-service typecheck/build/test | local command output |
 | 2 | Runtime collection price routes | Done | `packages/runtime-service/src/routes/collections.ts` | runtime-service typecheck/build/test | local command output |
+| 2 | Shared editor project contract package | Done | `packages/editor-core` | editor-core typecheck/build | local command output |
+| 2 | Runtime `/api/project` extraction | Done | `packages/runtime-service/src/createRuntimeServer.ts` + `@homebrew-forge/editor-core/projectAdapter` | runtime-service typecheck/build/test | local command output |
 | 3 | Web `/api/version` parity endpoint | Done | `packages/editor/src/server` | editor tests, typecheck, build, Vite `/api/version` smoke | local command output |
 | 2 | Host-neutral API route registration | Pending | runtime-service/editor adapter | API smoke | pending |
 | 3 | Vite adapter preservation | Pending | `packages/editor/src/server` | web dev and API parity | pending |
