@@ -1,0 +1,4 @@
+card_name,card_id,oracle_id,scryfall_id,roles,source,confidence,notes
+Sol Ring,,,,ramp,seed-example,0.98,Fast mana staple
+Arcane Signet,,,,ramp|fixing,seed-example,0.98,Commander mana rock
+Command Tower,,,,mana_source|fixing,seed-example,0.95,Commander fixing land

@@ -1,19 +1,25 @@
-import type { ArtManifestRecord, CardFaceRecord, CardRecord, ExportProfile } from '@homebrew-forge/forge';
+import type { ArtManifestRecord, CardFaceRecord, CardRecord, CardVariantFaceRecord, CardVariantRecord, ExportProfile } from '@homebrew-forge/forge';
 import type { CardDraft } from './editorTypes.js';
 import { CARD_TYPES, SUPERTYPES } from './magicTerms.js';
 import { buildTypeLine, inferColors, inferFrame, normalizeColors } from './frameRegistry.js';
 import { CORE_FRAMES } from './frameRegistry.js';
+import type { FrameBorderColor } from './frameSupportTypes.js';
 
 export function draftFromRecords(args: {
   card: CardRecord;
   face: CardFaceRecord;
+  variant?: CardVariantRecord;
+  variantFace?: CardVariantFaceRecord;
   art?: ArtManifestRecord;
   setName: string;
   language?: string;
   designer?: string;
 }): CardDraft {
-  const parsedType = parseTypeLine(args.face.typeLine);
-  const planeswalkerAbilities = parsePlaneswalkerAbilities(args.face.oracleText ?? '');
+  const variant = args.variant ?? defaultVariant(args.card);
+  const face = args.variantFace ? cardFaceFromVariantFace(args.variantFace) : args.face;
+  const parsedType = parseTypeLine(face.typeLine);
+  const planeswalkerAbilities = parsePlaneswalkerAbilities(face.oracleText ?? '');
+  const layoutVariant = parseLayoutVariant(face.layoutVariant);
   return {
     cardId: args.card.cardId,
     setCode: args.card.setCode,
@@ -23,27 +29,27 @@ export function draftFromRecords(args: {
     language: args.language ?? 'EN',
     designer: args.designer ?? '',
     name: args.card.name,
-    manaCost: args.face.manaCost ?? '',
+    manaCost: face.manaCost ?? '',
     rarity: args.card.rarity,
     layout: args.card.layout,
     mode: args.card.mode,
-    frameType: args.face.frameType,
-    frameOverrideId: 'auto',
+    frameType: face.frameType,
+    frameOverrideId: layoutVariant.frameOverrideId,
     supertypes: parsedType.supertypes,
     cardTypes: parsedType.cardTypes,
     subtypes: parsedType.subtypes,
-    typeLine: args.face.typeLine,
-    oracleText: args.face.oracleText ?? '',
-    flavorText: args.face.flavorText ?? '',
-    rulesTextSize: rulesTextSizeFromHint(args.face.rulesTextSizeHint),
-    rulesTextPaddingTop: numberToDraftCell(args.face.rulesTextPaddingTop),
-    rulesTextPaddingRight: numberToDraftCell(args.face.rulesTextPaddingRight),
-    rulesTextPaddingBottom: numberToDraftCell(args.face.rulesTextPaddingBottom),
-    rulesTextPaddingLeft: numberToDraftCell(args.face.rulesTextPaddingLeft),
-    rulesTextReminderMode: args.face.rulesTextReminderMode ?? 'auto',
-    power: args.face.power ?? '',
-    toughness: args.face.toughness ?? '',
-    loyalty: args.face.loyalty ?? '',
+    typeLine: face.typeLine,
+    oracleText: face.oracleText ?? '',
+    flavorText: face.flavorText ?? '',
+    rulesTextSize: rulesTextSizeFromHint(face.rulesTextSizeHint),
+    rulesTextPaddingTop: numberToDraftCell(face.rulesTextPaddingTop),
+    rulesTextPaddingRight: numberToDraftCell(face.rulesTextPaddingRight),
+    rulesTextPaddingBottom: numberToDraftCell(face.rulesTextPaddingBottom),
+    rulesTextPaddingLeft: numberToDraftCell(face.rulesTextPaddingLeft),
+    rulesTextReminderMode: face.rulesTextReminderMode ?? 'auto',
+    power: face.power ?? '',
+    toughness: face.toughness ?? '',
+    loyalty: face.loyalty ?? '',
     planeswalkerAbilityCount: planeswalkerAbilities.count,
     planeswalkerAbility1Cost: planeswalkerAbilities.abilities[0]?.cost ?? '+1',
     planeswalkerAbility1Text: planeswalkerAbilities.abilities[0]?.text ?? '',
@@ -53,11 +59,11 @@ export function draftFromRecords(args: {
     planeswalkerAbility3Text: planeswalkerAbilities.abilities[2]?.text ?? '',
     planeswalkerAbility4Cost: planeswalkerAbilities.abilities[3]?.cost ?? '',
     planeswalkerAbility4Text: planeswalkerAbilities.abilities[3]?.text ?? '',
-    colors: args.face.colors ?? args.card.colorIdentity ?? '',
+    colors: face.colors ?? args.card.colorIdentity ?? '',
     colorIndicator: '',
-    borderColor: 'black',
-    foilTreatment: 'none',
-    artId: args.face.artId ?? '',
+    borderColor: layoutVariant.borderColor,
+    foilTreatment: layoutVariant.foilTreatment,
+    artId: face.artId ?? '',
     artFilePath: args.art?.filePath ?? '',
     artUrl: args.art?.sourceUrl ?? '',
     artDataUri: undefined,
@@ -68,29 +74,44 @@ export function draftFromRecords(args: {
     artCropY: args.art?.crop?.y === undefined ? '' : String(args.art.crop.y),
     artCropW: args.art?.crop?.w === undefined ? '' : String(args.art.crop.w),
     artCropH: args.art?.crop?.h === undefined ? '' : String(args.art.crop.h),
-    artist: args.face.artistDisplay ?? args.art?.artist ?? '',
+    artist: face.artistDisplay ?? args.art?.artist ?? '',
     setSymbolPath: '',
     setSymbolUrl: '',
-    watermark: args.face.watermark ?? '',
+    watermark: face.watermark ?? '',
     status: args.card.status,
     tags: args.card.tags,
     notes: args.card.notes ?? '',
+    variantId: variant.variantId,
+    variantDisplayName: variant.displayName,
+    variantKind: variant.kind,
+    variantStatus: variant.status,
+    variantIsPrimary: variant.isPrimary,
+    variantExportPolicy: variant.exportPolicy,
+    variantTags: variant.tags,
+    variantNotes: variant.notes ?? '',
+    variantCreatedAt: variant.createdAt,
+    variantUpdatedAt: variant.updatedAt,
+    variantSummaries: [],
     sourceCard: args.card,
-    sourceFace: args.face
+    sourceFace: face
   };
 }
 
-export function recordsFromDraft(draft: CardDraft): { card: CardRecord; face: CardFaceRecord } {
+export function recordsFromDraft(draft: CardDraft): { card: CardRecord; face: CardFaceRecord; variant: CardVariantRecord; variantFace: CardVariantFaceRecord } {
   const inferredFrame = inferFrame(draft, CORE_FRAMES);
   const typeLine = buildTypeLine(draft);
   const frameColors = inferColors(draft.manaCost);
   const colorIdentity = normalizeColors(draft.colorIndicator) || frameColors;
   const layout = inferredFrame.layout;
   const oracleText = draft.cardTypes.includes('Planeswalker') ? serializePlaneswalkerAbilities(draft) || draft.oracleText : draft.oracleText;
-  const layoutVariant = inferredFrame.frameType === 'token_full_art' ? 'full_art' : draft.sourceFace?.layoutVariant ?? 'normal';
+  const layoutVariant = serializeLayoutVariant({
+    base: inferredFrame.frameType === 'token_full_art' ? 'full_art' : parseLayoutVariant(draft.sourceFace?.layoutVariant).base,
+    borderColor: draft.borderColor,
+    foilTreatment: draft.foilTreatment,
+    frameOverrideId: draft.frameOverrideId
+  });
 
-  return {
-    card: {
+  const card: CardRecord = {
       cardId: draft.cardId,
       setCode: draft.setCode,
       collectorNumber: draft.collectorNumber,
@@ -106,8 +127,8 @@ export function recordsFromDraft(draft: CardDraft): { card: CardRecord; face: Ca
       printCount: draft.sourceCard?.printCount ?? 1,
       exportNameOverride: draft.sourceCard?.exportNameOverride,
       notes: draft.creationNotes ?? draft.notes ?? draft.sourceCard?.notes
-    },
-    face: {
+    };
+  const face: CardFaceRecord = {
       cardId: draft.cardId,
       faceIndex: draft.sourceFace?.faceIndex ?? 0,
       faceName: draft.name,
@@ -131,7 +152,99 @@ export function recordsFromDraft(draft: CardDraft): { card: CardRecord; face: Ca
       rulesTextPaddingLeft: optionalNumberFromDraft(draft.rulesTextPaddingLeft),
       rulesTextReminderMode: draft.rulesTextReminderMode,
       layoutVariant
-    }
+    };
+  const now = new Date().toISOString();
+  const variant: CardVariantRecord = {
+    variantId: draft.variantId || `${draft.cardId}-V1`,
+    cardId: draft.cardId,
+    displayName: draft.variantDisplayName || 'Variant 1',
+    kind: draft.variantKind || 'mechanics_test',
+    status: draft.variantStatus || 'active',
+    isPrimary: Boolean(draft.variantIsPrimary),
+    exportPolicy: draft.variantExportPolicy || 'default',
+    tags: draft.variantTags ?? [],
+    notes: draft.variantNotes ?? '',
+    createdAt: draft.variantCreatedAt || now,
+    updatedAt: now
+  };
+  return {
+    card,
+    face,
+    variant,
+    variantFace: variantFaceFromCardFace(variant.variantId, face)
+  };
+}
+
+function defaultVariant(card: CardRecord): CardVariantRecord {
+  return {
+    variantId: `${card.cardId}-V1`,
+    cardId: card.cardId,
+    displayName: 'Variant 1',
+    kind: 'mechanics_test',
+    status: card.status === 'final' ? 'final' : 'active',
+    isPrimary: true,
+    exportPolicy: 'default',
+    tags: [],
+    notes: '',
+    createdAt: undefined,
+    updatedAt: undefined
+  };
+}
+
+function cardFaceFromVariantFace(face: CardVariantFaceRecord): CardFaceRecord {
+  return {
+    cardId: face.cardId,
+    faceIndex: face.faceIndex,
+    faceName: face.faceName,
+    manaCost: face.manaCost,
+    typeLine: face.typeLine,
+    oracleText: face.oracleText,
+    flavorText: face.flavorText,
+    power: face.power,
+    toughness: face.toughness,
+    loyalty: face.loyalty,
+    defense: face.defense,
+    colors: face.colors,
+    frameType: face.frameType,
+    artId: face.artId,
+    artistDisplay: face.artistDisplay,
+    watermark: face.watermark,
+    rulesTextSizeHint: face.rulesTextSizeHint,
+    rulesTextPaddingTop: face.rulesTextPaddingTop,
+    rulesTextPaddingRight: face.rulesTextPaddingRight,
+    rulesTextPaddingBottom: face.rulesTextPaddingBottom,
+    rulesTextPaddingLeft: face.rulesTextPaddingLeft,
+    rulesTextReminderMode: face.rulesTextReminderMode,
+    layoutVariant: face.layoutVariant
+  };
+}
+
+function variantFaceFromCardFace(variantId: string, face: CardFaceRecord): CardVariantFaceRecord {
+  return {
+    variantId,
+    cardId: face.cardId,
+    faceIndex: face.faceIndex,
+    faceName: face.faceName,
+    manaCost: face.manaCost,
+    typeLine: face.typeLine,
+    oracleText: face.oracleText,
+    flavorText: face.flavorText,
+    power: face.power,
+    toughness: face.toughness,
+    loyalty: face.loyalty,
+    defense: face.defense,
+    colors: face.colors,
+    frameType: face.frameType,
+    artId: face.artId,
+    artistDisplay: face.artistDisplay,
+    watermark: face.watermark,
+    rulesTextSizeHint: face.rulesTextSizeHint,
+    rulesTextPaddingTop: face.rulesTextPaddingTop,
+    rulesTextPaddingRight: face.rulesTextPaddingRight,
+    rulesTextPaddingBottom: face.rulesTextPaddingBottom,
+    rulesTextPaddingLeft: face.rulesTextPaddingLeft,
+    rulesTextReminderMode: face.rulesTextReminderMode,
+    layoutVariant: face.layoutVariant
   };
 }
 
@@ -162,6 +275,63 @@ function optionalNumberFromDraft(value: string): number | undefined {
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseLayoutVariant(value: string | undefined): {
+  base: string;
+  borderColor: FrameBorderColor;
+  foilTreatment: CardDraft['foilTreatment'];
+  frameOverrideId: string;
+} {
+  const raw = String(value ?? '').trim();
+  if (!raw) {
+    return { base: 'normal', borderColor: 'black', foilTreatment: 'none', frameOverrideId: 'auto' };
+  }
+  const [base = 'normal', ...parts] = raw.split(';').map((part) => part.trim()).filter(Boolean);
+  const metadata = new Map(parts.map((part) => {
+    const [key = '', ...rest] = part.split('=');
+    return [key.trim(), rest.join('=').trim()];
+  }));
+  return {
+    base,
+    borderColor: parseBorderColor(metadata.get('border')),
+    foilTreatment: parseFoilTreatment(metadata.get('treatment')),
+    frameOverrideId: metadata.get('frame') || 'auto'
+  };
+}
+
+function serializeLayoutVariant(args: {
+  base: string;
+  borderColor: FrameBorderColor;
+  foilTreatment: CardDraft['foilTreatment'];
+  frameOverrideId: string;
+}): string {
+  const base = args.base.trim() || 'normal';
+  const parts = [base];
+  if (args.borderColor !== 'black') {
+    parts.push(`border=${args.borderColor}`);
+  }
+  if (args.foilTreatment !== 'none') {
+    parts.push(`treatment=${args.foilTreatment}`);
+  }
+  if (args.frameOverrideId && args.frameOverrideId !== 'auto') {
+    parts.push(`frame=${args.frameOverrideId}`);
+  }
+  return parts.join(';');
+}
+
+function parseBorderColor(value: string | undefined): FrameBorderColor {
+  if (value === 'white' || value === 'white-mse' || value === 'silver' || value === 'gold' || value === 'borderless' || value === 'none') {
+    return value;
+  }
+  return 'black';
+}
+
+function parseFoilTreatment(value: string | undefined): CardDraft['foilTreatment'] {
+  if (value === 'foil' || value === 'etched' || value === 'showcase') {
+    return value;
+  }
+  return 'none';
 }
 
 function parsePlaneswalkerAbilities(oracleText: string): { count: '3' | '4'; abilities: Array<{ cost: string; text: string }> } {
@@ -211,7 +381,7 @@ export function previewProfile(): ExportProfile {
 }
 
 function parseTypeLine(typeLine: string): { supertypes: string[]; cardTypes: string[]; subtypes: string } {
-  const [left = '', right = ''] = typeLine.split(/\s+-\s+/, 2);
+  const [left = '', right = ''] = typeLine.split(/\s+[—-]\s+/, 2);
   const knownSupertypes = new Set(SUPERTYPES);
   const knownTypes = new Set(CARD_TYPES);
   const words = left.split(/\s+/).filter(Boolean);

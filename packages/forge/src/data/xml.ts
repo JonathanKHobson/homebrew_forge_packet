@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import { normalizeLayoutId, type CardLayout } from '../domain/frameSupport.js';
 import { normalizeManaCost } from '../domain/mana.js';
 import type { CsvRow } from './csv.js';
 
@@ -193,24 +194,58 @@ export function inferLayout(typeLine: string, tokenFlag = ''): string {
   if (/\btoken\b/i.test(typeLine) || cleanTokenFlag(tokenFlag)) {
     return 'token';
   }
+  if (/\bemblem\b/i.test(typeLine)) {
+    return 'emblem';
+  }
   if (/\bsaga\b/i.test(typeLine)) {
     return 'saga';
   }
+  if (/\bclass\b/i.test(typeLine)) {
+    return 'class';
+  }
+  if (/\bcase\b/i.test(typeLine)) {
+    return 'case';
+  }
+  if (/\broom\b/i.test(typeLine)) {
+    return 'room';
+  }
   if (/\bbattle\b/i.test(typeLine)) {
     return 'battle';
+  }
+  if (/\bplane\b/i.test(typeLine)) {
+    return 'plane';
+  }
+  if (/\bphenomenon\b/i.test(typeLine)) {
+    return 'phenomenon';
+  }
+  if (/\bscheme\b/i.test(typeLine)) {
+    return 'scheme';
+  }
+  if (/\bdungeon\b/i.test(typeLine)) {
+    return 'dungeon';
+  }
+  if (/\bvanguard\b/i.test(typeLine)) {
+    return 'vanguard';
+  }
+  if (/\bconspiracy\b/i.test(typeLine)) {
+    return 'normal';
+  }
+  if (/\battraction\b/i.test(typeLine)) {
+    return 'attraction';
+  }
+  if (/\bvehicle\b/i.test(typeLine)) {
+    return 'normal';
   }
   return 'normal';
 }
 
 export function frameTypeFor(typeLine: string, layout: string): string {
-  if (layout === 'token') {
+  const normalizedLayout = normalizeLayoutId(layout);
+  if (normalizedLayout === 'token' || normalizedLayout === 'double_faced_token') {
     return 'token_creature';
   }
-  if (layout === 'saga') {
-    return 'saga';
-  }
-  if (layout === 'battle') {
-    return 'battle';
+  if (isSpecialLayoutFrame(normalizedLayout)) {
+    return normalizedLayout;
   }
   if (/\bplaneswalker\b/i.test(typeLine)) {
     return 'normal_planeswalker';
@@ -218,8 +253,29 @@ export function frameTypeFor(typeLine: string, layout: string): string {
   if (/\bland\b/i.test(typeLine)) {
     return 'normal_land';
   }
+  if (/\bvehicle\b/i.test(typeLine)) {
+    return 'vehicle';
+  }
+  if (/\bequipment\b/i.test(typeLine)) {
+    return 'equipment';
+  }
+  if (/\baura\b/i.test(typeLine)) {
+    return 'aura';
+  }
+  if (/\bprototype\b/i.test(typeLine)) {
+    return 'prototype';
+  }
   if (/\bartifact\b/i.test(typeLine) && !/\bcreature\b/i.test(typeLine)) {
     return 'normal_artifact';
+  }
+  if (/\binstant\b/i.test(typeLine)) {
+    return 'normal_instant';
+  }
+  if (/\bsorcery\b/i.test(typeLine)) {
+    return 'normal_sorcery';
+  }
+  if (/\benchantment\b/i.test(typeLine) && !/\bcreature\b/i.test(typeLine)) {
+    return 'normal_enchantment';
   }
   return 'normal_creature';
 }
@@ -233,11 +289,43 @@ function cardTags(typeLine: string, layout: string): string {
   if (layout === 'token') {
     tags.push('token');
   }
-  if (layout === 'saga') {
-    tags.push('needs_review', 'unsupported_layout:saga');
+  if (!['normal', 'token'].includes(layout)) {
+    tags.push('needs_review', `registered_layout:${layout}`);
   }
   if (/\btransform\b/i.test(typeLine)) {
     tags.push('possible_transform');
   }
   return tags.join(';');
+}
+
+function isSpecialLayoutFrame(layout: CardLayout): boolean {
+  return [
+    'saga',
+    'class',
+    'case',
+    'room',
+    'battle',
+    'plane',
+    'scheme',
+    'phenomenon',
+    'vanguard',
+    'dungeon',
+    'adventure',
+    'split',
+    'flip',
+    'transform',
+    'modal_dfc',
+    'meld',
+    'leveler',
+    'prepare',
+    'omen',
+    'emblem',
+    'attraction',
+    'sticker_sheet',
+    'station',
+    'mutate',
+    'prototype',
+    'aftermath',
+    'fuse'
+  ].includes(layout);
 }

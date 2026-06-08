@@ -365,7 +365,7 @@ function shouldScoreDirectTerm(link: ExtractedReferenceLink, face: CardFaceRecor
 }
 
 function parseTypeLine(typeLine: string): { cardTypes: string[]; subtypes: string[]; supertypes: string[] } {
-  const [left = '', right = ''] = typeLine.split(/\s+-\s+/, 2);
+  const [left = '', right = ''] = typeLine.split(/\s+[—-]\s+/, 2);
   const words = left.split(/\s+/).filter(Boolean);
   const cardTypes = words.filter((word) => ['Artifact', 'Battle', 'Creature', 'Enchantment', 'Instant', 'Kindred', 'Land', 'Planeswalker', 'Sorcery'].includes(word));
   const supertypes = words.filter((word) => !cardTypes.includes(word));

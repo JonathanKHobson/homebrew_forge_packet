@@ -3,6 +3,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import JSZip from 'jszip';
 import { parseCsvRecords, type CsvRow, writeCsvRecords } from '../data/csv.js';
+import { isKnownLayout, layoutSupportFor, normalizeLayoutId, RENDERABLE_LAYOUTS } from '../domain/frameSupport.js';
 import { normalizeManaCost } from '../domain/mana.js';
 import {
   frameTypeFor,
@@ -32,6 +33,8 @@ export interface ImportAudit {
   rawSourcePath?: string;
   importedCards: number;
   importedFaces: number;
+  importedVariants: number;
+  importedVariantFaces: number;
   artReferences: number;
   missingArt: number;
   legacyRenderReferences: number;
@@ -48,9 +51,13 @@ export interface ImportAudit {
 export interface AnalyzedImport {
   cards: CsvRow[];
   faces: CsvRow[];
+  variants: CsvRow[];
+  variantFaces: CsvRow[];
   art: CsvRow[];
   audit: ImportAudit;
 }
+
+type ImportRecordSet = Pick<AnalyzedImport, 'cards' | 'faces' | 'variants' | 'variantFaces' | 'art'>;
 
 export interface AnalyzeMtgDesignImportOptions {
   setCode: string;
@@ -92,6 +99,47 @@ export const CARD_HEADERS = [
 ];
 
 export const FACE_HEADERS = [
+  'card_id',
+  'face_index',
+  'face_name',
+  'mana_cost',
+  'type_line',
+  'oracle_text',
+  'flavor_text',
+  'power',
+  'toughness',
+  'loyalty',
+  'defense',
+  'colors',
+  'frame_type',
+  'art_id',
+  'artist_display',
+  'watermark',
+  'rules_text_size_hint',
+  'rules_text_padding_top',
+  'rules_text_padding_right',
+  'rules_text_padding_bottom',
+  'rules_text_padding_left',
+  'rules_text_reminder_mode',
+  'layout_variant'
+];
+
+export const VARIANT_HEADERS = [
+  'variant_id',
+  'card_id',
+  'display_name',
+  'kind',
+  'status',
+  'is_primary',
+  'export_policy',
+  'tags',
+  'notes',
+  'created_at',
+  'updated_at'
+];
+
+export const VARIANT_FACE_HEADERS = [
+  'variant_id',
   'card_id',
   'face_index',
   'face_name',
@@ -165,8 +213,6 @@ export const EXPORT_PROFILE_HEADERS = [
   'filename_template'
 ];
 
-const RENDERABLE_LAYOUTS = new Set(['normal', 'token']);
-
 export function analyzeMtgDesignImport(options: AnalyzeMtgDesignImportOptions): AnalyzedImport {
   const format = options.format === 'xml' ? 'cockatrice' : options.format;
   const parsed =
@@ -185,7 +231,7 @@ export function analyzeMtgDesignImport(options: AnalyzeMtgDesignImportOptions): 
   return { ...withLocalArt, audit };
 }
 
-export function parsePlanesculptorsText(content: string, options: { setCode: string; inputPath?: string }): Pick<AnalyzedImport, 'cards' | 'faces' | 'art'> {
+export function parsePlanesculptorsText(content: string, options: { setCode: string; inputPath?: string }): ImportRecordSet {
   const chunks = content.split('===========').filter((chunk) => chunk.trim());
   const cards: CsvRow[] = [];
   const faces: CsvRow[] = [];
@@ -230,7 +276,7 @@ export function parsePlanesculptorsText(content: string, options: { setCode: str
       status: statusForLayout(layout),
       print_count: '1',
       export_name_override: '',
-      notes: 'Imported from MTG.design Planesculptors text.'
+      notes: 'Imported from Planesculptors text.'
     });
 
     faces.push({
@@ -260,7 +306,7 @@ export function parsePlanesculptorsText(content: string, options: { setCode: str
     });
   }
 
-  return attachLocalImageCandidates({ cards, faces, art }, options.inputPath, options.setCode);
+  return attachLocalImageCandidates(withPrimaryVariants({ cards, faces, art }), options.inputPath, options.setCode);
 }
 
 export async function readMtgDesignInput(inputPath: string, format: MtgDesignImportFormat): Promise<{ content: string; inputPath: string }> {
@@ -291,9 +337,13 @@ export async function applyImportedRows(options: ApplyImportedRowsOptions): Prom
   await ensureSetScaffold(options.repoRoot, options.setCode);
   const cardsPath = join(setDir, 'cards.csv');
   const facesPath = join(setDir, 'card_faces.csv');
+  const variantsPath = join(setDir, 'card_variants.csv');
+  const variantFacesPath = join(setDir, 'card_variant_faces.csv');
   const artPath = join(setDir, 'art_manifest.csv');
   const cards = options.mode === 'replace' ? [] : await readCsvIfExists(cardsPath);
   const faces = options.mode === 'replace' ? [] : await readCsvIfExists(facesPath);
+  const variants = options.mode === 'replace' ? [] : await readCsvIfExists(variantsPath);
+  const variantFaces = options.mode === 'replace' ? [] : await readCsvIfExists(variantFacesPath);
   const artRows = options.mode === 'replace' ? [] : await readCsvIfExists(artPath);
   const copiedArt = await prepareArtRowsForWrite(options.repoRoot, options.setCode, options.imported.art);
   const artIdMap = new Map(copiedArt.map((row) => [row.art_id, row]));
@@ -305,12 +355,22 @@ export async function applyImportedRows(options: ApplyImportedRowsOptions): Prom
     const artId = face.art_id;
     upsertRowByKeys(faces, ['card_id', 'face_index'], artId && artIdMap.has(artId) ? face : { ...face, art_id: artId ?? '' });
   }
+  for (const variant of options.imported.variants) {
+    upsertRowByKeys(variants, ['variant_id'], variant);
+  }
+  for (const face of options.imported.variantFaces) {
+    const artId = face.art_id;
+    upsertRowByKeys(variantFaces, ['variant_id', 'card_id', 'face_index'], artId && artIdMap.has(artId) ? face : { ...face, art_id: artId ?? '' });
+  }
   for (const art of copiedArt) {
     upsertRowByKeys(artRows, ['art_id'], art);
   }
 
+  enforcePrimaryVariantRows(variants, options.imported.variants);
   await writeFile(cardsPath, `${writeCsvRecords(cards, CARD_HEADERS)}\n`, 'utf8');
   await writeFile(facesPath, `${writeCsvRecords(faces, FACE_HEADERS)}\n`, 'utf8');
+  await writeFile(variantsPath, `${writeCsvRecords(variants, VARIANT_HEADERS)}\n`, 'utf8');
+  await writeFile(variantFacesPath, `${writeCsvRecords(variantFaces, VARIANT_FACE_HEADERS)}\n`, 'utf8');
   await writeFile(artPath, `${writeCsvRecords(artRows, ART_HEADERS)}\n`, 'utf8');
 
   return summary;
@@ -333,20 +393,22 @@ export async function writeImportReports(reportPath: string, summary: ImportAppl
   await writeFile(markdownPath, `${summary.markdownSummary}\n`, 'utf8');
 }
 
-function normalizeImportedRowsFromXml(content: string, setCode: string, format: MtgDesignImportFormat): Pick<AnalyzedImport, 'cards' | 'faces' | 'art'> {
+function normalizeImportedRowsFromXml(content: string, setCode: string, format: MtgDesignImportFormat): ImportRecordSet {
   const parsed = parseCardsXml(content);
   return normalizeImportedRows(parsed.cards, parsed.faces, parsed.art ?? [], setCode, format);
 }
 
-function normalizeImportedRows(sourceCards: CsvRow[], sourceFaces: CsvRow[], sourceArt: CsvRow[], setCode: string, format: MtgDesignImportFormat): Pick<AnalyzedImport, 'cards' | 'faces' | 'art'> {
+function normalizeImportedRows(sourceCards: CsvRow[], sourceFaces: CsvRow[], sourceArt: CsvRow[], setCode: string, format: MtgDesignImportFormat): ImportRecordSet {
   const facesByCardId = new Map<string, CsvRow[]>();
   for (const face of sourceFaces) {
     facesByCardId.set(face.card_id, [...(facesByCardId.get(face.card_id) ?? []), face]);
   }
   const artById = new Map(sourceArt.map((row) => [row.art_id, row]));
   const cards: CsvRow[] = [];
-  const faces: CsvRow[] = [];
+  const variants: CsvRow[] = [];
+  const variantFaces: CsvRow[] = [];
   const art: CsvRow[] = [];
+  const variantIdsByCardKey = new Map<string, string>();
 
   for (const [index, row] of sourceCards.entries()) {
     const collectorNumber = clean(row.collector_number || row.number || row.collector || String(index + 1).padStart(3, '0'));
@@ -358,7 +420,7 @@ function normalizeImportedRows(sourceCards: CsvRow[], sourceFaces: CsvRow[], sou
     const layout = normalizeLayout(clean(row.layout || inferLayout(primaryTypeLine)), primaryTypeLine);
     const colors = normalizeColors(clean(row.color_identity || primaryFace.colors || row.colors) || clean(primaryFace.mana_cost || row.mana_cost || row.manacost));
 
-    cards.push({
+    upsertRowByKeys(cards, ['card_id'], {
       card_id: cardId,
       set_code: setCode,
       collector_number: collectorNumber,
@@ -373,15 +435,41 @@ function normalizeImportedRows(sourceCards: CsvRow[], sourceFaces: CsvRow[], sou
       status: clean(row.status) || statusForLayout(layout),
       print_count: clean(row.print_count) || '1',
       export_name_override: clean(row.export_name_override),
-      notes: clean(row.notes || `Imported from MTG.design ${format}.`)
+      notes: clean(row.notes || `Imported from ${importSourceLabel(format)}.`)
+    });
+
+    const variantKey = variantIdentityKey(row);
+    const variantMapKey = `${cardId}\u0000${variantKey}`;
+    const existingVariantId = variantIdsByCardKey.get(variantMapKey);
+    const variantIndex = existingVariantId ? variantOrdinal(existingVariantId) : [...variantIdsByCardKey.keys()].filter((key) => key.startsWith(`${cardId}\u0000`)).length + 1;
+    const variantId = clean(row.variant_id) || existingVariantId || safeCardId(`${cardId}-V${variantIndex}`);
+    variantIdsByCardKey.set(variantMapKey, variantId);
+    const existingVariant = variants.find((variant) => variant.variant_id === variantId);
+    const rawKind = clean(row.variant_kind || row.kind);
+    const rawStatus = clean(row.variant_status);
+    const rawExportPolicy = clean(row.variant_export_policy || row.export_policy);
+    upsertRowByKeys(variants, ['variant_id'], {
+      variant_id: variantId,
+      card_id: cardId,
+      display_name: clean(row.variant_display_name || row.variant_name || row.display_name) || existingVariant?.display_name || `Variant ${variantIndex}`,
+      kind: rawKind ? normalizeVariantKind(rawKind) : existingVariant?.kind || 'mechanics_test',
+      status: rawStatus ? normalizeVariantStatus(rawStatus) : existingVariant?.status || 'active',
+      is_primary: clean(row.variant_is_primary || row.is_primary) ? normalizeBooleanCell(row.variant_is_primary || row.is_primary) : existingVariant?.is_primary || 'false',
+      export_policy: rawExportPolicy ? normalizeVariantExportPolicy(rawExportPolicy) : existingVariant?.export_policy || 'default',
+      tags: clean(row.variant_tags) || existingVariant?.tags || '',
+      notes: clean(row.variant_notes) || existingVariant?.notes || '',
+      created_at: clean(row.variant_created_at || row.created_at) || existingVariant?.created_at || '',
+      updated_at: clean(row.variant_updated_at || row.updated_at) || existingVariant?.updated_at || ''
     });
 
     for (const [faceOffset, face] of sourceFaceRows.entries()) {
       const typeLine = clean(face.type_line || row.type_line || row.type || row.card_type || primaryTypeLine);
       const faceArtId = clean(face.art_id || row.art_id);
       const sourceArtRow = faceArtId ? artById.get(faceArtId) : undefined;
-      const importedArtId = faceArtId || clean(row.art_url || row.source_url || sourceArtRow?.source_url) ? `${cardId}-ART` : '';
-      faces.push({
+      const artReference = clean(row.art_url || row.source_url || sourceArtRow?.source_url);
+      const importedArtId = faceArtId || (artReference ? (variantId.endsWith('-V1') ? `${cardId}-ART` : `${variantId}-ART`) : '');
+      variantFaces.push({
+        variant_id: variantId,
         card_id: cardId,
         face_index: clean(face.face_index) || String(faceOffset),
         face_name: clean(face.face_name) || name,
@@ -430,10 +518,12 @@ function normalizeImportedRows(sourceCards: CsvRow[], sourceFaces: CsvRow[], sou
     }
   }
 
-  return { cards, faces, art: dedupeRows(art, 'art_id') };
+  const normalizedVariants = normalizeImportedVariantPrimaries(cards, variants);
+  const faces = primaryFacesFromImportedVariants(cards, normalizedVariants, variantFaces);
+  return { cards, faces, variants: normalizedVariants, variantFaces, art: dedupeRows(art, 'art_id') };
 }
 
-function attachLocalImageCandidates(imported: Pick<AnalyzedImport, 'cards' | 'faces' | 'art'>, inputPath: string | undefined, setCode: string): Pick<AnalyzedImport, 'cards' | 'faces' | 'art'> {
+function attachLocalImageCandidates(imported: ImportRecordSet, inputPath: string | undefined, setCode: string): ImportRecordSet {
   if (!inputPath || inputPath.toLowerCase().endsWith('.zip')) {
     return imported;
   }
@@ -454,7 +544,147 @@ function attachLocalImageCandidates(imported: Pick<AnalyzedImport, 'cards' | 'fa
   return { ...imported, art };
 }
 
-function buildImportAudit(args: Pick<AnalyzedImport, 'cards' | 'faces' | 'art'> & { setCode: string; sourceFormat: MtgDesignImportFormat; rawSourcePath?: string }): ImportAudit {
+function withPrimaryVariants(imported: Pick<AnalyzedImport, 'cards' | 'faces' | 'art'>): ImportRecordSet {
+  const variants = imported.cards.map((card) => ({
+    variant_id: safeCardId(`${card.card_id}-V1`),
+    card_id: card.card_id,
+    display_name: 'Variant 1',
+    kind: 'mechanics_test',
+    status: clean(card.status) === 'final' ? 'final' : 'active',
+    is_primary: 'true',
+    export_policy: 'default',
+    tags: '',
+    notes: '',
+    created_at: '',
+    updated_at: ''
+  }));
+  const variantFaces = imported.faces.map((face) => ({
+    variant_id: safeCardId(`${face.card_id}-V1`),
+    ...face
+  }));
+  return { ...imported, variants, variantFaces };
+}
+
+function variantIdentityKey(row: CsvRow): string {
+  if (clean(row.variant_id)) {
+    return `id:${clean(row.variant_id)}`;
+  }
+  const explicit = [
+    row.variant_display_name,
+    row.variant_name,
+    row.display_name,
+    row.variant_kind,
+    row.kind,
+    row.variant_status,
+    row.variant_export_policy,
+    row.export_policy,
+    row.variant_tags,
+    row.variant_notes
+  ].map(clean).filter(Boolean);
+  return explicit.length ? `variant:${explicit.join('|')}` : 'primary';
+}
+
+function normalizeImportedVariantPrimaries(cards: CsvRow[], variants: CsvRow[]): CsvRow[] {
+  const normalized: CsvRow[] = [];
+  for (const card of cards) {
+    const cardVariants = variants.filter((variant) => variant.card_id === card.card_id);
+    if (!cardVariants.length) {
+      continue;
+    }
+    const preferredIndex = cardVariants.findIndex((variant) => isTruthyCell(variant.is_primary) && clean(variant.status) !== 'archived');
+    const fallbackIndex = cardVariants.findIndex((variant) => clean(variant.status) !== 'archived');
+    const primaryIndex = preferredIndex >= 0 ? preferredIndex : fallbackIndex >= 0 ? fallbackIndex : 0;
+    normalized.push(...cardVariants.map((variant, index) => ({ ...variant, is_primary: index === primaryIndex ? 'true' : 'false' })));
+  }
+  return normalized;
+}
+
+function primaryFacesFromImportedVariants(cards: CsvRow[], variants: CsvRow[], variantFaces: CsvRow[]): CsvRow[] {
+  const faces: CsvRow[] = [];
+  for (const card of cards) {
+    const primary = variants.find((variant) => variant.card_id === card.card_id && isTruthyCell(variant.is_primary));
+    if (!primary) {
+      continue;
+    }
+    const rows = variantFaces
+      .filter((face) => face.variant_id === primary.variant_id)
+      .sort((left, right) => Number(clean(left.face_index) || 0) - Number(clean(right.face_index) || 0));
+    for (const row of rows) {
+      const { variant_id: _variantId, ...face } = row;
+      faces.push(face);
+    }
+  }
+  return faces;
+}
+
+function enforcePrimaryVariantRows(allVariants: CsvRow[], importedVariants: CsvRow[]): void {
+  const importedPrimaryByCard = new Map<string, string>();
+  for (const variant of importedVariants) {
+    if (isTruthyCell(variant.is_primary)) {
+      importedPrimaryByCard.set(variant.card_id, variant.variant_id);
+    }
+  }
+
+  for (const [cardId, primaryVariantId] of importedPrimaryByCard) {
+    for (const variant of allVariants) {
+      if (variant.card_id === cardId) {
+        variant.is_primary = variant.variant_id === primaryVariantId ? 'true' : 'false';
+      }
+    }
+  }
+
+  const variantsByCard = new Map<string, CsvRow[]>();
+  for (const variant of allVariants) {
+    variantsByCard.set(variant.card_id, [...(variantsByCard.get(variant.card_id) ?? []), variant]);
+  }
+  for (const variants of variantsByCard.values()) {
+    if (variants.some((variant) => isTruthyCell(variant.is_primary))) {
+      continue;
+    }
+    const fallback = variants.find((variant) => clean(variant.status) !== 'archived') ?? variants[0];
+    if (fallback) {
+      fallback.is_primary = 'true';
+    }
+  }
+}
+
+const VARIANT_KINDS = new Set(['mechanics_test', 'wording_test', 'visual_alternate', 'finish_alternate', 'print_alternate', 'history_snapshot']);
+const VARIANT_STATUSES = new Set(['active', 'testing', 'final', 'archived']);
+const VARIANT_EXPORT_POLICIES = new Set(['default', 'optional', 'excluded']);
+
+function normalizeVariantKind(value: string): string {
+  const normalized = normalizeVariantEnum(value);
+  return VARIANT_KINDS.has(normalized) ? normalized : 'mechanics_test';
+}
+
+function normalizeVariantStatus(value: string): string {
+  const normalized = normalizeVariantEnum(value);
+  return VARIANT_STATUSES.has(normalized) ? normalized : 'active';
+}
+
+function normalizeVariantExportPolicy(value: string): string {
+  const normalized = normalizeVariantEnum(value);
+  return VARIANT_EXPORT_POLICIES.has(normalized) ? normalized : 'default';
+}
+
+function normalizeVariantEnum(value: string): string {
+  return clean(value).toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+function variantOrdinal(variantId: string): number {
+  const match = variantId.match(/-V(\d+)$/i);
+  return match ? Math.max(1, Number(match[1]) || 1) : 1;
+}
+
+function normalizeBooleanCell(value: unknown): string {
+  return clean(value) ? (isTruthyCell(value) ? 'true' : 'false') : 'false';
+}
+
+function isTruthyCell(value: unknown): boolean {
+  return ['true', '1', 'yes', 'y'].includes(clean(value).toLowerCase());
+}
+
+function buildImportAudit(args: ImportRecordSet & { setCode: string; sourceFormat: MtgDesignImportFormat; rawSourcePath?: string }): ImportAudit {
   const warnings: ImportAuditWarning[] = [];
   const unsupported = new Map<string, number>();
   const collectors = new Map<string, string[]>();
@@ -488,15 +718,16 @@ function buildImportAudit(args: Pick<AnalyzedImport, 'cards' | 'faces' | 'art'> 
         message: `${card.name} mentions transform but was imported as ${card.layout}.`
       });
     }
-    if (!RENDERABLE_LAYOUTS.has(card.layout)) {
+    if (!isKnownLayout(card.layout) || !RENDERABLE_LAYOUTS.has(card.layout)) {
+      const layoutSupport = layoutSupportFor(card.layout);
       unsupported.set(card.layout, (unsupported.get(card.layout) ?? 0) + 1);
       warnings.push({
-        code: 'unsupported-layout',
+        code: isKnownLayout(card.layout) ? 'registered-layout-fallback' : 'unknown-layout',
         severity: 'warning',
         cardId: card.card_id,
         collectorNumber: card.collector_number,
         name: card.name,
-        message: `${card.name} uses unsupported layout ${card.layout}; data was preserved for review.`
+        message: `${card.name} uses ${isKnownLayout(card.layout) ? `${layoutSupport.supportState} layout` : 'unknown layout'} ${card.layout}; data was preserved and ${layoutSupport.fallbackLayout} fallback rendering will be used.`
       });
     }
   }
@@ -537,6 +768,8 @@ function buildImportAudit(args: Pick<AnalyzedImport, 'cards' | 'faces' | 'art'> 
     rawSourcePath: args.rawSourcePath,
     importedCards: args.cards.length,
     importedFaces: args.faces.length,
+    importedVariants: args.variants.length,
+    importedVariantFaces: args.variantFaces.length,
     artReferences: args.art.length,
     missingArt,
     legacyRenderReferences,
@@ -561,13 +794,15 @@ function markdownSummary(audit: Omit<ImportAudit, 'markdownSummary'>): string {
     `- Source: ${audit.sourceFormat}${audit.rawSourcePath ? ` (${audit.rawSourcePath})` : ''}`,
     `- Cards: ${audit.importedCards}`,
     `- Faces: ${audit.importedFaces}`,
+    `- Variants: ${audit.importedVariants}`,
+    `- Variant faces: ${audit.importedVariantFaces}`,
     `- Art references: ${audit.artReferences}`,
     `- Legacy full-card render references: ${audit.legacyRenderReferences}`,
     `- Needs editable/source art: ${audit.editableArtNeeded}`,
     `- Tokens: ${audit.parsedTokens}`,
     `- Sagas: ${audit.parsedSagas}`,
     `- Possible transform cards: ${audit.possibleTransformCards}`,
-    `- Unsupported layouts: ${audit.unsupportedLayouts.map((item) => `${item.layout}=${item.count}`).join(', ') || 'none'}`,
+    `- Layouts needing fallback: ${audit.unsupportedLayouts.map((item) => `${item.layout}=${item.count}`).join(', ') || 'none'}`,
     `- Duplicate collector numbers: ${audit.duplicates.length}`,
     `- Warnings: ${audit.warnings.length}`
   ].join('\n');
@@ -593,6 +828,8 @@ async function ensureSetScaffold(repoRoot: string, setCode: string): Promise<voi
   ]);
   await writeIfMissing(join(setDir, 'cards.csv'), [CARD_HEADERS]);
   await writeIfMissing(join(setDir, 'card_faces.csv'), [FACE_HEADERS]);
+  await writeIfMissing(join(setDir, 'card_variants.csv'), [VARIANT_HEADERS]);
+  await writeIfMissing(join(setDir, 'card_variant_faces.csv'), [VARIANT_FACE_HEADERS]);
   await writeIfMissing(join(setDir, 'art_manifest.csv'), [ART_HEADERS]);
   await writeIfMissing(join(setDir, 'export_profiles.csv'), [
     EXPORT_PROFILE_HEADERS,
@@ -684,28 +921,13 @@ function buildImageCandidateMap(inputPath: string, setCode: string): Map<string,
 
 function normalizeLayout(value: string, typeLine: string): string {
   const layout = value === 'xml' ? inferLayout(typeLine) : value || inferLayout(typeLine);
-  if (
-    [
-      'normal',
-      'split',
-      'flip',
-      'transform',
-      'modal_dfc',
-      'meld',
-      'adventure',
-      'saga',
-      'class',
-      'case',
-      'battle',
-      'plane',
-      'scheme',
-      'phenomenon',
-      'vanguard',
-      'dungeon',
-      'token'
-    ].includes(layout)
-  ) {
-    return layout;
+  const rawNormalized = layout.trim().toLowerCase().replace(/[-\s]+/g, '_');
+  const aliasNormalized = normalizeLayoutId(rawNormalized);
+  if (isKnownLayout(rawNormalized)) {
+    return aliasNormalized;
+  }
+  if (rawNormalized && aliasNormalized !== 'normal') {
+    return aliasNormalized;
   }
   return inferLayout(typeLine);
 }
@@ -715,8 +937,8 @@ function importTags(typeLine: string, layout: string): string {
   if (layout === 'token') {
     tags.push('token');
   }
-  if (!RENDERABLE_LAYOUTS.has(layout)) {
-    tags.push('needs_review', `unsupported_layout:${layout}`);
+  if (!isKnownLayout(layout) || !RENDERABLE_LAYOUTS.has(layout)) {
+    tags.push('needs_review', `registered_layout:${layout}`);
   }
   if (/\btransform(s|ed|ing)?\b/i.test(typeLine)) {
     tags.push('possible_transform');
@@ -724,8 +946,21 @@ function importTags(typeLine: string, layout: string): string {
   return tags.join(';');
 }
 
+function importSourceLabel(format: MtgDesignImportFormat): string {
+  if (format === 'csv') {
+    return 'Homebrew Forge CSV';
+  }
+  if (format === 'planesculptors') {
+    return 'Planesculptors text';
+  }
+  if (format === 'xml') {
+    return 'generic XML';
+  }
+  return 'Cockatrice XML';
+}
+
 function statusForLayout(layout: string): string {
-  return RENDERABLE_LAYOUTS.has(layout) ? 'draft' : 'review';
+  return isKnownLayout(layout) && RENDERABLE_LAYOUTS.has(layout) ? 'draft' : 'review';
 }
 
 function mergeTags(...values: Array<string | undefined>): string {

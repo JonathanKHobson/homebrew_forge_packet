@@ -8,7 +8,9 @@ import {
   exportCollectionCockatrice,
   exportCollectionCsv,
   exportCollectionPlainText,
-  importCollectionCsv
+  importCollectionCsv,
+  importCollectionPriceCsv,
+  refreshCollectionMarketPrices
 } from './collections/collectionStore.js';
 import {
   type CollectionExportTarget,
@@ -140,6 +142,7 @@ program
 const exportCommand = program.command('export').description('Export set, deck, and collection packages');
 const assetsCommand = program.command('assets').description('Inspect local asset packs');
 const importCommand = program.command('import').description('Import MTG.design, scanner CSV, and XML data');
+const refreshCommand = program.command('refresh').description('Refresh cached local source snapshots');
 const inspectCommand = program.command('inspect').description('Inspect local Homebrew Forge source data');
 const referenceCommand = program.command('reference').description('Audit, sync, and inspect official Magic reference data');
 const powerCommand = program.command('power').description('Audit and inspect card power scoring treatments');
@@ -198,7 +201,7 @@ exportCommand
   .requiredOption('--set <setCode>', 'Set code to export')
   .option('--root <path>', 'Repo root', process.cwd())
   .option('--output <path>', 'Output root', 'output')
-  .option('--paper <paper>', 'Paper size: letter or a4', 'letter')
+  .option('--paper <paper>', 'Paper size: letter, a4, or photo_4x6', 'letter')
   .option('--cards-per-page <count>', 'Cards per page', '9')
   .option('--profile <profileId>', 'Print PDF export profile ID')
   .action(async (options: { set: string; root: string; output: string; paper: string; cardsPerPage: string; profile?: string }) => {
@@ -256,7 +259,7 @@ importCommand
   .command('collection')
   .requiredOption('--from <csv>', 'Scanner CSV file to import')
   .requiredOption('--collection <id>', 'Collection id to import into')
-  .option('--source <source>', 'Scanner source: manabox, tcgplayer, dragonshield, delver, or generic', 'manabox')
+  .option('--source <source>', 'Scanner source: manabox, tcgplayer, dragonshield, delver, scryfall, or generic', 'manabox')
   .option('--name <name>', 'Collection display name')
   .option('--description <description>', 'Collection description')
   .option('--root <path>', 'Repo root', process.cwd())
@@ -297,6 +300,82 @@ importCommand
         if (result.summary.warnings.length > 0) {
           console.log(`Warnings: ${result.summary.warnings.length}`);
         }
+      });
+    }
+  );
+
+importCommand
+  .command('collection-prices')
+  .requiredOption('--from <csv>', 'Provider price CSV to import')
+  .requiredOption('--collection <id>', 'Collection id to update')
+  .option('--source <source>', 'Price source label, such as tcgplayer, manabox, or cardkingdom', 'price_csv')
+  .option('--root <path>', 'Repo root', process.cwd())
+  .option('--dry-run', 'Analyze without writing collection files', false)
+  .option('--json', 'Print structured JSON summary', false)
+  .action(
+    async (options: {
+      from: string;
+      collection: string;
+      source: string;
+      root: string;
+      dryRun: boolean;
+      json: boolean;
+    }) => {
+      await runCli(async () => {
+        const rootDir = resolveRoot(options.root);
+        const result = await importCollectionPriceCsv(rootDir, {
+          collectionId: options.collection,
+          source: options.source,
+          dryRun: options.dryRun,
+          content: await readFile(resolve(options.from), 'utf8')
+        });
+        if (options.json) {
+          console.log(JSON.stringify(result.summary, null, 2));
+          return;
+        }
+        console.log(
+          `${options.dryRun ? 'Dry-run analyzed' : 'Imported'} ${result.summary.source} prices for ${result.summary.collectionId}. ` +
+            `${result.summary.updatedRows} updated, ${result.summary.missingRows} missing.`
+        );
+      });
+    }
+  );
+
+refreshCommand
+  .command('collection-prices')
+  .requiredOption('--collection <id>', 'Collection id to refresh')
+  .option('--source <source>', 'Local price source: scryfall', 'scryfall')
+  .option('--root <path>', 'Repo root', process.cwd())
+  .option('--only-missing', 'Only fill rows that do not already have a market snapshot', false)
+  .option('--dry-run', 'Analyze without writing collection files', false)
+  .option('--json', 'Print structured JSON summary', false)
+  .action(
+    async (options: {
+      collection: string;
+      source: string;
+      root: string;
+      onlyMissing: boolean;
+      dryRun: boolean;
+      json: boolean;
+    }) => {
+      await runCli(async () => {
+        if (options.source.toLowerCase() !== 'scryfall') {
+          throw new Error('Only the local Scryfall official-card cache is supported for direct refresh. Import other provider snapshots with import collection-prices.');
+        }
+        const result = await refreshCollectionMarketPrices(resolveRoot(options.root), {
+          collectionId: options.collection,
+          source: 'scryfall',
+          onlyMissing: options.onlyMissing,
+          dryRun: options.dryRun
+        });
+        if (options.json) {
+          console.log(JSON.stringify(result.summary, null, 2));
+          return;
+        }
+        console.log(
+          `${options.dryRun ? 'Dry-run analyzed' : 'Refreshed'} ${result.summary.collectionId} from ${result.summary.source}. ` +
+            `${result.summary.updatedRows} updated, ${result.summary.missingRows} missing.`
+        );
       });
     }
   );
@@ -350,7 +429,7 @@ importCommand
           return;
         }
         console.log(
-          `${options.dryRun ? 'Dry-run analyzed' : 'Imported'} ${summary.importedCards} cards, ${summary.importedFaces} faces, ${summary.artReferences} art references for ${summary.setCode}.`
+          `${options.dryRun ? 'Dry-run analyzed' : 'Imported'} ${summary.importedCards} cards, ${summary.importedFaces} faces, ${summary.importedVariants} variants, ${summary.importedVariantFaces} variant faces, ${summary.artReferences} art references for ${summary.setCode}.`
         );
         console.log(`Warnings: ${summary.warnings.length}. Unsupported layouts: ${summary.unsupportedLayouts.map((item) => `${item.layout}=${item.count}`).join(', ') || 'none'}.`);
         if (summary.reportPath) {
@@ -641,7 +720,7 @@ function normalizeCollectionImportMode(value: string): CollectionImportMode {
 
 function normalizeCollectionSource(value: string): CollectionSourcePreset {
   const normalized = value.toLowerCase();
-  if (['manabox', 'tcgplayer', 'dragonshield', 'delver', 'generic'].includes(normalized)) {
+  if (['manabox', 'tcgplayer', 'dragonshield', 'delver', 'generic', 'scryfall'].includes(normalized)) {
     return normalized as CollectionSourcePreset;
   }
   throw new Error(`Unsupported collection source ${value}.`);
@@ -657,7 +736,7 @@ function normalizeCollectionExportTarget(value: string): CollectionExportTarget 
 
 function normalizePrintPaper(value: string): PrintPaper {
   const normalized = value.toLowerCase();
-  if (normalized === 'letter' || normalized === 'a4') {
+  if (normalized === 'letter' || normalized === 'a4' || normalized === 'photo_4x6') {
     return normalized;
   }
   throw new Error(`Unsupported paper ${value}.`);

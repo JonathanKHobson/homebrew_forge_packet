@@ -1,0 +1,27 @@
+{
+  "collectionId": "flagged",
+  "name": "Flagged",
+  "description": "Cards needing attention, review, or follow-up.",
+  "gameId": "mtg",
+  "purpose": "mixed",
+  "source": "generic",
+  "kind": "list",
+  "listCategory": "flagged",
+  "tags": [
+    "flagged",
+    "signs-of-assassins"
+  ],
+  "defaultEntryTags": [
+    "flagged"
+  ],
+  "defaultOwnershipStatus": "reference",
+  "defaultStarred": false,
+  "defaultFlagged": true,
+  "defaultProxy": false,
+  "defaultHomebrew": false,
+  "linkedSetCodes": [
+    "SOA"
+  ],
+  "createdAt": "2026-06-08T01:38:55.120Z",
+  "updatedAt": "2026-06-08T03:26:24.648Z"
+}

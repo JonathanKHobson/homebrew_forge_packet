@@ -52,7 +52,7 @@ reference-cache/
 ```
 
 `reference/custom/references.json` is the local project-owned store for terms
-created inside Homebrew Forge. It sits beside the bundled catalog rather than
+created inside Homebrew Forge. It sits beside the included catalog rather than
 editing seed data. Each saved reference carries its category, source, system,
 official/homebrew origin, lifecycle status, and draft/final workflow status.
 

@@ -7,7 +7,7 @@ Search stays visible in each workspace. Filters open a dedicated browse/filter
 overlay with matching results on one side and filter controls on the other.
 
 This plan is the source of truth for future filter work on Cards, Decks,
-Collections, Sets, Projects, Library, and Reference.
+Collections, Sets, Projects, Gallery, and Reference.
 
 ## Phase Checklist
 
@@ -28,13 +28,13 @@ Collections, Sets, Projects, Library, and Reference.
    - Preserve existing card status and tags.
    - Add tags to deck metadata.
    - Add tags to set CSV/schema/template handling.
-   - Add project status and tags to the library JSON model.
+   - Add project status and tags to the gallery JSON model.
    - Keep older files valid when tags or project status are missing.
 
 4. Management workspaces
    - Keep search visible in every left panel.
    - Make the filter button open the shared overlay for Decks, Collections,
-     Sets, Projects, Library, and Reference.
+     Sets, Projects, Gallery, and Reference.
    - Show a badge whenever non-search filters are active.
    - Show reset actions in overlays and empty states.
 

@@ -1,27 +1,56 @@
 import type {
   CardRecord,
   CardFaceRecord,
+  CardVariantExportMode,
+  CardVariantRecord,
   CollectionExportResult,
   CollectionExportTarget,
   CollectionEntry,
+  CollectionImportContentFormat,
   CollectionImportMode,
   CollectionImportResult,
   CollectionImportSummary,
+  CollectionKind,
+  CollectionListCategory,
+  CollectionMetadata,
+  CollectionOwnershipStatus,
+  CollectionPriceImportRequest,
+  CollectionPriceRefreshRequest,
+  CollectionPriceRefreshResult,
+  CollectionPriceRefreshSummary,
   CollectionPurpose,
   CollectionSourcePreset,
   CollectionState,
   CollectionSummary,
   CreateCollectionRequest,
+  SaveCollectionRequest,
   CreateDeckRequest as ForgeCreateDeckRequest,
   DeckCardOption,
   DeckEntry,
   DeckExportResult,
+  DeckImportResult,
   DeckMetadata,
   DeckState,
   DeckSummary,
+  PrintInkMode,
+  PrintLayout,
+  PrintOutputFormat,
+  PrintPaper,
+  ImportDeckRequest,
   SaveDeckRequest
 } from '@homebrew-forge/forge';
 import type { CardPowerAssessment } from '@homebrew-forge/forge';
+import type {
+  AddOfficialCardToCollectionRequest,
+  AddOfficialCardToDeckRequest,
+  AddOfficialCardToSetRequest,
+  OfficialCardCatalogStatus,
+  OfficialCardCatalogView,
+  OfficialCardSearchCard,
+  OfficialCardSearchFilters,
+  OfficialCardSearchResult
+} from '@homebrew-forge/forge';
+import type { FrameBorderColor, FrameSupportState } from './frameSupportTypes.js';
 
 export interface UniverseSummary {
   id: string;
@@ -29,6 +58,7 @@ export interface UniverseSummary {
   description?: string;
   status?: string;
   tags?: string[];
+  coverImageUrl?: string;
 }
 
 export interface SetSummary {
@@ -48,19 +78,90 @@ export interface LibraryState {
   selectedSetCode: string;
 }
 
-export type { DeckCardOption, DeckEntry, DeckExportResult, DeckMetadata, DeckState, DeckSummary, ForgeCreateDeckRequest as CreateDeckRequest, SaveDeckRequest };
+export interface RuntimeHealth {
+  appLabel: string;
+  repoRoot: string;
+  processId: number;
+  startedAt: string;
+  port: number;
+  startupFingerprint: string;
+  currentFingerprint: string;
+  stale: boolean;
+  staleReasons: string[];
+  forgeDist: {
+    stale: boolean;
+    reason: 'fresh' | 'missing-source' | 'missing-dist' | 'source-newer-than-dist';
+    sourceNewestMtimeMs: number;
+    distNewestMtimeMs: number;
+  };
+}
+
+export type { CardVariantExportMode, DeckCardOption, DeckEntry, DeckExportResult, DeckImportResult, DeckMetadata, DeckState, DeckSummary, ForgeCreateDeckRequest as CreateDeckRequest, ImportDeckRequest, SaveDeckRequest };
+export type { PrintInkMode, PrintLayout, PrintOutputFormat, PrintPaper };
+export type {
+  AddOfficialCardToCollectionRequest,
+  AddOfficialCardToDeckRequest,
+  AddOfficialCardToSetRequest,
+  OfficialCardCatalogStatus,
+  OfficialCardCatalogView,
+  OfficialCardSearchCard,
+  OfficialCardSearchFilters,
+  OfficialCardSearchResult
+};
+
+export interface AddOfficialCardToSetResult {
+  project: EditorProject;
+  summary: {
+    setCode: string;
+    cardId: string;
+    name: string;
+    collectorNumber: string;
+    sourceSetCode?: string;
+    sourceCollectorNumber?: string;
+  };
+}
+
+export interface ImportCollectionToSetRequest {
+  collectionId: string;
+  setCode: string;
+  entryIds?: string[];
+  status?: 'idea' | 'draft' | 'review' | 'playtest' | 'final' | 'cut' | 'archived';
+}
+
+export interface ImportCollectionToSetResult {
+  project: EditorProject;
+  summary: {
+    collectionId: string;
+    setCode: string;
+    requestedRows: number;
+    importedRows: number;
+    skippedRows: number;
+    warnings: string[];
+    importedNames: string[];
+  };
+}
 export type {
   CollectionExportResult,
   CollectionExportTarget,
   CollectionEntry,
+  CollectionImportContentFormat,
   CollectionImportMode,
   CollectionImportResult,
   CollectionImportSummary,
+  CollectionKind,
+  CollectionListCategory,
+  CollectionMetadata,
+  CollectionOwnershipStatus,
+  CollectionPriceImportRequest,
+  CollectionPriceRefreshRequest,
+  CollectionPriceRefreshResult,
+  CollectionPriceRefreshSummary,
   CollectionPurpose,
   CollectionSourcePreset,
   CollectionState,
   CollectionSummary,
-  CreateCollectionRequest
+  CreateCollectionRequest,
+  SaveCollectionRequest
 };
 
 export interface CreateSetRequest {
@@ -110,6 +211,7 @@ export type ExportSourceTarget =
 export interface ExportSourceRequest {
   setCode: string;
   target: ExportSourceTarget;
+  variantMode?: CardVariantExportMode;
 }
 
 export interface ExportSourceResult {
@@ -118,6 +220,44 @@ export interface ExportSourceResult {
   encoding: 'text' | 'base64';
   content: string;
   sync?: CockatriceSyncResult;
+}
+
+export type PrintSourceKind = 'current_card' | 'active_set' | 'deck' | 'collection' | 'project';
+
+export interface PrintExportRequest {
+  sourceKind: PrintSourceKind;
+  draft?: CardDraft;
+  setCode?: string;
+  deckId?: string;
+  collectionId?: string;
+  universeId?: string;
+  variantMode?: CardVariantExportMode;
+  outputFormat: PrintOutputFormat;
+  paper: PrintPaper;
+  layout: PrintLayout;
+  inkMode: PrintInkMode;
+  copies: number;
+  includeCropMarks: boolean;
+  includeCutLines: boolean;
+  scalePercent: number;
+}
+
+export interface PrintExportResult {
+  filename: string;
+  mimeType: string;
+  encoding: 'base64';
+  content: string;
+  warnings: string[];
+  summary: {
+    sourceKind: PrintSourceKind;
+    cardCount: number;
+    pageCount: number;
+    paper: PrintPaper;
+    layout: PrintLayout;
+    inkMode: PrintInkMode;
+    outputFormat: PrintOutputFormat;
+    scalePercent: number;
+  };
 }
 
 export interface EditorProject {
@@ -162,6 +302,7 @@ export interface CreateLibraryAssetRequest {
   permissionStatus?: string;
   notes?: string;
   assignedCardIds?: string[];
+  assignedVariantIds?: string[];
 }
 
 export interface CardSummary {
@@ -184,6 +325,23 @@ export interface CardSummary {
   toughness: string;
   hasArt: boolean;
   needsReview: boolean;
+  primaryVariantId: string;
+  activeVariantId?: string;
+  variantCount: number;
+  variants: CardVariantSummary[];
+}
+
+export interface CardVariantSummary {
+  variantId: string;
+  cardId: string;
+  displayName: string;
+  kind: CardVariantRecord['kind'];
+  status: CardVariantRecord['status'];
+  isPrimary: boolean;
+  exportPolicy: CardVariantRecord['exportPolicy'];
+  tags: string[];
+  notes: string;
+  searchText: string;
 }
 
 export interface CardDraft {
@@ -227,7 +385,7 @@ export interface CardDraft {
   planeswalkerAbility4Text: string;
   colors: string;
   colorIndicator: string;
-  borderColor: 'black' | 'white' | 'silver' | 'gold';
+  borderColor: FrameBorderColor;
   foilTreatment: 'none' | 'foil' | 'etched' | 'showcase';
   artId: string;
   artFilePath: string;
@@ -247,6 +405,17 @@ export interface CardDraft {
   status: CardRecord['status'];
   tags: string[];
   notes: string;
+  variantId: string;
+  variantDisplayName: string;
+  variantKind: CardVariantRecord['kind'];
+  variantStatus: CardVariantRecord['status'];
+  variantIsPrimary: boolean;
+  variantExportPolicy: CardVariantRecord['exportPolicy'];
+  variantTags: string[];
+  variantNotes: string;
+  variantCreatedAt?: string;
+  variantUpdatedAt?: string;
+  variantSummaries: CardVariantSummary[];
   creationStatus?: CardRecord['status'];
   creationNotes?: string;
   sourceCard?: CardRecord;
@@ -262,7 +431,9 @@ export interface FrameOption {
   renderable: boolean;
   description: string;
   supportedTypes: string[];
-  source: 'basic-m15' | 'full-magic-pack' | 'planned';
+  source: 'basic-m15' | 'full-magic-pack' | 'figma' | 'genevensis' | 'private' | 'planned' | 'reference';
+  supportState?: FrameSupportState;
+  supportedBorderColors?: FrameBorderColor[];
 }
 
 export interface PreviewResponse {
@@ -283,6 +454,8 @@ export interface ImportCardsRequest {
 export interface ImportCardsSummary {
   importedCards: number;
   importedFaces: number;
+  importedVariants: number;
+  importedVariantFaces: number;
   artReferences: number;
   missingArt: number;
   legacyRenderReferences: number;

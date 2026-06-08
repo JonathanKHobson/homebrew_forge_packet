@@ -40,7 +40,7 @@ Use a threshold because font rendering may vary by OS.
 - each asset has a source entry,
 - each source has a license/notes field,
 - assets marked non-redistributable are ignored by packaging commands,
-- local-only assets are not included in public bundle commands.
+- local-only assets are not included in public packaging commands.
 
 ## Quality gates
 

@@ -10,7 +10,7 @@ and inspecting existing objects.
 
 This plan is the source of truth for future work on:
 
-- plus-button creation overlays for Cards, Decks, Sets, Projects, and Library,
+- plus-button creation overlays for Cards, Decks, Sets, Projects, and Gallery,
 - File > Import and File > Export transfer hubs,
 - ungrouped holding areas for cards, sets, and projects,
 - Reference alignment after the separate Reference upgrade lands.
@@ -24,7 +24,7 @@ helpers.
 - Cards creates a blank unsaved draft immediately and opens it in the editing
   surface.
 - Decks opens a compact create form inside the left list panel.
-- Sets, Projects, and Library open create prompts inside the right inspector
+- Sets, Projects, and Gallery open create prompts inside the right inspector
   panel.
 - Reference has a plus button placeholder in this branch and is being upgraded
   separately.
@@ -41,7 +41,7 @@ with as much focused real estate as possible. Editing is for preview, layout,
 fine tuning, and iterative review.
 
 Import and export are transfer workflows. They should live under File and
-support cards, decks, sets, projects, library assets, and references over time.
+support cards, decks, sets, projects, gallery assets, and references over time.
 
 ## Shared Overlay Contract
 
@@ -99,9 +99,9 @@ Projects:
   hooks for grouping sets, cards, and decks.
 - After `Create Draft`, creates the project and selects it.
 
-Library:
+Gallery:
 
-- Opens a Library asset creation/import overlay instead of the right-panel
+- Opens a Gallery asset creation/import overlay instead of the right-panel
   prompt.
 - Supports upload, URL, source note, asset type, artist/source metadata, and
   optional card assignment.
@@ -126,7 +126,7 @@ File > Import should open a broad import hub with entity choices:
 - Decks,
 - Sets,
 - Projects,
-- Library,
+- Gallery,
 - References.
 
 The first implementation should wire only existing supported behavior and show
@@ -146,7 +146,7 @@ Future behavior:
 - deck import from `.cod`, XML, text, or Markdown,
 - set import to new or existing set,
 - project import as a grouped collection of sets/cards/decks,
-- library asset import from files, URLs, or CSV metadata,
+- gallery asset import from files, URLs, or CSV metadata,
 - reference import from CSV or other structured reference sources.
 
 ## File Export Hub
@@ -157,7 +157,7 @@ File > Export should mirror the import hub:
 - Decks,
 - Sets,
 - Projects,
-- Library,
+- Gallery,
 - References.
 
 Current supported behavior to preserve:
@@ -176,7 +176,7 @@ Future behavior:
 - export a deck from File even when the Decks workspace is not active,
 - export a project as a grouped package of its sets, decks, cards, library
   assets, and references,
-- export library assets with metadata,
+- export gallery assets with metadata,
 - export reference data.
 
 ## Ungrouped Holding Areas
@@ -220,7 +220,7 @@ only request an overlay through callbacks such as `onCreateCard`,
 
 ## Acceptance Criteria
 
-- Cards, Decks, Sets, Projects, and Library plus buttons all open the same
+- Cards, Decks, Sets, Projects, and Gallery plus buttons all open the same
   overlay pattern.
 - No plus button silently creates an object before the user confirms.
 - Dirty overlays ask before closing.

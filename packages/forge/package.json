@@ -14,9 +14,17 @@
       "types": "./dist/reference/catalog.d.ts",
       "import": "./dist/reference/catalog.js"
     },
+    "./officialCards": {
+      "types": "./dist/officialCards/officialCardStore.d.ts",
+      "import": "./dist/officialCards/officialCardStore.js"
+    },
     "./mana": {
       "types": "./dist/domain/mana.d.ts",
       "import": "./dist/domain/mana.js"
+    },
+    "./frameSupport": {
+      "types": "./dist/domain/frameSupport.d.ts",
+      "import": "./dist/domain/frameSupport.js"
     }
   },
   "bin": {

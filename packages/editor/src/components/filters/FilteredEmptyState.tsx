@@ -1,3 +1,5 @@
+import { Button, EmptyState } from '../forge-ui/index.js';
+
 interface FilteredEmptyStateProps {
   title: string;
   detail: string;
@@ -9,23 +11,26 @@ interface FilteredEmptyStateProps {
 
 export function FilteredEmptyState({ title, detail, showClearSearch, showResetFilters, onClearSearch, onResetFilters }: FilteredEmptyStateProps) {
   return (
-    <div className="empty-list filtered-empty">
-      <strong>{title}</strong>
-      <span>{detail}</span>
-      {showClearSearch || showResetFilters ? (
-        <div className="empty-actions">
+    <EmptyState
+      className="filtered-empty"
+      title={title}
+      detail={detail}
+      actions={
+        showClearSearch || showResetFilters ? (
+          <>
           {showClearSearch ? (
-            <button type="button" className="secondary-button" onClick={onClearSearch}>
+            <Button onClick={onClearSearch}>
               Clear Search
-            </button>
+            </Button>
           ) : null}
           {showResetFilters ? (
-            <button type="button" className="secondary-button" onClick={onResetFilters}>
+            <Button onClick={onResetFilters}>
               Reset Filters
-            </button>
+            </Button>
           ) : null}
-        </div>
-      ) : null}
-    </div>
+          </>
+        ) : null
+      }
+    />
   );
 }

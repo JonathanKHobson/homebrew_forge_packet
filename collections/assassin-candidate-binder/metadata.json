@@ -1,0 +1,39 @@
+{
+  "collectionId": "assassin-candidate-binder",
+  "name": "Assassin's Ledger",
+  "description": "Kyle owned ManaBox batch for the Signs of Assassins Commander deck family.",
+  "linkedUniverseId": "assassin-deck-candidates",
+  "gameId": "mtg",
+  "purpose": "owned",
+  "source": "manabox",
+  "kind": "binder",
+  "listCategory": "general",
+  "tags": [
+    "batch-001",
+    "assassin",
+    "commander",
+    "mardu",
+    "manabox",
+    "signs-of-assassins"
+  ],
+  "defaultEntryTags": [
+    "batch-001",
+    "assassin",
+    "commander",
+    "mardu",
+    "manabox",
+    "signs-of-assassins"
+  ],
+  "defaultOwnershipStatus": "owned",
+  "defaultStarred": false,
+  "defaultFlagged": false,
+  "defaultProxy": false,
+  "defaultHomebrew": false,
+  "accentColor": "#9b2f3f",
+  "linkedSetCodes": [
+    "SOA"
+  ],
+  "acquisitionNotes": "batch-001 import from Kyle's ManaBox Assassin deck CSV.",
+  "createdAt": "2026-06-08T02:54:00.457Z",
+  "updatedAt": "2026-06-08T03:26:24.559Z"
+}

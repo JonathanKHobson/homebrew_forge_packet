@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { loadForgeProject } from '../src/data/loadProject.js';
+import { cardRecordSchema } from '../src/domain/schemas.js';
 import { validateForgeProject } from '../src/validation/validateProject.js';
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
@@ -67,7 +68,7 @@ describe('forge project validation', () => {
     });
 
     assert.equal(result.valid, true);
-    assert.ok(result.warnings.some((warning) => warning.includes('unsupported layout saga')));
+    assert.equal(result.warnings.some((warning) => warning.includes('unsupported layout saga')), false);
     assert.ok(result.warnings.some((warning) => warning.includes('unrecognized mana cost syntax')));
     assert.ok(result.warnings.some((warning) => warning.includes('token layout should use a token frame')));
     assert.ok(result.warnings.some((warning) => warning.includes('references missing art MISSING-ART')));
@@ -83,5 +84,20 @@ describe('forge project validation', () => {
 
     assert.equal(result.valid, true);
     assert.equal(result.warnings.some((warning) => warning.includes('mana cost')), false);
+  });
+
+  it('normalizes common layout aliases at the schema boundary', () => {
+    const parsed = cardRecordSchema.parse({
+      card_id: 'ALIAS-001',
+      set_code: 'QA',
+      collector_number: '001',
+      name: 'Alias Test',
+      layout: 'modal-dfc',
+      mode: 'imported',
+      rarity: 'rare',
+      status: 'draft'
+    });
+
+    assert.equal(parsed.layout, 'modal_dfc');
   });
 });

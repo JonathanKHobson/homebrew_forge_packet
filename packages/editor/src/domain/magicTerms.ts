@@ -82,4 +82,4 @@ export const COMMON_SUBTYPES = referenceOptionsForCategory(REFERENCE_CATALOG, 's
 
 export const RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus', 'token'] as const;
 
-export const BORDER_COLORS = ['black', 'white', 'silver', 'gold'] as const;
+export { BORDER_COLORS } from './borderColorRegistry.js';

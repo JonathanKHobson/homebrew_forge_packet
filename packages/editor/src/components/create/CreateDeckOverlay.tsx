@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchCollection, fetchCollections } from '../../api/client.js';
 import type { CollectionEntry, CollectionState, CollectionSummary, CreateDeckRequest, DeckCardOption, DeckEntry, EditorProject, LibraryState } from '../../domain/editorTypes.js';
 import type { CreateFlowStatus } from '../../domain/createFlowTypes.js';
+import { COMMANDER_BRACKET_OPTIONS, DECK_FORMAT_OPTIONS, DECK_PLAY_STYLE_SUGGESTIONS } from '../../domain/deckTaxonomy.js';
+import { COLOR_IDENTITY_OPTIONS } from '../../domain/magicTerms.js';
 import { CollapsibleSection } from '../CollapsibleSection.js';
 import { Field } from '../Field.js';
 import { Icon } from '../Icon.js';
 import { OverlayShell } from '../overlays/OverlayShell.js';
+import { TagEditor } from '../TagEditor.js';
 import { CreateFlowStatusMessage } from './CreateFlowStatusMessage.js';
-import { splitTagInput } from '../../domain/filterTypes.js';
 
 export type CreateDeckOverlayEntry = Omit<DeckEntry, 'deckId'>;
 
@@ -23,8 +25,11 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [format, setFormat] = useState('');
+  const [playStyleTags, setPlayStyleTags] = useState<string[]>([]);
+  const [colorIdentity, setColorIdentity] = useState('');
+  const [commanderBracket, setCommanderBracket] = useState('');
   const [status, setStatus] = useState<CreateDeckRequest['status']>('draft');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [linkedUniverseId, setLinkedUniverseId] = useState(library?.selectedUniverseId ?? '');
   const [linkedSetCode, setLinkedSetCode] = useState(library?.selectedSetCode ?? project?.setCode ?? '');
   const [notes, setNotes] = useState('');
@@ -36,7 +41,7 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
   const [entries, setEntries] = useState<CreateDeckOverlayEntry[]>([]);
   const [flowState, setFlowState] = useState<CreateFlowStatus>('idle');
   const [error, setError] = useState('');
-  const dirty = Boolean(name || description || format || notes || tags || entries.length || status !== 'draft');
+  const dirty = Boolean(name || description || format || playStyleTags.length || colorIdentity || commanderBracket || notes || tags.length || entries.length || status !== 'draft');
 
   useEffect(() => {
     let mounted = true;
@@ -78,7 +83,14 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
         power: draft.power,
         toughness: draft.toughness,
         status: draft.status,
-        tags: draft.tags
+        tags: draft.tags,
+        variants: draft.variantSummaries.map((variant) => ({
+          variantId: variant.variantId,
+          displayName: variant.displayName,
+          kind: variant.kind,
+          status: variant.status,
+          isPrimary: variant.isPrimary
+        }))
       })),
     [project?.drafts]
   );
@@ -102,8 +114,9 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
   }
 
   function addCard(card: DeckCardOption, section: DeckEntry['section']) {
+    const primaryVariantId = card.variants.find((variant) => variant.isPrimary)?.variantId;
     setEntries((current) => {
-      const index = current.findIndex((entry) => entry.section === section && entry.setCode === card.setCode && entry.cardId === card.cardId);
+      const index = current.findIndex((entry) => entry.section === section && entry.setCode === card.setCode && entry.cardId === card.cardId && entry.variantId === primaryVariantId);
       if (index >= 0) {
         return current.map((entry, entryIndex) => (entryIndex === index ? { ...entry, count: entry.count + 1 } : entry));
       }
@@ -114,6 +127,7 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
           count: 1,
           setCode: card.setCode,
           cardId: card.cardId,
+          variantId: primaryVariantId,
           nameSnapshot: card.name
         }
       ];
@@ -185,8 +199,11 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
           linkedUniverseId: linkedUniverseId || undefined,
           linkedSetCode: linkedSetCode || undefined,
           format,
+          playStyleTags,
+          colorIdentity: colorIdentity || undefined,
+          commanderBracket: commanderBracket || undefined,
           status,
-          tags: splitTagInput(tags),
+          tags,
           notes
         },
         entries
@@ -207,10 +224,10 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
         Cancel
       </button>
       <button type="button" className="secondary-button" disabled>
-        Import Deck
+        Import deck
       </button>
       <button type="button" className="primary-button" disabled={flowState === 'saving' || !name.trim()} onClick={() => void submit()}>
-        {flowState === 'saving' ? 'Creating...' : 'Create Draft'}
+        {flowState === 'saving' ? 'Creating...' : 'Create deck'}
       </button>
     </>
   );
@@ -225,14 +242,46 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
               <input value={name} placeholder="New playtest deck" onChange={(event) => { setName(event.target.value); markDirty(); }} />
             </Field>
             <Field label="Format">
-              <input value={format} placeholder="Kitchen table, Commander, playtest..." onChange={(event) => { setFormat(event.target.value); markDirty(); }} />
+              <input list="create-deck-format-options" value={format} placeholder="Commander, Modern, Kitchen Table..." onChange={(event) => { setFormat(event.target.value); markDirty(); }} />
+              <datalist id="create-deck-format-options">
+                {DECK_FORMAT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </datalist>
             </Field>
           </div>
           <Field label="Description">
             <textarea value={description} rows={3} onChange={(event) => { setDescription(event.target.value); markDirty(); }} />
           </Field>
+          <Field label="Play style">
+            <TagEditor value={playStyleTags} suggestions={[...DECK_PLAY_STYLE_SUGGESTIONS, ...availableCards.flatMap((card) => card.tags)]} placeholder="Aggro, Control, Tokens..." ariaLabel="Deck play style tags" onChange={(nextTags) => { setPlayStyleTags(nextTags); markDirty(); }} />
+          </Field>
+          <div className="grid-2">
+            <Field label="Color identity">
+              <select value={colorIdentity} onChange={(event) => { setColorIdentity(event.target.value); markDirty(); }}>
+                <option value="">Unset</option>
+                {COLOR_IDENTITY_OPTIONS.map((identity) => (
+                  <option key={identity} value={identity}>
+                    {identity === 'C' ? 'C - Colorless' : identity === 'WUBRG' ? 'WUBRG - Five color' : identity}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Commander bracket">
+              <select value={commanderBracket} onChange={(event) => { setCommanderBracket(event.target.value); markDirty(); }}>
+                <option value="">None</option>
+                {COMMANDER_BRACKET_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
           <Field label="Tags">
-            <input value={tags} placeholder="playtest, aggro, commander" onChange={(event) => { setTags(event.target.value); markDirty(); }} />
+            <TagEditor value={tags} suggestions={availableCards.flatMap((card) => card.tags)} placeholder="project notes, testing labels..." ariaLabel="Deck tags" onChange={(nextTags) => { setTags(nextTags); markDirty(); }} />
           </Field>
           <div className="grid-3">
             <Field label="Status">
@@ -316,7 +365,7 @@ export function CreateDeckOverlay({ library, project, onCreateDeck, onStatus, on
                 <input type="number" min="1" value={entry.count} onChange={(event) => updateEntry(index, { count: Number(event.target.value) })} />
                 <span>
                   <strong>{entry.nameSnapshot}</strong>
-                  <small>{entry.setCode}</small>
+                  <small>{entry.setCode}{entry.variantId ? ` / ${entry.variantId}` : ''}</small>
                 </span>
                 <select value={entry.section} onChange={(event) => updateEntry(index, { section: event.target.value as DeckEntry['section'] })}>
                   <option value="main">Main</option>

@@ -1,0 +1,3 @@
+name,category,definition,reminder_text,typical_colors,aliases,tags,rule_number,source_set,components,design_notes,origin,status,system
+Metallivory,homebrew,Damage dealt to artifacts by this source is doubled.,,R,artifact bite;metal hunger,homebrew;combat,,DEMO,artifact-matter,Prototype mechanic for artifact-heavy sets,homebrew,homebrew,homebrew
+Scryfall Mark,counter,A marker used by imported reference examples.,,U,,counter;import-demo,,DEMO,,Example local counter reference,homebrew,homebrew,homebrew

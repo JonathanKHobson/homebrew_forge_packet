@@ -7,14 +7,19 @@ import {
   artManifestRecordSchema,
   cardFaceRecordSchema,
   cardRecordSchema,
+  cardVariantFaceRecordSchema,
+  cardVariantRecordSchema,
   exportProfileSchema,
   type ArtManifestRecord,
   type CardFaceRecord,
   type CardRecord,
+  type CardVariantFaceRecord,
+  type CardVariantRecord,
   type ExportProfile,
   type ForgeProject,
   setRecordSchema
 } from '../domain/schemas.js';
+import { normalizeProjectVariants } from '../variants/cardVariants.js';
 
 export interface LoadForgeProjectOptions {
   rootDir: string;
@@ -39,7 +44,12 @@ export async function loadForgeProject(options: LoadForgeProjectOptions): Promis
   }
 
   const cards = parseRows(rawCards, cardRecordSchema, 'cards.csv');
-  const faces = parseRows(rawFaces, cardFaceRecordSchema, 'card_faces.csv');
+  const legacyFaces = parseRows(rawFaces, cardFaceRecordSchema, 'card_faces.csv');
+  const rawVariants = await readOptionalCsvFile(join(setDir, 'card_variants.csv'));
+  const rawVariantFaces = await readOptionalCsvFile(join(setDir, 'card_variant_faces.csv'));
+  const variants = parseRows(rawVariants, cardVariantRecordSchema, 'card_variants.csv');
+  const variantFaces = parseRows(rawVariantFaces, cardVariantFaceRecordSchema, 'card_variant_faces.csv');
+  const normalizedVariants = normalizeProjectVariants({ cards, faces: legacyFaces, variants, variantFaces });
   const artRows = parseRows(await readCsvFile(join(setDir, 'art_manifest.csv')), artManifestRecordSchema, 'art_manifest.csv');
   const exportProfiles = parseRows(
     await readCsvFile(join(setDir, 'export_profiles.csv')),
@@ -61,7 +71,9 @@ export async function loadForgeProject(options: LoadForgeProjectOptions): Promis
     setCode: options.setCode,
     set,
     cards,
-    faces,
+    faces: normalizedVariants.primaryFaces,
+    variants: normalizedVariants.variants,
+    variantFaces: normalizedVariants.variantFaces,
     art,
     exportProfiles
   };
@@ -69,6 +81,14 @@ export async function loadForgeProject(options: LoadForgeProjectOptions): Promis
 
 async function readCsvFile(path: string): Promise<CsvRow[]> {
   return parseCsvRecords(await readFile(path, 'utf8'));
+}
+
+async function readOptionalCsvFile(path: string): Promise<CsvRow[]> {
+  try {
+    return await readCsvFile(path);
+  } catch {
+    return [];
+  }
 }
 
 function parseRows<T>(rows: CsvRow[], schema: ZodType<T>, label: string): T[] {

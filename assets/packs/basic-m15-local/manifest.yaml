@@ -195,6 +195,11 @@ roles:
     color_variant: C
     required: false
     path: data/magic-m15-mainframe-tokens.mse-style/m20/ccard.png
+  - id: basic-m15-border-mask
+    role: mask.border
+    color_variant: all
+    required: false
+    path: data/magic-m15.mse-style/border_mask.png
   - id: basic-m15-frame-planeswalker-w
     role: frame.full_card
     layout: normal_planeswalker

@@ -17,6 +17,31 @@
       "tags": [
         "demo"
       ]
+    },
+    {
+      "id": "squirrel-far-away",
+      "name": "Squirrel Far Away",
+      "description": "Squirrel-focused playtest project for partner deck experiments and homebrew variants.",
+      "status": "playtest",
+      "tags": [
+        "squirrel",
+        "commander",
+        "partner-deck"
+      ]
+    },
+    {
+      "id": "assassin-deck-candidates",
+      "name": "Signs of Assassins",
+      "description": "Deck-building project for Kyle's Altaïr Assassin Commander deck, owned ledger, recommendations, flags, and variants.",
+      "status": "draft",
+      "tags": [
+        "assassin",
+        "commander",
+        "mardu",
+        "deck-building"
+      ],
+      "updatedAt": "2026-06-08T03:26:22.014Z",
+      "coverImageUrl": "https://cards.scryfall.io/art_crop/front/3/5/358026de-ab7c-4a17-8cac-cfbee391b127.jpg?1721423908"
     }
   ],
   "sets": [
@@ -29,6 +54,16 @@
       "setCode": "DEMO",
       "universeId": "demo",
       "sortOrder": 1
+    },
+    {
+      "setCode": "SQM",
+      "universeId": "squirrel-far-away",
+      "sortOrder": 1
+    },
+    {
+      "setCode": "SOA",
+      "universeId": "assassin-deck-candidates",
+      "sortOrder": 61
     }
   ]
 }

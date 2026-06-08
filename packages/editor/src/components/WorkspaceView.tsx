@@ -1,23 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
-  exportCollection,
-  exportDeck,
+  addOfficialCardToCollection,
   exportSource,
   fetchCollection,
   fetchCollections,
   fetchDeck,
   fetchDecks,
+  fetchOfficialCardStatus,
   fetchPreview,
   fetchProject,
+  searchOfficialCardCatalog,
+  saveCollection,
   saveDeck,
+  syncOfficialCardCatalog,
   updateSet,
   updateUniverse
 } from '../api/client.js';
 import type {
   CardDraft,
   CollectionEntry,
-  CollectionExportTarget,
+  CollectionKind,
+  CollectionListCategory,
+  CollectionOwnershipStatus,
   CollectionPurpose,
   CollectionState,
   CollectionSummary,
@@ -28,10 +33,19 @@ import type {
   DeckSummary,
   EditorProject,
   LibraryState,
+  OfficialCardCatalogStatus,
+  OfficialCardCatalogView,
+  OfficialCardSearchCard,
+  OfficialCardSearchResult,
   SetSummary,
   UniverseSummary
 } from '../domain/editorTypes.js';
 import type { WorkspaceSection } from '../domain/editorUiTypes.js';
+import { collectionKindForSurface, isOwnedStatus, listCategoryLabel, ownershipStatusLabel, surfaceLabel, surfaceSingularLabel, type CollectionSurfaceKind } from '../domain/collectionLists.js';
+import { applyCollectionBulkEdit, collectionOwnerSuggestions, normalizeCollectionOwnerName, normalizeCollectionTags, summarizeCollectionOwnership, type CollectionBulkEditPatch, type CollectionViewMode } from '../domain/collectionOwnership.js';
+import { getWorkMode, type WorkModeId } from '../domain/workModes.js';
+import { formatCount } from '../domain/uiText.js';
+import { assessDeckLegality } from '../domain/deckLegality.js';
 import {
   DECK_STATUS_OPTIONS,
   PROJECT_STATUS_OPTIONS,
@@ -39,11 +53,21 @@ import {
   countActiveFilters,
   includesAnyFilterText,
   includesFilterText,
-  joinTags,
   matchesNumberQuery,
-  matchesTagFilter,
-  splitTagInput
+  matchesTagFilter
 } from '../domain/filterTypes.js';
+import { COMMANDER_BRACKET_OPTIONS, DECK_FORMAT_OPTIONS, DECK_PLAY_STYLE_SUGGESTIONS } from '../domain/deckTaxonomy.js';
+import { COLOR_IDENTITY_OPTIONS } from '../domain/magicTerms.js';
+import {
+  CONDITION_OPTIONS,
+  FINISH_OPTIONS,
+  LANGUAGE_OPTIONS,
+  collectionValueEstimateFromEntry,
+  imageUrlForMetadata,
+  metadataFromCollectionEntry,
+  metadataFromDeckCard,
+  printLabelForMetadata
+} from '../domain/officialCardMetadata.js';
 import {
   activeReferenceRuleFilterCount,
   activeReferenceTermFilterCount,
@@ -63,15 +87,30 @@ import { Field } from './Field.js';
 import { BrowseFilterOverlay } from './filters/BrowseFilterOverlay.js';
 import { FilterButton } from './filters/FilterButton.js';
 import { FilteredEmptyState } from './filters/FilteredEmptyState.js';
+import { StatusPill, type StatusPillTone } from './forge-ui/index.js';
 import { Icon, type IconName } from './Icon.js';
+import { ImageLightbox } from './ImageLightbox.js';
+import { ColorIdentitySymbols, ManaCostSymbols } from './ManaSymbols.js';
 import { PanelResizeHandle } from './PanelResizeHandle.js';
+import { CollectionEntryViews } from './collections/CollectionEntryViews.js';
+import { DeckCoverBadge } from './decks/DeckCoverBadge.js';
+import { DeckEntryViews, type DeckViewMode } from './decks/DeckEntryViews.js';
+import { SetCardViews, type SetViewMode } from './sets/SetCardViews.js';
+import { CollectionBulkEditOverlay } from './overlays/CollectionBulkEditOverlay.js';
+import { CollectionCardPreviewOverlay } from './overlays/CollectionCardPreviewOverlay.js';
+import { CollectionMetadataOverlay } from './overlays/CollectionMetadataOverlay.js';
+import { CollectionPriceToolsOverlay } from './overlays/CollectionPriceToolsOverlay.js';
+import { DeckAddCardsOverlay } from './overlays/DeckAddCardsOverlay.js';
+import { DeckCardPreviewOverlay } from './overlays/DeckCardPreviewOverlay.js';
 import { ReferenceCreateOverlay } from './overlays/ReferenceCreateOverlay.js';
 import { ReferenceFilterControls } from './reference/ReferenceFilterControls.js';
 import { RulesGuide } from './reference/RulesGuide.js';
+import { TagEditor } from './TagEditor.js';
 import type { ReferenceCatalog, ReferenceCategory, ReferenceRuleEntry, ReferenceRuleKind, ReferenceTerm } from '@homebrew-forge/forge';
 
 interface WorkspaceViewProps {
-  section: Exclude<WorkspaceSection, 'cards'>;
+  section: Exclude<WorkspaceSection, 'maker' | 'cards'>;
+  workMode: WorkModeId;
   library: LibraryState | null;
   project: EditorProject | null;
   activeCardId: string;
@@ -86,7 +125,7 @@ interface WorkspaceViewProps {
   onShowLeftPanelChange: (value: boolean) => void;
   onShowRightPanelChange: (value: boolean) => void;
   onCreateDeck: () => void;
-  onCreateCollection: () => void;
+  onCreateCollection: (kind?: CollectionKind, listCategory?: CollectionListCategory) => void;
   onCreateSetOverlay: () => void;
   onCreateProject: () => void;
   onCreateLibraryAsset: () => void;
@@ -95,13 +134,18 @@ interface WorkspaceViewProps {
   onReferenceCatalogUpdated: (catalog: ReferenceCatalog) => void;
   onUniverseSelect: (universeId: string) => void;
   onLoadSet: (setCode: string) => Promise<void> | void;
-  onOpenCard: (setCode: string, cardId: string) => Promise<void> | void;
+  onOpenCard: (setCode: string, cardId: string, variantId?: string) => Promise<void> | void;
   onOpenSet: (setCode: string) => Promise<void> | void;
+  onOpenCardBrowser: () => void;
+  onOpenDashboard: () => void;
   onStatus: (message: string) => void;
+  saveShortcutToken: number;
   deckRefreshToken: number;
   activeDeckId: string;
   collectionRefreshToken: number;
   activeCollectionId: string;
+  showCardsRailItem: boolean;
+  onShowCardsRailItemChange: (value: boolean) => void;
   showCollectionsRailItem: boolean;
   onShowCollectionsRailItemChange: (value: boolean) => void;
 }
@@ -124,8 +168,71 @@ interface LibraryItem {
   cropH: string;
 }
 
+const DEFAULT_DECK_FILTERS = {
+  status: 'all',
+  tag: '',
+  playStyle: '',
+  format: '',
+  colorIdentity: 'all',
+  commanderBracket: 'all',
+  commander: '',
+  linkedUniverseId: 'all',
+  linkedSetCode: 'all',
+  unresolved: 'all',
+  mainCount: '',
+  sideCount: '',
+  maybeCount: ''
+};
+
+const DECK_ROLE_SUGGESTIONS = [
+  'Ramp',
+  'Mana source',
+  'Fixing',
+  'Draw',
+  'Removal',
+  'Board wipe',
+  'Stack interaction',
+  'Protection',
+  'Recursion',
+  'Tutor',
+  'Finisher',
+  'Enabler',
+  'Payoff',
+  'Synergy',
+  'Utility',
+  'Threat',
+  'Land',
+  'Commander',
+  'Sideboard tech'
+];
+
+const COLLECTION_VIEW_MODE_OPTIONS: Array<{ mode: CollectionViewMode; label: string; icon: IconName }> = [
+  { mode: 'table', label: 'Table', icon: 'collections' },
+  { mode: 'grid', label: 'Grid', icon: 'grid' },
+  { mode: 'list', label: 'List', icon: 'list' },
+  { mode: 'single', label: 'Single card', icon: 'single' }
+];
+
+const DECK_VIEW_MODE_OPTIONS: Array<{ mode: DeckViewMode; label: string; icon: IconName }> = [
+  { mode: 'board', label: 'Board', icon: 'decks' },
+  { mode: 'grid', label: 'Grid', icon: 'grid' },
+  { mode: 'list', label: 'List', icon: 'list' },
+  { mode: 'single', label: 'Single card', icon: 'single' },
+  { mode: 'candidates', label: 'Candidates', icon: 'filter' },
+  { mode: 'roles', label: 'Roles', icon: 'flag' },
+  { mode: 'mana', label: 'Mana', icon: 'settings' }
+];
+
+function defaultDeckFiltersForProject(projectId: string) {
+  return {
+    ...DEFAULT_DECK_FILTERS,
+    linkedUniverseId: projectId || 'all'
+  };
+}
+
 export function WorkspaceView({
   section,
+  workMode,
   library,
   project,
   activeCardId,
@@ -151,11 +258,16 @@ export function WorkspaceView({
   onLoadSet,
   onOpenCard,
   onOpenSet,
+  onOpenCardBrowser,
+  onOpenDashboard,
   onStatus,
+  saveShortcutToken,
   deckRefreshToken,
   activeDeckId,
   collectionRefreshToken,
   activeCollectionId,
+  showCardsRailItem,
+  onShowCardsRailItemChange,
   showCollectionsRailItem,
   onShowCollectionsRailItemChange
 }: WorkspaceViewProps) {
@@ -164,7 +276,10 @@ export function WorkspaceView({
       {section === 'projects' ? (
         <ProjectsWorkspace
           library={library}
+          project={project}
           selectedUniverseId={selectedUniverseId}
+          deckRefreshToken={deckRefreshToken}
+          collectionRefreshToken={collectionRefreshToken}
           showLeftPanel={showLeftPanel}
           showRightPanel={showRightPanel}
           leftPanelWidth={leftPanelWidth}
@@ -180,26 +295,10 @@ export function WorkspaceView({
           onOpenCard={onOpenCard}
           onOpenSet={onOpenSet}
           onStatus={onStatus}
+          saveShortcutToken={saveShortcutToken}
         />
       ) : section === 'decks' ? (
         <DecksWorkspace
-          library={library}
-          showLeftPanel={showLeftPanel}
-          showRightPanel={showRightPanel}
-          leftPanelWidth={leftPanelWidth}
-          rightPanelWidth={rightPanelWidth}
-          onResizeLeftPanel={onResizeLeftPanel}
-          onResizeRightPanel={onResizeRightPanel}
-          onShowLeftPanelChange={onShowLeftPanelChange}
-          onShowRightPanelChange={onShowRightPanelChange}
-          onCreateDeck={onCreateDeck}
-          onOpenCard={onOpenCard}
-          onStatus={onStatus}
-          deckRefreshToken={deckRefreshToken}
-          activeDeckId={activeDeckId}
-        />
-      ) : section === 'collections' ? (
-        <CollectionsWorkspace
           library={library}
           selectedUniverseId={selectedUniverseId}
           showLeftPanel={showLeftPanel}
@@ -210,10 +309,35 @@ export function WorkspaceView({
           onResizeRightPanel={onResizeRightPanel}
           onShowLeftPanelChange={onShowLeftPanelChange}
           onShowRightPanelChange={onShowRightPanelChange}
-          onCreateCollection={onCreateCollection}
+          onCreateDeck={onCreateDeck}
+          onOpenCard={onOpenCard}
+          onOpenCardBrowser={onOpenCardBrowser}
+          onOpenDashboard={onOpenDashboard}
           onStatus={onStatus}
+          saveShortcutToken={saveShortcutToken}
+          deckRefreshToken={deckRefreshToken}
+          activeDeckId={activeDeckId}
+          workMode={workMode}
+        />
+      ) : section === 'collections' || section === 'binders' || section === 'lists' ? (
+        <CollectionsWorkspace
+          surface={section === 'binders' ? 'binders' : section === 'lists' ? 'lists' : 'collections'}
+          library={library}
+          showLeftPanel={showLeftPanel}
+          showRightPanel={showRightPanel}
+          leftPanelWidth={leftPanelWidth}
+          rightPanelWidth={rightPanelWidth}
+          onResizeLeftPanel={onResizeLeftPanel}
+          onResizeRightPanel={onResizeRightPanel}
+          onShowLeftPanelChange={onShowLeftPanelChange}
+          onShowRightPanelChange={onShowRightPanelChange}
+          onCreateCollection={onCreateCollection}
+          onOpenCard={onOpenCard}
+          onStatus={onStatus}
+          saveShortcutToken={saveShortcutToken}
           collectionRefreshToken={collectionRefreshToken}
           activeCollectionId={activeCollectionId}
+          workMode={workMode}
         />
       ) : section === 'sets' ? (
         <SetsWorkspace
@@ -234,6 +358,7 @@ export function WorkspaceView({
           onLoadSet={onLoadSet}
           onOpenCard={onOpenCard}
           onStatus={onStatus}
+          saveShortcutToken={saveShortcutToken}
         />
       ) : section === 'library' ? (
         <LibraryWorkspace
@@ -253,6 +378,7 @@ export function WorkspaceView({
           library={library}
           project={project}
           activeCardId={activeCardId}
+          selectedUniverseId={selectedUniverseId}
           referenceCatalog={referenceCatalog}
           showLeftPanel={showLeftPanel}
           showRightPanel={showRightPanel}
@@ -266,7 +392,13 @@ export function WorkspaceView({
           onStatus={onStatus}
         />
       ) : (
-        <SettingsWorkspace project={project} showCollectionsRailItem={showCollectionsRailItem} onShowCollectionsRailItemChange={onShowCollectionsRailItemChange} />
+        <SettingsWorkspace
+          project={project}
+          showCardsRailItem={showCardsRailItem}
+          onShowCardsRailItemChange={onShowCardsRailItemChange}
+          showCollectionsRailItem={showCollectionsRailItem}
+          onShowCollectionsRailItemChange={onShowCollectionsRailItemChange}
+        />
       )}
     </section>
   );
@@ -286,9 +418,13 @@ const referenceCategories: Array<{ id: ReferenceCategory | 'all'; label: string 
   { id: 'homebrew', label: 'Homebrew' }
 ];
 
-const referenceModes: Array<{ id: 'terms' | 'rules'; label: string }> = [
+type ReferenceMode = 'terms' | 'rules' | 'official-cards';
+const REFERENCE_OFFICIAL_PAGE_SIZE = 120;
+
+const referenceModes: Array<{ id: ReferenceMode; label: string }> = [
   { id: 'terms', label: 'Terms' },
-  { id: 'rules', label: 'Rules' }
+  { id: 'rules', label: 'Rules' },
+  { id: 'official-cards', label: 'Official Cards' }
 ];
 
 const ruleKinds: Array<{ id: ReferenceRuleKind | 'all'; label: string }> = [
@@ -302,8 +438,8 @@ const ruleKinds: Array<{ id: ReferenceRuleKind | 'all'; label: string }> = [
 ];
 
 function CollectionsWorkspace({
+  surface,
   library,
-  selectedUniverseId,
   showLeftPanel,
   showRightPanel,
   leftPanelWidth,
@@ -313,13 +449,15 @@ function CollectionsWorkspace({
   onShowLeftPanelChange,
   onShowRightPanelChange,
   onCreateCollection,
+  onOpenCard,
   onStatus,
+  saveShortcutToken,
   collectionRefreshToken,
-  activeCollectionId
+  activeCollectionId,
+  workMode
 }: Pick<
   WorkspaceViewProps,
   | 'library'
-  | 'selectedUniverseId'
   | 'showLeftPanel'
   | 'showRightPanel'
   | 'leftPanelWidth'
@@ -329,56 +467,119 @@ function CollectionsWorkspace({
   | 'onShowLeftPanelChange'
   | 'onShowRightPanelChange'
   | 'onCreateCollection'
+  | 'onOpenCard'
   | 'onStatus'
+  | 'saveShortcutToken'
   | 'collectionRefreshToken'
   | 'activeCollectionId'
->) {
+  | 'workMode'
+> & {
+  surface: CollectionSurfaceKind;
+}) {
   const [collections, setCollections] = useState<CollectionSummary[]>([]);
   const [collection, setCollection] = useState<CollectionState | null>(null);
   const [query, setQuery] = useState('');
   const [entryQuery, setEntryQuery] = useState('');
   const [reviewFilter, setReviewFilter] = useState<'all' | 'needs_review' | 'matched'>('all');
   const [purposeFilter, setPurposeFilter] = useState<CollectionPurpose | 'all'>('all');
-  const [projectFilter, setProjectFilter] = useState(selectedUniverseId || 'all');
+  const [projectFilter, setProjectFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [kindFilter, setKindFilter] = useState<CollectionKind | 'all'>(() => collectionKindForSurface(surface));
+  const [listCategoryFilter, setListCategoryFilter] = useState<CollectionListCategory | 'all'>('all');
   const [matchStrategyFilter, setMatchStrategyFilter] = useState('all');
+  const [ownershipStatusFilter, setOwnershipStatusFilter] = useState<CollectionOwnershipStatus | 'all'>('all');
+  const [ownerFilter, setOwnerFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
+  const [markerFilter, setMarkerFilter] = useState('all');
+  const [purchaseValueFilter, setPurchaseValueFilter] = useState('all');
+  const [marketValueFilter, setMarketValueFilter] = useState('all');
   const [finishFilter, setFinishFilter] = useState('');
   const [conditionFilter, setConditionFilter] = useState('');
   const [languageFilter, setLanguageFilter] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState('');
-  const [busyTarget, setBusyTarget] = useState<CollectionExportTarget | ''>('');
+  const [selectedEntryIds, setSelectedEntryIds] = useState<Set<string>>(() => new Set());
+  const [collectionViewMode, setCollectionViewMode] = useState<CollectionViewMode>('table');
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [previewEntryId, setPreviewEntryId] = useState('');
+  const [expandedImageEntryId, setExpandedImageEntryId] = useState('');
+  const [metadataOverlayOpen, setMetadataOverlayOpen] = useState(false);
+  const [priceToolsOpen, setPriceToolsOpen] = useState(false);
+  const [savingCollection, setSavingCollection] = useState(false);
+  const [collectionDirty, setCollectionDirty] = useState(false);
   const activeCollectionFilterCount = countActiveFilters([
     { value: projectFilter, defaultValue: 'all' },
     { value: purposeFilter, defaultValue: 'all' },
+    { value: kindFilter, defaultValue: collectionKindForSurface(surface) },
+    { value: listCategoryFilter, defaultValue: 'all' },
     { value: sourceFilter, defaultValue: 'all' },
     { value: reviewFilter, defaultValue: 'all' },
     { value: matchStrategyFilter, defaultValue: 'all' },
+    { value: ownershipStatusFilter, defaultValue: 'all' },
+    { value: ownerFilter, defaultValue: '' },
+    { value: tagFilter, defaultValue: '' },
+    { value: markerFilter, defaultValue: 'all' },
+    { value: purchaseValueFilter, defaultValue: 'all' },
+    { value: marketValueFilter, defaultValue: 'all' },
     { value: finishFilter, defaultValue: '' },
     { value: conditionFilter, defaultValue: '' },
     { value: languageFilter, defaultValue: '' }
   ]);
+  const ownerSuggestions = useMemo(
+    () => collectionOwnerSuggestions(collections.flatMap((candidate) => candidate.ownerNames ?? []), collection?.entries.map((entry) => entry.ownerName)),
+    [collection?.entries, collections]
+  );
 
   useEffect(() => {
     void loadCollections(activeCollectionId || undefined);
-  }, [collectionRefreshToken]);
+  }, [collectionRefreshToken, surface]);
 
   useEffect(() => {
-    setProjectFilter((current) => (current === 'all' ? current : selectedUniverseId || 'all'));
-  }, [selectedUniverseId]);
+    setKindFilter(collectionKindForSurface(surface));
+  }, [surface]);
+
+  useEffect(() => {
+    if (!saveShortcutToken) {
+      return;
+    }
+    if (!collection) {
+      onStatus('No collection is selected to save.');
+      return;
+    }
+    if (savingCollection) {
+      onStatus('Collection save is already in progress.');
+      return;
+    }
+    if (!collectionDirty) {
+      onStatus('No collection changes to save.');
+      return;
+    }
+    void handleSaveCollection();
+  }, [saveShortcutToken]);
 
   async function loadCollections(nextCollectionId?: string) {
     try {
       const loaded = await fetchCollections();
       setCollections(loaded);
-      const targetId = nextCollectionId ?? collection?.metadata.collectionId ?? loaded[0]?.collectionId;
+      const visibleLoaded = loaded.filter((candidate) => matchesCollectionSurface(candidate, surface));
+      const requested = nextCollectionId ? loaded.find((candidate) => candidate.collectionId === nextCollectionId && matchesCollectionSurface(candidate, surface)) : undefined;
+      const current = collection ? loaded.find((candidate) => candidate.collectionId === collection.metadata.collectionId && matchesCollectionSurface(candidate, surface)) : undefined;
+      const targetId = requested?.collectionId ?? current?.collectionId ?? visibleLoaded[0]?.collectionId;
       if (targetId) {
         const nextCollection = await fetchCollection(targetId);
         setCollection(nextCollection);
         setSelectedEntryId(nextCollection.entries[0]?.entryId ?? '');
+        setSelectedEntryIds(new Set());
+        setPreviewEntryId('');
+        setExpandedImageEntryId('');
+        setCollectionDirty(false);
       } else {
         setCollection(null);
         setSelectedEntryId('');
+        setSelectedEntryIds(new Set());
+        setPreviewEntryId('');
+        setExpandedImageEntryId('');
+        setCollectionDirty(false);
       }
     } catch (error) {
       onStatus(error instanceof Error ? error.message : String(error));
@@ -390,67 +591,271 @@ function CollectionsWorkspace({
       const nextCollection = await fetchCollection(collectionId);
       setCollection(nextCollection);
       setSelectedEntryId(nextCollection.entries[0]?.entryId ?? '');
+      setSelectedEntryIds(new Set());
+      setPreviewEntryId('');
+      setExpandedImageEntryId('');
+      setCollectionDirty(false);
     } catch (error) {
       onStatus(error instanceof Error ? error.message : String(error));
     }
   }
 
-  async function handleExportCollection(target: CollectionExportTarget) {
+  async function handleSaveCollection() {
     if (!collection) {
       return;
     }
-    setBusyTarget(target);
+    setSavingCollection(true);
     try {
-      const result = await exportCollection(collection.metadata.collectionId, target);
-      downloadContent(result.filename, result.mimeType, 'text', result.content);
-      onStatus(`Exported ${result.filename}.`);
+      const result = await saveCollection(collection);
+      setCollections(result.collections);
+      setCollection(result.collection);
+      setSelectedEntryId((current) => result.collection.entries.find((entry) => entry.entryId === current)?.entryId ?? result.collection.entries[0]?.entryId ?? '');
+      setCollectionDirty(false);
+      onStatus(`Saved collection ${result.collection.metadata.name}.`);
     } catch (error) {
       onStatus(error instanceof Error ? error.message : String(error));
     } finally {
-      setBusyTarget('');
+      setSavingCollection(false);
     }
+  }
+
+  function updateCollection(next: CollectionState) {
+    setCollection(next);
+    setCollectionDirty(true);
+  }
+
+  function updateCollectionMetadata(next: CollectionState['metadata']) {
+    if (!collection) {
+      return;
+    }
+    updateCollection({ ...collection, metadata: next });
+  }
+
+  function replaceCollectionFromServer(nextCollections: CollectionSummary[], nextCollection: CollectionState) {
+    setCollections(nextCollections);
+    setCollection(nextCollection);
+    setSelectedEntryId((current) => nextCollection.entries.find((entry) => entry.entryId === current)?.entryId ?? nextCollection.entries[0]?.entryId ?? '');
+    setSelectedEntryIds((current) => new Set([...current].filter((entryId) => nextCollection.entries.some((entry) => entry.entryId === entryId))));
+    setCollectionDirty(false);
+  }
+
+  function updateCollectionEntry(entryId: string, patch: Partial<CollectionEntry>) {
+    if (!collection) {
+      return;
+    }
+    updateCollection({
+      ...collection,
+      entries: collection.entries.map((entry) =>
+        entry.entryId === entryId
+          ? {
+              ...entry,
+              ...patch,
+              quantity: Math.max(1, Number(patch.quantity ?? entry.quantity) || 1)
+            }
+          : entry
+      )
+    });
+  }
+
+  function toggleEntrySelection(entryId: string) {
+    setSelectedEntryIds((current) => {
+      const next = new Set(current);
+      if (next.has(entryId)) {
+        next.delete(entryId);
+      } else {
+        next.add(entryId);
+      }
+      return next;
+    });
+  }
+
+  function selectFilteredEntries() {
+    setSelectedEntryIds(new Set(filteredEntries.map((entry) => entry.entryId)));
+  }
+
+  function selectAllEntries() {
+    setSelectedEntryIds(new Set((collection?.entries ?? []).map((entry) => entry.entryId)));
+  }
+
+  function clearSelectedEntries() {
+    setSelectedEntryIds(new Set());
+  }
+
+  function applyBulkEdit(patch: CollectionBulkEditPatch) {
+    if (!collection || selectedEntryIds.size === 0) {
+      return;
+    }
+    const selectedIds = new Set(selectedEntryIds);
+    updateCollection({
+      ...collection,
+      entries: collection.entries.map((entry) => (selectedIds.has(entry.entryId) ? applyCollectionBulkEdit(entry, patch) : entry))
+    });
+    setBulkEditOpen(false);
+    onStatus(`Updated ${selectedIds.size} selected collection ${selectedIds.size === 1 ? 'row' : 'rows'}.`);
+  }
+
+  function markSelectedForDeletion() {
+    if (!collection || selectedEntryIds.size === 0) {
+      return;
+    }
+    const selectedIds = new Set(selectedEntryIds);
+    updateCollection({
+      ...collection,
+      entries: collection.entries.map((entry) => (selectedIds.has(entry.entryId) ? { ...entry, markedForDeletion: true } : entry))
+    });
+    onStatus(`Marked ${selectedIds.size} selected ${selectedIds.size === 1 ? 'row' : 'rows'} for deletion.`);
+  }
+
+  function deleteSelectedEntries() {
+    if (!collection || selectedEntryIds.size === 0) {
+      return;
+    }
+    const selectedIds = new Set(selectedEntryIds);
+    if (!window.confirm(`Permanently delete ${selectedIds.size} selected collection ${selectedIds.size === 1 ? 'row' : 'rows'}?`)) {
+      return;
+    }
+    const nextEntries = collection.entries.filter((entry) => !selectedIds.has(entry.entryId));
+    updateCollection({ ...collection, entries: nextEntries });
+    setSelectedEntryIds(new Set());
+    setSelectedEntryId((current) => nextEntries.find((entry) => entry.entryId === current)?.entryId ?? nextEntries[0]?.entryId ?? '');
+    onStatus(`Deleted ${selectedIds.size} collection ${selectedIds.size === 1 ? 'row' : 'rows'}. Save the collection to persist this change.`);
+  }
+
+  function deleteCollectionEntry(entryId: string) {
+    if (!collection) {
+      return;
+    }
+    const entry = collection.entries.find((candidate) => candidate.entryId === entryId);
+    if (!entry || !window.confirm(`Permanently delete ${entry.cardName} from this collection?`)) {
+      return;
+    }
+    const nextEntries = collection.entries.filter((candidate) => candidate.entryId !== entryId);
+    updateCollection({ ...collection, entries: nextEntries });
+    setSelectedEntryIds((current) => {
+      const next = new Set(current);
+      next.delete(entryId);
+      return next;
+    });
+    setSelectedEntryId((current) => current === entryId ? nextEntries[0]?.entryId ?? '' : current);
+    onStatus(`Deleted ${entry.cardName}. Save the collection to persist this change.`);
+  }
+
+  function resetCollectionFilters() {
+    setProjectFilter('all');
+    setPurposeFilter('all');
+    setKindFilter(collectionKindForSurface(surface));
+    setListCategoryFilter('all');
+    setSourceFilter('all');
+    setReviewFilter('all');
+    setMatchStrategyFilter('all');
+    setOwnershipStatusFilter('all');
+    setOwnerFilter('');
+    setTagFilter('');
+    setMarkerFilter('all');
+    setPurchaseValueFilter('all');
+    setMarketValueFilter('all');
+    setFinishFilter('');
+    setConditionFilter('');
+    setLanguageFilter('');
   }
 
   const filteredCollections = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return collections.filter((candidate) => {
-      const matchesQuery = !needle || `${candidate.name} ${candidate.description ?? ''} ${candidate.source} ${candidate.purpose}`.toLowerCase().includes(needle);
+      const matchesQuery = !needle || `${candidate.name} ${candidate.description ?? ''} ${candidate.source} ${candidate.purpose} ${(candidate.ownerNames ?? []).join(' ')}`.toLowerCase().includes(needle);
+      const matchesOwner = includesAnyFilterText(candidate.ownerNames ?? [], ownerFilter);
+      const matchesSurface = matchesCollectionSurface(candidate, surface);
+      const matchesKind = kindFilter === 'all' || candidate.kind === kindFilter;
+      const matchesListCategory = listCategoryFilter === 'all' || candidate.listCategory === listCategoryFilter;
       const matchesPurpose = purposeFilter === 'all' || candidate.purpose === purposeFilter;
       const matchesProject = projectFilter === 'all' || candidate.linkedUniverseId === projectFilter;
       const matchesSource = sourceFilter === 'all' || candidate.source === sourceFilter;
-      return matchesQuery && matchesPurpose && matchesProject && matchesSource;
+      return matchesSurface && matchesKind && matchesListCategory && matchesQuery && matchesOwner && matchesPurpose && matchesProject && matchesSource;
     });
-  }, [collections, projectFilter, purposeFilter, query, sourceFilter]);
+  }, [collections, kindFilter, listCategoryFilter, ownerFilter, projectFilter, purposeFilter, query, sourceFilter, surface]);
 
   const filteredEntries = useMemo(() => {
     const needle = entryQuery.trim().toLowerCase();
     return (collection?.entries ?? []).filter((entry) => {
       const matchesStatus = reviewFilter === 'all' || entry.reviewStatus === reviewFilter;
       const matchesStrategy = matchStrategyFilter === 'all' || entry.matchStrategy === matchStrategyFilter;
+      const matchesOwnershipStatus = ownershipStatusFilter === 'all' || entry.ownershipStatus === ownershipStatusFilter;
+      const matchesOwner = includesFilterText(entry.ownerName, ownerFilter);
+      const matchesTags = matchesTagFilter(entry.tags, tagFilter);
+      const matchesMarker = collectionEntryMatchesMarker(entry, markerFilter);
+      const matchesPurchaseValue = collectionEntryMatchesValueState(entry.purchasePrice, purchaseValueFilter);
+      const matchesMarketValue = collectionEntryMatchesValueState(collectionValueEstimateFromEntry(entry)?.amount, marketValueFilter);
       const matchesFinish = includesFilterText(entry.finish, finishFilter);
       const matchesCondition = includesFilterText(entry.condition, conditionFilter);
       const matchesLanguage = includesFilterText(entry.language, languageFilter);
-      const matchesQuery = !needle || `${entry.cardName} ${entry.setCode ?? ''} ${entry.collectorNumber ?? ''} ${entry.condition ?? ''} ${entry.reviewNotes ?? ''}`.toLowerCase().includes(needle);
-      return matchesStatus && matchesStrategy && matchesFinish && matchesCondition && matchesLanguage && matchesQuery;
+      const matchesQuery = !needle || `${entry.cardName} ${entry.ownerName} ${entry.ownershipStatus} ${entry.setCode ?? ''} ${entry.collectorNumber ?? ''} ${entry.finish ?? ''} ${entry.condition ?? ''} ${entry.language ?? ''} ${entry.location ?? ''} ${entry.source} ${(entry.tags ?? []).join(' ')} ${entry.reviewNotes ?? ''} ${entry.notes ?? ''}`.toLowerCase().includes(needle);
+      return matchesStatus && matchesStrategy && matchesOwnershipStatus && matchesOwner && matchesTags && matchesMarker && matchesPurchaseValue && matchesMarketValue && matchesFinish && matchesCondition && matchesLanguage && matchesQuery;
     });
-  }, [collection?.entries, conditionFilter, entryQuery, finishFilter, languageFilter, matchStrategyFilter, reviewFilter]);
+  }, [collection?.entries, conditionFilter, entryQuery, finishFilter, languageFilter, markerFilter, marketValueFilter, matchStrategyFilter, ownerFilter, ownershipStatusFilter, purchaseValueFilter, reviewFilter, tagFilter]);
+  const filteredEntryIds = filteredEntries.map((entry) => entry.entryId);
+  const allFilteredSelected = filteredEntryIds.length > 0 && filteredEntryIds.every((entryId) => selectedEntryIds.has(entryId));
+  const selectedEntries = (collection?.entries ?? []).filter((entry) => selectedEntryIds.has(entry.entryId));
   const selectedEntry = collection?.entries.find((entry) => entry.entryId === selectedEntryId) ?? filteredEntries[0] ?? collection?.entries[0];
+  const previewEntry = collection?.entries.find((entry) => entry.entryId === previewEntryId);
+  const expandedImageEntry = collection?.entries.find((entry) => entry.entryId === expandedImageEntryId);
+  const expandedImageSrc = expandedImageEntry ? imageUrlForMetadata(metadataFromCollectionEntry(expandedImageEntry), 'large') : '';
+  const collectionMetrics = useMemo(() => summarizeCollectionOwnership(collection), [collection]);
+  const collectionStatItems = useMemo(() => {
+    const items: Array<{ label: string; value: ReactNode; note?: string; icon?: IconName }> = [
+      { label: 'Entries', value: collection?.entries.length ?? 0, icon: 'collections' },
+      { label: collection?.metadata.kind === 'list' ? 'References' : 'Cards', value: collectionMetrics.totalCards, icon: collection?.metadata.kind === 'list' ? 'lists' : 'cards' }
+    ];
+    if (collectionMetrics.duplicateCopies > 0) {
+      items.push({ label: 'Duplicates', value: collectionMetrics.duplicateCopies, icon: 'grid' });
+    }
+    if (collectionMetrics.reviewCopies > 0) {
+      items.push({ label: 'Review', value: collectionMetrics.reviewCopies, icon: 'flag' });
+    }
+    if (collectionMetrics.premiumCopies > 0) {
+      items.push({ label: 'Premium', value: collectionMetrics.premiumCopies, icon: 'star' });
+    }
+    if (collectionMetrics.knownConditionCopies > 0) {
+      items.push({ label: 'Conditions', value: collectionMetrics.knownConditionCopies, icon: 'guide' });
+    }
+    if (collectionMetrics.starredCopies > 0) {
+      items.push({ label: 'Starred', value: collectionMetrics.starredCopies, icon: 'star' });
+    }
+    if (collectionMetrics.flaggedCopies > 0) {
+      items.push({ label: 'Flagged', value: collectionMetrics.flaggedCopies, icon: 'flag' });
+    }
+    if (collectionMetrics.deletionCopies > 0) {
+      items.push({ label: 'Delete Queue', value: collectionMetrics.deletionCopies, icon: 'trash' });
+    }
+    if (collectionMetrics.purchaseRows > 0) {
+      items.push({ label: 'Purchase', value: formatMoney(collectionMetrics.purchaseTotal, collectionMetrics.purchaseCurrency), note: 'Manual/imported', icon: 'download' });
+    }
+    if (collectionMetrics.valueSourceRows > 0) {
+      items.push({ label: 'Value', value: formatMoney(collectionMetrics.estimatedValue, collectionMetrics.valueCurrency), note: `${formatCount(collectionMetrics.valueSourceRows, 'priced row')}`, icon: 'view' });
+    }
+    if (collectionMetrics.gainLoss !== null) {
+      items.push({ label: 'Gain/Loss', value: formatMoney(collectionMetrics.gainLoss, collectionMetrics.valueCurrency), icon: 'settings' });
+    }
+    return items;
+  }, [collection?.entries.length, collection?.metadata.kind, collectionMetrics]);
+  const surfaceTitle = surfaceLabel(surface);
+  const surfaceSingular = surfaceSingularLabel(surface);
+  const newKind = surface === 'lists' ? 'list' : 'binder';
 
   return (
     <div className="management-workspace" style={{ gridTemplateColumns: buildManagementColumns(showLeftPanel, showRightPanel, leftPanelWidth, rightPanelWidth) }}>
       {showLeftPanel ? (
         <EntityListPanel
-          title="Collections"
-          subtitle={`${filteredCollections.length} of ${collections.length} collections`}
-          newLabel="New collection"
+          title={surfaceTitle}
+          subtitle={`${filteredCollections.length} of ${collections.filter((candidate) => matchesCollectionSurface(candidate, surface)).length} ${surfaceTitle.toLowerCase()}`}
+          newLabel={`New ${surfaceSingular.toLowerCase()}`}
           activeFilterCount={activeCollectionFilterCount}
           onOpenFilters={() => setFiltersOpen(true)}
-          onNew={onCreateCollection}
+          onNew={() => onCreateCollection(newKind, surface === 'lists' ? 'general' : 'general')}
           onCollapse={() => onShowLeftPanelChange(false)}
           searchControl={
             <label className="search-field">
               <Icon name="search" />
-              <input value={query} placeholder="Search collections..." onChange={(event) => setQuery(event.target.value)} />
+              <input value={query} placeholder={`Search ${surfaceTitle.toLowerCase()}...`} onChange={(event) => setQuery(event.target.value)} />
             </label>
           }
         >
@@ -462,12 +867,17 @@ function CollectionsWorkspace({
                 className={`entity-row clickable ${candidate.collectionId === collection?.metadata.collectionId ? 'selected' : ''}`}
                 onClick={() => void handleSelectCollection(candidate.collectionId)}
               >
-                <Icon name="collections" />
+                <Icon name={candidate.kind === 'list' ? 'lists' : 'binders'} />
                 <span>
                   <strong>{candidate.name}</strong>
-                  <small>
-                    {candidate.cardCount} cards - {purposeLabel(candidate.purpose)}
-                    {candidate.reviewCount ? ` - ${candidate.reviewCount} review` : ''}
+                  <small className="entity-row-source-line">
+                    <StatusPill tone={candidate.reviewCount ? 'warning' : 'info'} className="workspace-source-pill">
+                      {candidate.reviewCount ? 'Review' : candidate.kind === 'list' ? listCategoryLabel(candidate.listCategory) : 'Binder'}
+                    </StatusPill>
+                    <span>
+                      {formatCount(candidate.cardCount, 'card')} - {candidate.kind === 'list' ? listCategoryLabel(candidate.listCategory) : purposeLabel(candidate.purpose)}
+                      {candidate.reviewCount ? ` - ${formatCount(candidate.reviewCount, 'review')}` : ''}
+                    </span>
                   </small>
                 </span>
               </button>
@@ -488,26 +898,27 @@ function CollectionsWorkspace({
             <div className="visual-management-header">
               <div>
                 <h2>{collection.metadata.name}</h2>
-                <p>{collection.entries.reduce((total, entry) => total + entry.quantity, 0)} physical cards</p>
+                <p>{formatCount(collection.entries.reduce((total, entry) => total + entry.quantity, 0), collection.metadata.kind === 'list' ? 'card reference' : 'physical card')}</p>
               </div>
               <div className="export-actions">
-                <button type="button" className="primary-button" disabled={busyTarget !== ''} onClick={() => void handleExportCollection('csv')}>
-                  CSV
+                <button type="button" className="primary-button" disabled={savingCollection || !collectionDirty} onClick={() => void handleSaveCollection()}>
+                  {savingCollection ? 'Saving...' : `Save ${surfaceSingular.toLowerCase()}`}
                 </button>
-                <button type="button" className="secondary-button" disabled={busyTarget !== ''} onClick={() => void handleExportCollection('text')}>
-                  Text
+                <button type="button" className="secondary-button" onClick={() => setMetadataOverlayOpen(true)}>
+                  Edit {surfaceSingular.toLowerCase()}
                 </button>
-                <button type="button" className="secondary-button" disabled={busyTarget !== ''} onClick={() => void handleExportCollection('cockatrice')}>
-                  .cod
+                <button type="button" className="secondary-button" disabled={collectionDirty || savingCollection} title={collectionDirty ? 'Save collection changes before refreshing prices.' : 'Refresh or import collection price snapshots'} onClick={() => setPriceToolsOpen(true)}>
+                  Prices
                 </button>
               </div>
             </div>
 
+            <WorkModeNote mode={workMode} section={surface === 'collections' ? 'collections' : surface} />
+
             <div className="collection-stat-grid">
-              <CollectionStat label="Entries" value={collection.entries.length} />
-              <CollectionStat label="Cards" value={collection.entries.reduce((total, entry) => total + entry.quantity, 0)} />
-              <CollectionStat label="Matched" value={collection.entries.filter((entry) => entry.reviewStatus === 'matched').length} />
-              <CollectionStat label="Review" value={collection.entries.filter((entry) => entry.reviewStatus === 'needs_review').length} />
+              {collectionStatItems.map((item) => (
+                <CollectionStat key={item.label} label={item.label} value={item.value} note={item.note} icon={item.icon} />
+              ))}
             </div>
 
             <div className="collection-table-toolbar">
@@ -516,49 +927,138 @@ function CollectionsWorkspace({
                 <input value={entryQuery} placeholder="Search cards..." onChange={(event) => setEntryQuery(event.target.value)} />
               </label>
               <span className="filter-count-note">{activeCollectionFilterCount ? `${activeCollectionFilterCount} active filters` : 'No filters active'}</span>
+              <div className="segmented-control collection-view-mode segmented-icon-control" role="group" aria-label={`${surfaceTitle} view mode`}>
+                {COLLECTION_VIEW_MODE_OPTIONS.map(({ mode, label, icon }) => (
+                  <button key={mode} type="button" className={collectionViewMode === mode ? 'active' : ''} title={`${label} view`} aria-label={`${label} view`} onClick={() => setCollectionViewMode(mode)}>
+                    <Icon name={icon} />
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="collection-table" role="table" aria-label="Collection entries">
-              <div className="collection-table-row header" role="row">
-                <span>Qty</span>
-                <span>Card</span>
-                <span>Print</span>
-                <span>Finish</span>
-                <span>Condition</span>
-                <span>Status</span>
-              </div>
-              {filteredEntries.map((entry) => (
-                <button
-                  key={entry.entryId}
-                  type="button"
-                  className={`collection-table-row ${entry.reviewStatus === 'needs_review' ? 'needs-review' : ''} ${entry.entryId === selectedEntry?.entryId ? 'selected' : ''}`}
-                  role="row"
-                  onClick={() => setSelectedEntryId(entry.entryId)}
-                >
-                  <span>{entry.quantity}</span>
-                  <span>
-                    <strong>{entry.cardName}</strong>
-                    {entry.reviewNotes ? <small>{entry.reviewNotes}</small> : null}
-                  </span>
-                  <span>{collectionPrintLabel(entry)}</span>
-                  <span>{entry.finish ?? '-'}</span>
-                  <span>{entry.condition ?? '-'}</span>
-                  <span>
-                    <CollectionStatusPill status={entry.reviewStatus} />
-                  </span>
-                </button>
-              ))}
-              {filteredEntries.length === 0 ? <p className="workspace-copy">No collection rows match the current filter.</p> : null}
+            <div className={`collection-selection-toolbar ${selectedEntryIds.size ? 'has-selection' : 'is-idle'}`}>
+              <label className="checkbox-row">
+                <input type="checkbox" checked={allFilteredSelected} disabled={!filteredEntries.length} onChange={(event) => event.target.checked ? selectFilteredEntries() : clearSelectedEntries()} />
+                <span>{selectedEntryIds.size ? `${formatCount(selectedEntryIds.size, 'row')} selected` : 'No rows selected'}</span>
+              </label>
+              <button type="button" className="secondary-button" disabled={!filteredEntries.length} onClick={selectFilteredEntries}>Select filtered</button>
+              <button type="button" className="secondary-button" disabled={!collection.entries.length} onClick={selectAllEntries}>Select all</button>
+              {selectedEntryIds.size ? (
+                <>
+                  <button type="button" className="secondary-button compact" onClick={clearSelectedEntries}>Clear</button>
+                  <button type="button" className="primary-button compact" onClick={() => setBulkEditOpen(true)}>Bulk edit</button>
+                  <button type="button" className="secondary-button compact" onClick={markSelectedForDeletion}>
+                    <Icon name="trash" />
+                    <span>Mark</span>
+                  </button>
+                  <button type="button" className="danger-button compact" onClick={deleteSelectedEntries} title="Delete selected rows" aria-label="Delete selected rows">
+                    <Icon name="trash" />
+                  </button>
+                </>
+              ) : null}
+            </div>
+
+            <div className="collection-entry-surface">
+              {collectionViewMode === 'table' ? (
+                <div className="collection-table" role="table" aria-label="Collection entries">
+                  <div className="collection-table-row header" role="row">
+                    <span className="collection-select-cell">Select</span>
+                    <span className="collection-qty-cell">Qty</span>
+                    <span className="collection-card-cell">Card</span>
+                    <span className="collection-print-cell">Print</span>
+                    <span className="collection-state-cell">State</span>
+                    <span className="collection-value-cell">Value</span>
+                    <span className="collection-status-cell">Status</span>
+                    <span className="collection-view-cell">View</span>
+                  </div>
+                  {filteredEntries.map((entry) => {
+                    const cardMetadata = metadataFromCollectionEntry(entry);
+                    return (
+                      <div
+                        key={entry.entryId}
+                        className={`collection-table-row ${entry.reviewStatus === 'needs_review' ? 'needs-review' : ''} ${entry.markedForDeletion ? 'marked-delete' : ''} ${!isOwnedStatus(entry.ownershipStatus) ? 'not-owned' : ''} ${entry.entryId === selectedEntry?.entryId ? 'selected' : ''}`}
+                        role="row"
+                        tabIndex={0}
+                        onClick={() => {
+                          setSelectedEntryId(entry.entryId);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedEntryId(entry.entryId);
+                          }
+                        }}
+                      >
+                        <span className="collection-select-cell">
+                          <input
+                            type="checkbox"
+                            checked={selectedEntryIds.has(entry.entryId)}
+                            aria-label={`Select ${entry.cardName}`}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={() => toggleEntrySelection(entry.entryId)}
+                          />
+                        </span>
+                        <span className="collection-qty-cell">{entry.quantity}</span>
+                        <span className="collection-card-cell">
+                          <CollectionArtThumb metadata={cardMetadata} fallback={entry.cardName} />
+                          <span>
+                            <strong>{entry.cardName}</strong>
+                            <small>{cardMetadata.typeLine || entry.reviewNotes || 'No official type line recorded'}</small>
+                          </span>
+                        </span>
+                        <span className="collection-print-cell">{collectionPrintLabel(entry)}</span>
+                        <span className="collection-state-cell">
+                          <strong>{entry.ownerName}</strong>
+                          <small>{[!isOwnedStatus(entry.ownershipStatus) ? ownershipStatusLabel(entry.ownershipStatus) : entry.finish, isOwnedStatus(entry.ownershipStatus) ? entry.condition : entry.finish, entry.starred ? 'Starred' : '', entry.flagged ? 'Flagged' : '', entry.markedForDeletion ? 'Delete review' : ''].filter(Boolean).join(' - ') || '-'}</small>
+                        </span>
+                        <span className="collection-value-cell">{formatCollectionEntryValue(entry)}</span>
+                        <span className="collection-status-cell">
+                          <CollectionStatusPill status={entry.reviewStatus} />
+                        </span>
+                        <span className="collection-view-cell row-action-cell">
+                          <button
+                            type="button"
+                            className="icon-button"
+                            title={`Preview and link ${entry.cardName}`}
+                            aria-label={`Preview and link ${entry.cardName}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedEntryId(entry.entryId);
+                              setPreviewEntryId(entry.entryId);
+                            }}
+                          >
+                            <Icon name="view" />
+                          </button>
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {filteredEntries.length === 0 ? <p className="workspace-copy">No collection rows match the current filter.</p> : null}
+                </div>
+              ) : (
+                <CollectionEntryViews
+                  mode={collectionViewMode}
+                  entries={filteredEntries}
+                  selectedEntry={selectedEntry}
+                  selectedEntryIds={selectedEntryIds}
+                  onSelect={setSelectedEntryId}
+                  onToggleSelection={toggleEntrySelection}
+                  onPreview={(entryId) => {
+                    setSelectedEntryId(entryId);
+                    setPreviewEntryId(entryId);
+                  }}
+                />
+              )}
             </div>
           </div>
         ) : (
           <div className="workspace-preview-hero">
             <div className="tile-art-placeholder large collection-empty-mark">
-              <Icon name="collections" />
+              <Icon name={surface === 'lists' ? 'lists' : surface === 'binders' ? 'binders' : 'collections'} />
             </div>
             <div>
-              <h2>No collection selected</h2>
-              <p>Create a collection from the plus button, or adjust the filters if a collection is hidden.</p>
+              <h2>No {surfaceSingular.toLowerCase()} selected</h2>
+              <p>Create a {surfaceSingular.toLowerCase()} from the plus button, or adjust the filters if one is hidden.</p>
             </div>
           </div>
         )}
@@ -568,7 +1068,18 @@ function CollectionsWorkspace({
       {showRightPanel ? (
         <aside className="workspace-inspector-panel">
           <WorkspacePanelToolbar label="Hide collection details panel" icon="collapseLeft" onClick={() => onShowRightPanelChange(false)} />
-          <CollectionDetailsPanel collection={collection} entry={selectedEntry} library={library} busyTarget={busyTarget} onExport={(target) => void handleExportCollection(target)} />
+          <CollectionDetailsPanel
+            collection={collection}
+            entry={selectedEntry}
+            library={library}
+            ownerSuggestions={ownerSuggestions}
+            dirty={collectionDirty}
+            saving={savingCollection}
+            onUpdateEntry={(patch) => selectedEntry ? updateCollectionEntry(selectedEntry.entryId, patch) : undefined}
+            onExpandImage={selectedEntry ? () => setExpandedImageEntryId(selectedEntry.entryId) : undefined}
+            onDeleteEntry={selectedEntry ? () => deleteCollectionEntry(selectedEntry.entryId) : undefined}
+            onSave={() => void handleSaveCollection()}
+          />
         </aside>
       ) : (
         <button type="button" className="collapsed-panel-strip right" onClick={() => onShowRightPanelChange(true)} title="Show collection details" aria-label="Show collection details">
@@ -577,49 +1088,51 @@ function CollectionsWorkspace({
       )}
       {filtersOpen ? (
         <BrowseFilterOverlay
-          title="Browse Collections"
-          subtitle="Filter collections and rows in the selected collection without hiding search."
-          resultsLabel={`${filteredCollections.length} matching collections`}
+          title={`Browse ${surfaceTitle}`}
+          subtitle={`Filter ${surfaceTitle.toLowerCase()} and rows in the selected ${surfaceSingular.toLowerCase()} without hiding search.`}
+          resultsLabel={`${filteredCollections.length} matching ${surfaceTitle.toLowerCase()}`}
           activeFilterCount={activeCollectionFilterCount}
           onClose={() => setFiltersOpen(false)}
-          onResetFilters={() => {
-            setProjectFilter('all');
-            setPurposeFilter('all');
-            setSourceFilter('all');
-            setReviewFilter('all');
-            setMatchStrategyFilter('all');
-            setFinishFilter('');
-            setConditionFilter('');
-            setLanguageFilter('');
-          }}
+          onResetFilters={resetCollectionFilters}
           results={
             <div className="filter-result-list">
               {filteredCollections.length ? (
                 filteredCollections.map((candidate) => (
                   <button key={candidate.collectionId} type="button" className={`entity-row clickable ${candidate.collectionId === collection?.metadata.collectionId ? 'selected' : ''}`} onClick={() => { void handleSelectCollection(candidate.collectionId); setFiltersOpen(false); }}>
-                    <Icon name="collections" />
+                    <Icon name={candidate.kind === 'list' ? 'lists' : 'binders'} />
                     <span>
                       <strong>{candidate.name}</strong>
-                      <small>{candidate.cardCount} cards - {purposeLabel(candidate.purpose)}</small>
+                      <small>{formatCount(candidate.cardCount, 'card')} - {candidate.kind === 'list' ? listCategoryLabel(candidate.listCategory) : purposeLabel(candidate.purpose)}</small>
                     </span>
                   </button>
                 ))
               ) : (
-                <FilteredEmptyState title="No collections match" detail="Reset filters or clear the collection search." showClearSearch={Boolean(query.trim())} showResetFilters={activeCollectionFilterCount > 0} onClearSearch={() => setQuery('')} onResetFilters={() => {
-                  setProjectFilter('all');
-                  setPurposeFilter('all');
-                  setSourceFilter('all');
-                  setReviewFilter('all');
-                  setMatchStrategyFilter('all');
-                  setFinishFilter('');
-                  setConditionFilter('');
-                  setLanguageFilter('');
-                }} />
+                <FilteredEmptyState title="No collections match" detail="Reset filters or clear the collection search." showClearSearch={Boolean(query.trim())} showResetFilters={activeCollectionFilterCount > 0} onClearSearch={() => setQuery('')} onResetFilters={resetCollectionFilters} />
               )}
             </div>
           }
         >
           <div className="filter-panel">
+            <label className="filter-field">
+              <span>Kind</span>
+              <select value={kindFilter} onChange={(event) => setKindFilter(event.target.value as CollectionKind | 'all')}>
+                <option value="all">All kinds</option>
+                <option value="binder">Binders</option>
+                <option value="list">Lists</option>
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>List category</span>
+              <select value={listCategoryFilter} disabled={kindFilter === 'binder'} onChange={(event) => setListCategoryFilter(event.target.value as CollectionListCategory | 'all')}>
+                <option value="all">All list categories</option>
+                <option value="general">General</option>
+                <option value="wishlist">Wish list</option>
+                <option value="recommendation">Recommendations</option>
+                <option value="starred">Starred</option>
+                <option value="flagged">Flagged</option>
+                <option value="gift">Gift list</option>
+              </select>
+            </label>
             <label className="filter-field">
               <span>Project</span>
               <select value={projectFilter} onChange={(event) => setProjectFilter(event.target.value)}>
@@ -648,6 +1161,7 @@ function CollectionsWorkspace({
                 <option value="tcgplayer">TCGplayer</option>
                 <option value="dragonshield">Dragon Shield</option>
                 <option value="delver">Delver Lens</option>
+                <option value="scryfall">Scryfall</option>
                 <option value="generic">Generic</option>
               </select>
             </label>
@@ -670,12 +1184,76 @@ function CollectionsWorkspace({
               </select>
             </label>
             <label className="filter-field">
+              <span>Owner</span>
+              <input list="collection-owner-filter-options" value={ownerFilter} placeholder="Kyle, Eleni..." onChange={(event) => setOwnerFilter(event.target.value)} />
+              <datalist id="collection-owner-filter-options">
+                {ownerSuggestions.map((owner) => (
+                  <option key={owner} value={owner} />
+                ))}
+              </datalist>
+            </label>
+            <label className="filter-field">
+              <span>Ownership status</span>
+              <select value={ownershipStatusFilter} onChange={(event) => setOwnershipStatusFilter(event.target.value as CollectionOwnershipStatus | 'all')}>
+                <option value="all">Any ownership status</option>
+                <option value="owned">Owned</option>
+                <option value="wanted">Wanted</option>
+                <option value="recommended">Recommended</option>
+                <option value="reference">Reference</option>
+                <option value="proxy">Proxy</option>
+                <option value="homebrew_unprinted">Homebrew unprinted</option>
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>Tags</span>
+              <input value={tagFilter} placeholder="trade, commander..." onChange={(event) => setTagFilter(event.target.value)} />
+            </label>
+            <label className="filter-field">
+              <span>Markers</span>
+              <select value={markerFilter} onChange={(event) => setMarkerFilter(event.target.value)}>
+                <option value="all">Any marker</option>
+                <option value="starred">Starred</option>
+                <option value="flagged">Flagged</option>
+                <option value="altered">Altered</option>
+                <option value="misprint">Misprint</option>
+                <option value="proxy">Proxy</option>
+                <option value="homebrew">Homebrew</option>
+                <option value="marked_for_deletion">Marked for deletion</option>
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>Purchase data</span>
+              <select value={purchaseValueFilter} onChange={(event) => setPurchaseValueFilter(event.target.value)}>
+                <option value="all">Any purchase data</option>
+                <option value="has">Has purchase price</option>
+                <option value="missing">Missing purchase price</option>
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>Market value</span>
+              <select value={marketValueFilter} onChange={(event) => setMarketValueFilter(event.target.value)}>
+                <option value="all">Any value state</option>
+                <option value="has">Has market snapshot</option>
+                <option value="missing">Missing market snapshot</option>
+              </select>
+            </label>
+            <label className="filter-field">
               <span>Finish</span>
-              <input value={finishFilter} placeholder="foil, nonfoil..." onChange={(event) => setFinishFilter(event.target.value)} />
+              <select value={finishFilter} onChange={(event) => setFinishFilter(event.target.value)}>
+                <option value="">Any finish</option>
+                {FINISH_OPTIONS.filter((option) => option.value).map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </label>
             <label className="filter-field">
               <span>Condition</span>
-              <input value={conditionFilter} placeholder="near mint, played..." onChange={(event) => setConditionFilter(event.target.value)} />
+              <select value={conditionFilter} onChange={(event) => setConditionFilter(event.target.value)}>
+                <option value="">Any condition</option>
+                {CONDITION_OPTIONS.filter((option) => option.value).map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </label>
             <label className="filter-field">
               <span>Language</span>
@@ -684,16 +1262,200 @@ function CollectionsWorkspace({
           </div>
         </BrowseFilterOverlay>
       ) : null}
+      {metadataOverlayOpen && collection ? (
+        <CollectionMetadataOverlay
+          metadata={collection.metadata}
+          library={library}
+          onSave={(metadata) => updateCollectionMetadata(metadata)}
+          onClose={() => setMetadataOverlayOpen(false)}
+        />
+      ) : null}
+      {bulkEditOpen ? (
+        <CollectionBulkEditOverlay
+          entries={selectedEntries}
+          ownerSuggestions={ownerSuggestions}
+          onApply={applyBulkEdit}
+          onClose={() => setBulkEditOpen(false)}
+        />
+      ) : null}
+      {priceToolsOpen && collection ? (
+        <CollectionPriceToolsOverlay
+          collection={collection}
+          onUpdated={replaceCollectionFromServer}
+          onStatus={onStatus}
+          onClose={() => setPriceToolsOpen(false)}
+        />
+      ) : null}
+      {collection && previewEntry ? (
+        <CollectionCardPreviewOverlay
+          collection={collection}
+          entry={previewEntry}
+          library={library}
+          ownerSuggestions={ownerSuggestions}
+          onChangeEntry={(patch) => updateCollectionEntry(previewEntry.entryId, patch)}
+          onOpenCard={onOpenCard}
+          onStatus={onStatus}
+          onClose={() => setPreviewEntryId('')}
+        />
+      ) : null}
+      {expandedImageEntry && expandedImageSrc ? (
+        <ImageLightbox src={expandedImageSrc} alt={`${expandedImageEntry.cardName} card image`} label={`${expandedImageEntry.cardName} expanded image`} onClose={() => setExpandedImageEntryId('')} />
+      ) : null}
     </div>
   );
 }
 
-function CollectionStat({ label, value }: { label: string; value: number }) {
+function CollectionStat({ label, value, note, icon }: { label: string; value: ReactNode; note?: string; icon?: IconName }) {
+  return <WorkspaceMetric label={label} value={value} note={note} icon={icon} />;
+}
+
+function matchesCollectionSurface(collection: Pick<CollectionSummary, 'kind'>, surface: CollectionSurfaceKind): boolean {
+  if (surface === 'binders') {
+    return collection.kind === 'binder';
+  }
+  if (surface === 'lists') {
+    return collection.kind === 'list';
+  }
+  return true;
+}
+
+function WorkModeNote({ mode, section }: { mode: WorkModeId; section: WorkspaceSection }) {
+  const activeMode = getWorkMode(mode);
+  const note = activeMode.workspaceNotes[section];
+  if (!note) {
+    return null;
+  }
   return (
-    <div className="collection-stat">
-      <strong>{value}</strong>
-      <span>{label}</span>
+    <div className="work-mode-note">
+      <strong>{activeMode.label}</strong>
+      <span>{note}</span>
     </div>
+  );
+}
+
+function WorkspaceMetric({ label, value, note, icon }: { label: string; value: ReactNode; note?: string; icon?: IconName }) {
+  return (
+    <div className="collection-stat workspace-metric">
+      <strong>{value}</strong>
+      <span className="workspace-metric-label">{icon ? <Icon name={icon} /> : null}{label}</span>
+      {note ? <small>{note}</small> : null}
+    </div>
+  );
+}
+
+function summarizeDeck(deck: DeckState | null) {
+  const entries = activeVariantEntries(deck);
+  const countSection = (section: DeckEntry['section']) => entries.filter((entry) => entry.section === section).reduce((total, entry) => total + entry.count, 0);
+  const unresolvedCards = entries.filter((entry) => entry.warning || !entry.card).reduce((total, entry) => total + entry.count, 0);
+  const totalCards = entries.reduce((total, entry) => total + entry.count, 0);
+  return {
+    totalCards,
+    mainCards: countSection('main'),
+    sideCards: countSection('side'),
+    maybeCards: countSection('maybe'),
+    resolvedCards: Math.max(0, totalCards - unresolvedCards),
+    unresolvedCards
+  };
+}
+
+function activeVariantEntries(deck: DeckState | null): DeckState['entries'] {
+  if (!deck) {
+    return [];
+  }
+  const activeVariantId = activeDeckVariantId(deck);
+  return deck.entries.filter((entry) => (!entry.deckVariantId || entry.deckVariantId === activeVariantId) && !entry.markedForDeletion);
+}
+
+function exportableDeckEntries(deck: DeckState | null): DeckState['entries'] {
+  return activeVariantEntries(deck).filter((entry) => entry.candidateStatus !== 'candidate' && entry.candidateStatus !== 'cut');
+}
+
+function activeDeckVariantId(deck: DeckState): string {
+  return deck.activeVariantId || deck.metadata.activeVariantId || deck.metadata.variants[0]?.variantId || 'default';
+}
+
+function nextDeckEntryId(deck: DeckState): string {
+  const existing = new Set(deck.entries.map((entry) => entry.entryId).filter(Boolean));
+  let index = deck.entries.length + 1;
+  let candidate = `entry-${String(index).padStart(3, '0')}`;
+  while (existing.has(candidate)) {
+    index += 1;
+    candidate = `entry-${String(index).padStart(3, '0')}`;
+  }
+  return candidate;
+}
+
+function nextDeckVariantId(deck: DeckState, name: string): string {
+  const base = slugForUiId(name) || 'variant';
+  const existing = new Set(deck.metadata.variants.map((variant) => variant.variantId));
+  let candidate = base;
+  let index = 2;
+  while (existing.has(candidate)) {
+    candidate = `${base}-${index}`;
+    index += 1;
+  }
+  return candidate;
+}
+
+function slugForUiId(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
+}
+
+function buildDeckRoleSummary(entries: DeckState['entries']): Array<{ label: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const entry of entries) {
+    if (entry.markedForDeletion || entry.candidateStatus === 'cut') {
+      continue;
+    }
+    for (const role of entry.roles ?? []) {
+      const label = deckRoleLabel(role);
+      counts.set(label, (counts.get(label) ?? 0) + entry.count);
+    }
+  }
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+    .slice(0, 10);
+}
+
+function formatCollectionEntryValue(entry: CollectionEntry): string {
+  const estimate = collectionValueEstimateFromEntry(entry);
+  return estimate ? formatMoney(estimate.amount * entry.quantity, estimate.currency) : 'No source';
+}
+
+function collectionEntryMatchesMarker(entry: CollectionEntry, marker: string): boolean {
+  if (marker === 'all') {
+    return true;
+  }
+  if (marker === 'marked_for_deletion') {
+    return Boolean(entry.markedForDeletion);
+  }
+  return Boolean(entry[marker as keyof Pick<CollectionEntry, 'starred' | 'flagged' | 'altered' | 'misprint' | 'proxy' | 'homebrew'>]);
+}
+
+function collectionEntryMatchesValueState(value: number | undefined, filter: string): boolean {
+  if (filter === 'has') {
+    return value !== undefined;
+  }
+  if (filter === 'missing') {
+    return value === undefined;
+  }
+  return true;
+}
+
+function formatMoney(amount: number, currency: string): string {
+  if (currency === 'TIX') {
+    return `${amount.toFixed(2)} tix`;
+  }
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+}
+
+function CollectionArtThumb({ metadata, fallback }: { metadata: ReturnType<typeof metadataFromCollectionEntry>; fallback: string }) {
+  const imageSrc = imageUrlForMetadata(metadata, 'small');
+  return (
+    <span className={`collection-art-thumb ${imageSrc ? 'has-art' : ''}`} aria-hidden="true">
+      {imageSrc ? <img src={imageSrc} alt="" loading="lazy" /> : <span>{fallback.slice(0, 2).toUpperCase()}</span>}
+    </span>
   );
 }
 
@@ -701,19 +1463,29 @@ function CollectionDetailsPanel({
   collection,
   entry,
   library,
-  busyTarget,
-  onExport
+  ownerSuggestions,
+  dirty,
+  saving,
+  onUpdateEntry,
+  onExpandImage,
+  onDeleteEntry,
+  onSave
 }: {
   collection: CollectionState | null;
   entry?: CollectionEntry;
   library: LibraryState | null;
-  busyTarget: CollectionExportTarget | '';
-  onExport: (target: CollectionExportTarget) => void;
+  ownerSuggestions: string[];
+  dirty: boolean;
+  saving: boolean;
+  onUpdateEntry: (patch: Partial<CollectionEntry>) => void;
+  onExpandImage?: () => void;
+  onDeleteEntry?: () => void;
+  onSave: () => void;
 }) {
   if (!collection) {
     return (
       <div className="collection-details-panel">
-        <h2>Collection Details</h2>
+        <h2>Collection Inspector</h2>
         <div className="preview-empty compact-empty">
           <strong>No collection selected</strong>
           <span>Choose a collection from the left panel.</span>
@@ -722,9 +1494,24 @@ function CollectionDetailsPanel({
     );
   }
   const projectName = library?.universes.find((universe) => universe.id === collection.metadata.linkedUniverseId)?.name ?? 'No project';
+  const cardMetadata = entry ? metadataFromCollectionEntry(entry) : null;
+  const imageSrc = imageUrlForMetadata(cardMetadata, 'normal');
   return (
     <div className="collection-details-panel">
-      <h2>Collection Details</h2>
+      <div className="inspector-heading-row">
+        <div>
+          <h2>{entry ? 'Collection Entry Inspector' : 'Collection Inspector'}</h2>
+          <p className="workspace-copy">{entry ? 'Edit collection ownership and review details.' : 'Choose a card from the center table.'}</p>
+        </div>
+        <button type="button" className="primary-button" disabled={!dirty || saving} onClick={onSave}>
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+        {entry ? (
+          <button type="button" className="danger-button" onClick={onDeleteEntry}>
+            Delete
+          </button>
+        ) : null}
+      </div>
       <div className="collection-detail-grid">
         <div className="readonly-line">
           <strong>{purposeLabel(collection.metadata.purpose)}</strong>
@@ -735,45 +1522,149 @@ function CollectionDetailsPanel({
           <span>{collection.metadata.source}</span>
         </div>
       </div>
-      <div className="export-actions">
-        <button type="button" className="primary-button" disabled={busyTarget !== ''} onClick={() => onExport('csv')}>
-          CSV
-        </button>
-        <button type="button" className="secondary-button" disabled={busyTarget !== ''} onClick={() => onExport('text')}>
-          Text
-        </button>
-        <button type="button" className="secondary-button" disabled={busyTarget !== ''} onClick={() => onExport('cockatrice')}>
-          .cod
-        </button>
-      </div>
       <div className="collection-card-preview">
-        <div className="tile-art-placeholder large collection-card-mark">
-          <span>{entry?.cardName.slice(0, 2).toUpperCase() ?? 'NA'}</span>
-        </div>
+        {imageSrc ? (
+          <button type="button" className="collection-card-image-button" onClick={onExpandImage} onDoubleClick={onExpandImage} title="Expand card image" aria-label={`Expand ${entry?.cardName ?? 'selected card'} image`}>
+            <img className="collection-card-image" src={imageSrc} alt={`${entry?.cardName ?? 'Selected card'} preview`} />
+          </button>
+        ) : (
+          <div className="tile-art-placeholder large collection-card-mark">
+            <span>{entry?.cardName.slice(0, 2).toUpperCase() ?? 'NA'}</span>
+          </div>
+        )}
         <div>
           <h3>{entry?.cardName ?? 'No card selected'}</h3>
-          <p className="workspace-copy">{entry ? `${entry.quantity} copy${entry.quantity === 1 ? '' : 'ies'} - ${collectionPrintLabel(entry)}` : 'Select a collection row to inspect it.'}</p>
+          <p className="workspace-copy">{entry ? `${entry.quantity} copy${entry.quantity === 1 ? '' : 'ies'} - ${collectionPrintLabel(entry)}` : 'Select a collection card to edit its ownership fields.'}</p>
           {entry ? <CollectionStatusPill status={entry.reviewStatus} /> : null}
         </div>
       </div>
       {entry ? (
-        <div className="collection-entry-metadata">
-          <div className="readonly-line">
-            <strong>Finish</strong>
-            <span>{entry.finish ?? '-'}</span>
+        <div className="collection-official-panel">
+          <div className="collection-detail-grid">
+            <div className="readonly-line">
+              <strong>Mana</strong>
+              <ManaCostSymbols value={cardMetadata?.manaCost} />
+            </div>
+            <div className="readonly-line">
+              <strong>Mana value</strong>
+              <span>{cardMetadata?.manaValue ?? '-'}</span>
+            </div>
+            <div className="readonly-line">
+              <strong>Identity</strong>
+              <ColorIdentitySymbols value={cardMetadata?.colorIdentity} />
+            </div>
+            <div className="readonly-line">
+              <strong>Type</strong>
+              <span>{cardMetadata?.typeLine || '-'}</span>
+            </div>
           </div>
-          <div className="readonly-line">
-            <strong>Condition</strong>
-            <span>{entry.condition ?? '-'}</span>
+          {cardMetadata?.oracleText ? <p className="official-card-text">{cardMetadata.oracleText}</p> : null}
+          {cardMetadata?.flavorText ? <p className="official-card-text flavor">{cardMetadata.flavorText}</p> : null}
+        </div>
+      ) : null}
+      {entry ? (
+        <div className="collection-entry-edit-grid">
+          <Field label="Quantity">
+            <input type="number" min="1" value={entry.quantity} onChange={(event) => onUpdateEntry({ quantity: Number(event.target.value) })} />
+          </Field>
+          <Field label="Owner">
+            <input list="collection-entry-owner-options" value={entry.ownerName} placeholder="Kyle" onChange={(event) => onUpdateEntry({ ownerName: event.target.value })} onBlur={(event) => onUpdateEntry({ ownerName: normalizeCollectionOwnerName(event.target.value) })} />
+            <datalist id="collection-entry-owner-options">
+              {ownerSuggestions.map((owner) => (
+                <option key={owner} value={owner} />
+              ))}
+            </datalist>
+          </Field>
+          <div className="grid-3">
+            <Field label="Finish">
+              <select value={entry.finish ?? ''} onChange={(event) => onUpdateEntry({ finish: event.target.value || undefined })}>
+                {FINISH_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Condition">
+              <select value={entry.condition ?? ''} onChange={(event) => onUpdateEntry({ condition: event.target.value || undefined })}>
+                {CONDITION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Language">
+              <select value={entry.language ?? ''} onChange={(event) => onUpdateEntry({ language: event.target.value || undefined })}>
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </Field>
           </div>
-          <div className="readonly-line">
-            <strong>Language</strong>
-            <span>{entry.language ?? '-'}</span>
+          <Field label="Location">
+            <input value={entry.location ?? ''} placeholder="Binder, box, shelf..." onChange={(event) => onUpdateEntry({ location: event.target.value || undefined })} />
+          </Field>
+          <div className="grid-2">
+            <Field label="Review status">
+              <select value={entry.reviewStatus} onChange={(event) => onUpdateEntry({ reviewStatus: event.target.value as CollectionEntry['reviewStatus'] })}>
+                <option value="matched">Matched</option>
+                <option value="needs_review">Needs review</option>
+              </select>
+            </Field>
+            <Field label="Purchase price">
+              <div className="grid-2">
+                <input type="number" min="0" step="0.01" value={entry.purchasePrice ?? ''} onChange={(event) => onUpdateEntry({ purchasePrice: event.target.value === '' ? undefined : Number(event.target.value) })} />
+                <input value={entry.purchaseCurrency ?? 'USD'} onChange={(event) => onUpdateEntry({ purchaseCurrency: event.target.value.toUpperCase() || undefined })} />
+              </div>
+            </Field>
           </div>
-          <div className="readonly-line">
-            <strong>Review</strong>
-            <span>{entry.reviewNotes ?? 'Matched'}</span>
+          <div className="grid-2">
+            <Field label="Market snapshot">
+              <div className="grid-3">
+                <input type="number" min="0" step="0.01" value={entry.estimatedMarketPrice ?? ''} onChange={(event) => onUpdateEntry({ estimatedMarketPrice: event.target.value === '' ? undefined : Number(event.target.value), marketPriceUpdatedAt: event.target.value === '' ? undefined : new Date().toISOString() })} />
+                <input value={entry.estimatedMarketCurrency ?? 'USD'} onChange={(event) => onUpdateEntry({ estimatedMarketCurrency: event.target.value.toUpperCase() || undefined })} />
+                <input value={entry.marketPriceSource ?? ''} placeholder="scryfall, csv..." onChange={(event) => onUpdateEntry({ marketPriceSource: event.target.value || undefined })} />
+              </div>
+            </Field>
+            <Field label="Tags">
+              <input value={(entry.tags ?? []).join(';')} placeholder="commander;trade" onChange={(event) => onUpdateEntry({ tags: normalizeCollectionTags(event.target.value) })} />
+            </Field>
           </div>
+          <div className="collection-marker-row" role="group" aria-label="Collection row markers">
+            <label className="checkbox-row">
+              <input type="checkbox" checked={Boolean(entry.starred)} onChange={(event) => onUpdateEntry({ starred: event.target.checked })} />
+              <span>Starred</span>
+            </label>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={Boolean(entry.flagged)} onChange={(event) => onUpdateEntry({ flagged: event.target.checked })} />
+              <span>Flagged</span>
+            </label>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={Boolean(entry.markedForDeletion)} onChange={(event) => onUpdateEntry({ markedForDeletion: event.target.checked })} />
+              <span>Marked for deletion</span>
+            </label>
+          </div>
+          <div className="collection-marker-row" role="group" aria-label="Collection row attributes">
+            <label className="checkbox-row">
+              <input type="checkbox" checked={Boolean(entry.altered)} onChange={(event) => onUpdateEntry({ altered: event.target.checked })} />
+              <span>Altered</span>
+            </label>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={Boolean(entry.misprint)} onChange={(event) => onUpdateEntry({ misprint: event.target.checked })} />
+              <span>Misprint</span>
+            </label>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={Boolean(entry.proxy)} onChange={(event) => onUpdateEntry({ proxy: event.target.checked })} />
+              <span>Proxy</span>
+            </label>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={Boolean(entry.homebrew)} onChange={(event) => onUpdateEntry({ homebrew: event.target.checked })} />
+              <span>Homebrew</span>
+            </label>
+          </div>
+          <Field label="Review notes">
+            <textarea value={entry.reviewNotes ?? ''} rows={4} onChange={(event) => onUpdateEntry({ reviewNotes: event.target.value || undefined })} />
+          </Field>
+          <Field label="Collection notes">
+            <textarea value={entry.notes ?? ''} rows={3} onChange={(event) => onUpdateEntry({ notes: event.target.value || undefined })} />
+          </Field>
         </div>
       ) : null}
     </div>
@@ -781,7 +1672,20 @@ function CollectionDetailsPanel({
 }
 
 function CollectionStatusPill({ status }: { status: CollectionEntry['reviewStatus'] }) {
-  return <span className={`collection-status-pill ${status}`}>{status === 'needs_review' ? 'Review' : 'Matched'}</span>;
+  return <StatusPill tone={status === 'needs_review' ? 'warning' : 'success'} className={`collection-status-pill ${status}`}>{status === 'needs_review' ? 'Review' : 'Matched'}</StatusPill>;
+}
+
+function toneForDeckStatus(status: string | undefined): StatusPillTone {
+  if (status === 'active' || status === 'ready' || status === 'complete') {
+    return 'success';
+  }
+  if (status === 'review' || status === 'needs_review') {
+    return 'warning';
+  }
+  if (status === 'archived') {
+    return 'neutral';
+  }
+  return 'info';
 }
 
 function collectionPrintLabel(entry: CollectionEntry): string {
@@ -810,6 +1714,7 @@ function gameLabel(gameId: string | undefined): string {
 
 function DecksWorkspace({
   library,
+  selectedUniverseId,
   showLeftPanel,
   showRightPanel,
   leftPanelWidth,
@@ -820,12 +1725,17 @@ function DecksWorkspace({
   onShowRightPanelChange,
   onCreateDeck,
   onOpenCard,
+  onOpenCardBrowser,
+  onOpenDashboard,
   onStatus,
+  saveShortcutToken,
   deckRefreshToken,
-  activeDeckId
+  activeDeckId,
+  workMode
 }: Pick<
   WorkspaceViewProps,
   | 'library'
+  | 'selectedUniverseId'
   | 'showLeftPanel'
   | 'showRightPanel'
   | 'leftPanelWidth'
@@ -836,37 +1746,35 @@ function DecksWorkspace({
   | 'onShowRightPanelChange'
   | 'onCreateDeck'
   | 'onOpenCard'
+  | 'onOpenCardBrowser'
+  | 'onOpenDashboard'
   | 'onStatus'
+  | 'saveShortcutToken'
   | 'deckRefreshToken'
   | 'activeDeckId'
+  | 'workMode'
 >) {
   const [decks, setDecks] = useState<DeckSummary[]>([]);
   const [deck, setDeck] = useState<DeckState | null>(null);
   const [query, setQuery] = useState('');
-  const [cardQuery, setCardQuery] = useState('');
-  const [collectionQuery, setCollectionQuery] = useState('');
-  const [deckCollections, setDeckCollections] = useState<CollectionSummary[]>([]);
-  const [selectedDeckCollectionId, setSelectedDeckCollectionId] = useState('');
-  const [deckCollection, setDeckCollection] = useState<CollectionState | null>(null);
+  const [addCardsOpen, setAddCardsOpen] = useState(false);
+  const [selectedDeckEntryIndex, setSelectedDeckEntryIndex] = useState<number | null>(null);
+  const [previewDeckEntryIndex, setPreviewDeckEntryIndex] = useState<number | null>(null);
+  const [activeDeckSection, setActiveDeckSection] = useState<DeckEntry['section']>('main');
+  const [deckViewMode, setDeckViewMode] = useState<DeckViewMode>('board');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [deckFilters, setDeckFilters] = useState({
-    status: 'all',
-    tag: '',
-    format: '',
-    linkedUniverseId: 'all',
-    linkedSetCode: 'all',
-    unresolved: 'all',
-    mainCount: '',
-    sideCount: '',
-    maybeCount: ''
-  });
+  const [deckFilters, setDeckFilters] = useState(() => defaultDeckFiltersForProject(selectedUniverseId));
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const activeDeckFilterCount = countActiveFilters([
     { value: deckFilters.status, defaultValue: 'all' },
     { value: deckFilters.tag, defaultValue: '' },
+    { value: deckFilters.playStyle, defaultValue: '' },
     { value: deckFilters.format, defaultValue: '' },
-    { value: deckFilters.linkedUniverseId, defaultValue: 'all' },
+    { value: deckFilters.colorIdentity, defaultValue: 'all' },
+    { value: deckFilters.commanderBracket, defaultValue: 'all' },
+    { value: deckFilters.commander, defaultValue: '' },
+    { value: deckFilters.linkedUniverseId, defaultValue: selectedUniverseId || 'all' },
     { value: deckFilters.linkedSetCode, defaultValue: 'all' },
     { value: deckFilters.unresolved, defaultValue: 'all' },
     { value: deckFilters.mainCount, defaultValue: '' },
@@ -876,48 +1784,47 @@ function DecksWorkspace({
 
   useEffect(() => {
     void loadDecks(activeDeckId || undefined);
-  }, [deckRefreshToken]);
+  }, [deckRefreshToken, selectedUniverseId]);
 
   useEffect(() => {
-    void loadDeckCollections();
-  }, []);
+    if (!saveShortcutToken) {
+      return;
+    }
+    if (!deck) {
+      onStatus('No deck is selected to save.');
+      return;
+    }
+    if (busy) {
+      onStatus('Deck save is already in progress.');
+      return;
+    }
+    if (!dirty) {
+      onStatus('No deck changes to save.');
+      return;
+    }
+    void handleSaveDeck();
+  }, [saveShortcutToken]);
+
+  useEffect(() => {
+    setDeckFilters((current) => ({ ...current, linkedUniverseId: selectedUniverseId || 'all' }));
+  }, [selectedUniverseId]);
 
   async function loadDecks(nextDeckId?: string) {
     try {
       const loaded = await fetchDecks();
       setDecks(loaded);
-      const targetId = nextDeckId ?? deck?.metadata.deckId ?? loaded[0]?.deckId;
+      const projectDecks = selectedUniverseId ? loaded.filter((candidate) => candidate.linkedUniverseId === selectedUniverseId) : loaded;
+      const currentDeckStillInProject = deck && (!selectedUniverseId || deck.metadata.linkedUniverseId === selectedUniverseId);
+      const targetId = nextDeckId ?? (currentDeckStillInProject ? deck.metadata.deckId : undefined) ?? projectDecks[0]?.deckId ?? loaded[0]?.deckId;
       if (targetId) {
         setDeck(await fetchDeck(targetId));
       } else {
         setDeck(null);
       }
+      setSelectedDeckEntryIndex(null);
+      setPreviewDeckEntryIndex(null);
+      setActiveDeckSection('main');
       setDirty(false);
-    } catch (error) {
-      onStatus(error instanceof Error ? error.message : String(error));
-    }
-  }
-
-  async function loadDeckCollections() {
-    try {
-      const loaded = await fetchCollections();
-      setDeckCollections(loaded);
-      if (loaded[0]) {
-        await handleSelectDeckCollection(loaded[0].collectionId);
-      }
-    } catch (error) {
-      onStatus(error instanceof Error ? error.message : String(error));
-    }
-  }
-
-  async function handleSelectDeckCollection(collectionId: string) {
-    setSelectedDeckCollectionId(collectionId);
-    if (!collectionId) {
-      setDeckCollection(null);
-      return;
-    }
-    try {
-      setDeckCollection(await fetchCollection(collectionId));
     } catch (error) {
       onStatus(error instanceof Error ? error.message : String(error));
     }
@@ -926,6 +1833,9 @@ function DecksWorkspace({
   async function handleSelectDeck(deckId: string) {
     try {
       setDeck(await fetchDeck(deckId));
+      setSelectedDeckEntryIndex(null);
+      setPreviewDeckEntryIndex(null);
+      setActiveDeckSection('main');
       setDirty(false);
     } catch (error) {
       onStatus(error instanceof Error ? error.message : String(error));
@@ -950,19 +1860,6 @@ function DecksWorkspace({
     }
   }
 
-  async function handleExportDeck(target: 'text' | 'cockatrice') {
-    if (!deck) {
-      return;
-    }
-    try {
-      const result = await exportDeck(deck.metadata.deckId, target);
-      downloadContent(result.filename, result.mimeType, 'text', result.content);
-      onStatus(`Exported ${result.filename}.`);
-    } catch (error) {
-      onStatus(error instanceof Error ? error.message : String(error));
-    }
-  }
-
   function updateDeck(next: DeckState) {
     setDeck(next);
     setDirty(true);
@@ -975,51 +1872,77 @@ function DecksWorkspace({
     updateDeck({ ...deck, metadata: { ...deck.metadata, ...next } });
   }
 
-  function addCard(card: DeckCardOption) {
+  function addCard(card: DeckCardOption, section: DeckEntry['section'] = 'main', count = 1, candidateStatus: DeckEntry['candidateStatus'] = 'active') {
     if (!deck) {
       return;
     }
-    const existingIndex = deck.entries.findIndex((entry) => entry.section === 'main' && entry.setCode === card.setCode && entry.cardId === card.cardId);
+    const deckVariantId = activeDeckVariantId(deck);
+    const primaryVariantId = card.variants.find((variant) => variant.isPrimary)?.variantId;
+    const existingIndex = deck.entries.findIndex((entry) => (entry.deckVariantId ?? deckVariantId) === deckVariantId && entry.section === section && entry.setCode === card.setCode && entry.cardId === card.cardId && entry.variantId === primaryVariantId);
     const entries =
       existingIndex >= 0
-        ? deck.entries.map((entry, index) => (index === existingIndex ? { ...entry, count: entry.count + 1, card, nameSnapshot: card.name } : entry))
+        ? deck.entries.map((entry, index) => (index === existingIndex ? { ...entry, count: entry.count + count, card, nameSnapshot: card.name } : entry))
         : [
             ...deck.entries,
             {
               deckId: deck.metadata.deckId,
-              section: 'main' as const,
-              count: 1,
+              entryId: nextDeckEntryId(deck),
+              deckVariantId,
+              section,
+              count,
               setCode: card.setCode,
               cardId: card.cardId,
+              variantId: primaryVariantId,
               nameSnapshot: card.name,
+              candidateStatus: candidateStatus ?? 'active',
+              roles: [],
+              roleSource: 'none' as const,
+              entryTags: [],
+              flags: [],
+              starred: false,
+              markedForDeletion: false,
               card
             }
           ];
     updateDeck({ ...deck, entries });
+    setActiveDeckSection(section);
   }
 
-  function addCollectionCard(entry: CollectionEntry) {
+  function addCollectionCard(entry: CollectionEntry, collectionSource: CollectionState | null, section: DeckEntry['section'] = 'main', count = 1, candidateStatus: DeckEntry['candidateStatus'] = 'active') {
     if (!deck) {
       return;
     }
-    const setCode = (entry.setCode || deckCollection?.metadata.collectionId || 'COLL').toUpperCase();
-    const cardId = entry.scryfallId || entry.entryId;
-    const existingIndex = deck.entries.findIndex((deckEntry) => deckEntry.section === 'main' && deckEntry.setCode === setCode && deckEntry.cardId === cardId);
+    const setCode = (entry.linkedSetCode || entry.setCode || collectionSource?.metadata.collectionId || 'COLL').toUpperCase();
+    const cardId = entry.linkedCardId || entry.scryfallId || entry.entryId;
+    const variantId = entry.linkedVariantId;
+    const deckVariantId = activeDeckVariantId(deck);
+    const existingIndex = deck.entries.findIndex((deckEntry) => (deckEntry.deckVariantId ?? deckVariantId) === deckVariantId && deckEntry.section === section && deckEntry.setCode === setCode && deckEntry.cardId === cardId && deckEntry.variantId === variantId);
     const entries =
       existingIndex >= 0
-        ? deck.entries.map((deckEntry, index) => (index === existingIndex ? { ...deckEntry, count: deckEntry.count + 1, nameSnapshot: entry.cardName } : deckEntry))
+        ? deck.entries.map((deckEntry, index) => (index === existingIndex ? { ...deckEntry, count: deckEntry.count + count, nameSnapshot: entry.cardName } : deckEntry))
         : [
             ...deck.entries,
             {
               deckId: deck.metadata.deckId,
-              section: 'main' as const,
-              count: 1,
+              entryId: nextDeckEntryId(deck),
+              deckVariantId,
+              section,
+              count,
               setCode,
               cardId,
-              nameSnapshot: entry.cardName
+              variantId,
+              nameSnapshot: entry.cardName,
+              candidateStatus: candidateStatus ?? 'active',
+              roles: [],
+              roleSource: 'none' as const,
+              entryTags: [],
+              flags: [],
+              starred: false,
+              markedForDeletion: false
             }
           ];
     updateDeck({ ...deck, entries });
+    setActiveDeckSection(section);
   }
 
   function updateEntry(index: number, next: Partial<DeckEntry>) {
@@ -1030,6 +1953,9 @@ function DecksWorkspace({
       ...deck,
       entries: deck.entries.map((entry, entryIndex) => (entryIndex === index ? { ...entry, ...next, count: Math.max(1, Number(next.count ?? entry.count) || 1) } : entry))
     });
+    if (next.section) {
+      setActiveDeckSection(next.section);
+    }
   }
 
   function removeEntry(index: number) {
@@ -1037,15 +1963,134 @@ function DecksWorkspace({
       return;
     }
     updateDeck({ ...deck, entries: deck.entries.filter((_, entryIndex) => entryIndex !== index) });
+    setSelectedDeckEntryIndex((current) => (current === index ? null : current !== null && current > index ? current - 1 : current));
+  }
+
+  function setActiveVariant(variantId: string) {
+    if (!deck || !variantId) {
+      return;
+    }
+    updateDeck({
+      ...deck,
+      activeVariantId: variantId,
+      activeVariant: deck.metadata.variants.find((variant) => variant.variantId === variantId) ?? deck.activeVariant,
+      variants: deck.metadata.variants,
+      metadata: { ...deck.metadata, activeVariantId: variantId }
+    });
+    setSelectedDeckEntryIndex(null);
+    setPreviewDeckEntryIndex(null);
+    setActiveDeckSection('main');
+  }
+
+  function duplicateActiveVariant() {
+    if (!deck) {
+      return;
+    }
+    const sourceVariantId = activeDeckVariantId(deck);
+    const sourceVariant = deck.metadata.variants.find((variant) => variant.variantId === sourceVariantId) ?? deck.activeVariant;
+    const now = new Date().toISOString();
+    const variantId = nextDeckVariantId(deck, `${sourceVariant?.name ?? 'Variant'} Copy`);
+    const nextVariant = {
+      ...(sourceVariant ?? deck.activeVariant),
+      deckId: deck.metadata.deckId,
+      variantId,
+      name: `${sourceVariant?.name ?? 'Variant'} Copy`,
+      status: 'testing' as const,
+      createdAt: now,
+      updatedAt: now
+    };
+    const copiedEntries = deck.entries
+      .filter((entry) => (!entry.deckVariantId || entry.deckVariantId === sourceVariantId) && !entry.markedForDeletion)
+      .map((entry, index) => ({
+        ...entry,
+        entryId: `${variantId}-entry-${String(index + 1).padStart(3, '0')}`,
+        deckVariantId: variantId,
+        candidateStatus: entry.candidateStatus === 'cut' ? 'candidate' : entry.candidateStatus ?? 'active'
+      }));
+    const variants = [...deck.metadata.variants, nextVariant];
+    updateDeck({
+      ...deck,
+      activeVariantId: variantId,
+      activeVariant: nextVariant,
+      variants,
+      metadata: { ...deck.metadata, activeVariantId: variantId, variants },
+      entries: [...deck.entries, ...copiedEntries]
+    });
+    setSelectedDeckEntryIndex(null);
+    setActiveDeckSection('main');
+  }
+
+  function createBlankVariant() {
+    if (!deck) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const variantId = nextDeckVariantId(deck, 'New Variant');
+    const nextVariant = {
+      deckId: deck.metadata.deckId,
+      variantId,
+      name: `Variant ${deck.metadata.variants.length + 1}`,
+      description: '',
+      status: 'draft' as const,
+      colorIdentity: deck.metadata.colorIdentity,
+      commander: deck.metadata.commander,
+      partnerCommanders: deck.metadata.partnerCommanders,
+      tags: [],
+      notes: '',
+      createdAt: now,
+      updatedAt: now
+    };
+    const variants = [...deck.metadata.variants, nextVariant];
+    updateDeck({
+      ...deck,
+      activeVariantId: variantId,
+      activeVariant: nextVariant,
+      variants,
+      metadata: { ...deck.metadata, activeVariantId: variantId, variants }
+    });
+    setSelectedDeckEntryIndex(null);
+    setActiveDeckSection('main');
+  }
+
+  function updateActiveVariant(patch: Partial<DeckState['variants'][number]>) {
+    if (!deck) {
+      return;
+    }
+    const variantId = activeDeckVariantId(deck);
+    const variants = deck.metadata.variants.map((variant) => (variant.variantId === variantId ? { ...variant, ...patch, updatedAt: new Date().toISOString() } : variant));
+    const activeVariant = variants.find((variant) => variant.variantId === variantId) ?? deck.activeVariant;
+    updateDeck({ ...deck, variants, activeVariant, metadata: { ...deck.metadata, variants } });
+  }
+
+  function archiveActiveVariant() {
+    updateActiveVariant({ status: 'archived' });
   }
 
   const filteredDecks = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return decks.filter((candidate) => {
-      const matchesQuery = !needle || `${candidate.name} ${candidate.description ?? ''} ${candidate.status} ${candidate.format ?? ''} ${candidate.tags.join(' ')}`.toLowerCase().includes(needle);
+      const searchableMetadata = [
+        candidate.name,
+        candidate.description,
+        candidate.status,
+        candidate.format,
+        candidate.colorIdentity,
+        candidate.commander?.nameSnapshot,
+        candidate.commanderBracket,
+        candidate.activeVariantName,
+        candidate.variants?.map((variant) => `${variant.name} ${variant.status} ${variant.tags.join(' ')}`).join(' '),
+        candidate.tags.join(' '),
+        candidate.playStyleTags.join(' ')
+      ].join(' ');
+      const matchesQuery = !needle || searchableMetadata.toLowerCase().includes(needle);
       const matchesStatus = deckFilters.status === 'all' || candidate.status === deckFilters.status;
       const matchesTags = matchesTagFilter(candidate.tags, deckFilters.tag);
+      const matchesPlayStyle = matchesTagFilter(candidate.playStyleTags, deckFilters.playStyle);
       const matchesFormat = includesFilterText(candidate.format, deckFilters.format);
+      const matchesColorIdentity = deckFilters.colorIdentity === 'all' || candidate.colorIdentity === deckFilters.colorIdentity;
+      const commanderText = [candidate.commander?.nameSnapshot, ...(candidate.partnerCommanders ?? []).map((commander) => commander.nameSnapshot)].filter(Boolean).join(' ');
+      const matchesCommander = includesFilterText(commanderText, deckFilters.commander);
+      const matchesCommanderBracket = deckFilters.commanderBracket === 'all' || candidate.commanderBracket === deckFilters.commanderBracket;
       const matchesProject = deckFilters.linkedUniverseId === 'all' || candidate.linkedUniverseId === deckFilters.linkedUniverseId;
       const matchesSet = deckFilters.linkedSetCode === 'all' || candidate.linkedSetCode === deckFilters.linkedSetCode;
       const matchesUnresolved =
@@ -1056,7 +2101,11 @@ function DecksWorkspace({
         matchesQuery &&
         matchesStatus &&
         matchesTags &&
+        matchesPlayStyle &&
         matchesFormat &&
+        matchesColorIdentity &&
+        matchesCommander &&
+        matchesCommanderBracket &&
         matchesProject &&
         matchesSet &&
         matchesUnresolved &&
@@ -1067,19 +2116,65 @@ function DecksWorkspace({
     });
   }, [deckFilters, decks, query]);
 
-  const filteredCards = useMemo(() => {
-    const needle = cardQuery.trim().toLowerCase();
-    return (deck?.availableCards ?? [])
-      .filter((card) => !needle || `${card.name} ${card.typeLine} ${card.setCode} ${card.setName} ${card.oracleText} ${card.flavorText} ${card.status} ${card.tags.join(' ')}`.toLowerCase().includes(needle))
-      .slice(0, 120);
-  }, [cardQuery, deck?.availableCards]);
-
-  const filteredDeckCollectionEntries = useMemo(() => {
-    const needle = collectionQuery.trim().toLowerCase();
-    return (deckCollection?.entries ?? [])
-      .filter((entry) => !needle || `${entry.cardName} ${entry.setCode ?? ''} ${entry.collectorNumber ?? ''} ${entry.condition ?? ''} ${entry.reviewNotes ?? ''}`.toLowerCase().includes(needle))
-      .slice(0, 120);
-  }, [collectionQuery, deckCollection?.entries]);
+  const selectedDeckEntry = selectedDeckEntryIndex === null ? undefined : deck?.entries[selectedDeckEntryIndex];
+  const previewDeckEntry = previewDeckEntryIndex === null ? undefined : deck?.entries[previewDeckEntryIndex];
+  const activeVariantId = deck ? activeDeckVariantId(deck) : 'default';
+  const activeVariant = deck?.metadata.variants.find((variant) => variant.variantId === activeVariantId) ?? deck?.activeVariant;
+  const activeDeckEntries = useMemo(() => activeVariantEntries(deck), [deck]);
+  const exportableEntries = useMemo(() => exportableDeckEntries(deck), [deck]);
+  const candidatePoolEntries = useMemo(
+    () =>
+      (deck?.entries ?? [])
+        .map((entry, index) => ({ entry, index }))
+        .filter(({ entry }) => entry.candidateStatus === 'candidate' || entry.candidateStatus === 'testing' || entry.candidateStatus === 'cut' || entry.markedForDeletion),
+    [deck?.entries]
+  );
+  const deckSectionCounts = useMemo(
+    () => ({
+      main: activeDeckEntries.filter((entry) => entry.section === 'main').reduce((sum, entry) => sum + entry.count, 0),
+      side: activeDeckEntries.filter((entry) => entry.section === 'side').reduce((sum, entry) => sum + entry.count, 0),
+      maybe: activeDeckEntries.filter((entry) => entry.section === 'maybe').reduce((sum, entry) => sum + entry.count, 0)
+    }),
+    [activeDeckEntries]
+  );
+  const deckLegalityIssues = useMemo(() => (deck ? assessDeckLegality(deck) : []), [deck]);
+  const deckMetrics = useMemo(() => summarizeDeck(deck), [deck]);
+  const activeDeckSectionEntries = useMemo(
+    () => (deck?.entries ?? []).map((entry, index) => ({ entry, index })).filter(({ entry }) => (!entry.deckVariantId || entry.deckVariantId === activeVariantId) && !entry.markedForDeletion && entry.section === activeDeckSection),
+    [activeDeckSection, activeVariantId, deck?.entries]
+  );
+  const activeVariantRows = useMemo(
+    () => (deck?.entries ?? []).map((entry, index) => ({ entry, index })).filter(({ entry }) => (!entry.deckVariantId || entry.deckVariantId === activeVariantId) && !entry.markedForDeletion),
+    [activeVariantId, deck?.entries]
+  );
+  const visibleDeckRows = useMemo(
+    () => (deckViewMode === 'candidates' ? candidatePoolEntries : deckViewMode === 'roles' || deckViewMode === 'mana' ? activeVariantRows : activeDeckSectionEntries),
+    [activeDeckSectionEntries, activeVariantRows, candidatePoolEntries, deckViewMode]
+  );
+  const deckRoleSummary = useMemo(() => buildDeckRoleSummary(activeDeckEntries), [activeDeckEntries]);
+  const deckMetricItems = useMemo(() => {
+    const items: Array<{ label: string; value: ReactNode; note?: string; icon?: IconName }> = [
+      { label: 'Total', value: deckMetrics.totalCards, icon: 'cards' },
+      { label: 'Main', value: deckMetrics.mainCards, icon: 'decks' }
+    ];
+    if (deckMetrics.sideCards > 0) {
+      items.push({ label: 'Sideboard', value: deckMetrics.sideCards, icon: 'list' });
+    }
+    if (deckMetrics.maybeCards > 0) {
+      items.push({ label: 'Maybe', value: deckMetrics.maybeCards, icon: 'flag' });
+    }
+    if ((deck?.metadata.variants.length ?? 0) > 1) {
+      items.push({ label: 'Variants', value: deck?.metadata.variants.length ?? 0, icon: 'grid' });
+    }
+    if (candidatePoolEntries.length > 0) {
+      items.push({ label: 'Candidates', value: candidatePoolEntries.length, icon: 'filter' });
+    }
+    items.push({ label: 'Ready', value: deckMetrics.resolvedCards, icon: 'save' });
+    if (deckMetrics.unresolvedCards > 0) {
+      items.push({ label: 'Unresolved', value: deckMetrics.unresolvedCards, note: 'Needs review before export confidence', icon: 'flag' });
+    }
+    return items;
+  }, [candidatePoolEntries.length, deck?.metadata.variants.length, deckMetrics]);
 
   return (
     <div className="management-workspace" style={{ gridTemplateColumns: buildManagementColumns(showLeftPanel, showRightPanel, leftPanelWidth, rightPanelWidth) }}>
@@ -1102,12 +2197,18 @@ function DecksWorkspace({
           <div className="entity-list">
             {filteredDecks.map((candidate) => (
               <button key={candidate.deckId} type="button" className={`entity-row clickable ${candidate.deckId === deck?.metadata.deckId ? 'selected' : ''}`} onClick={() => void handleSelectDeck(candidate.deckId)}>
-                <Icon name="decks" />
+                <DeckCoverBadge metadata={candidate} />
                 <span>
                   <strong>{candidate.name}</strong>
-                  <small>
-                    {candidate.cardCount} cards - {candidate.status}
-                    {candidate.unresolvedCount ? ` - ${candidate.unresolvedCount} unresolved` : ''}
+                  <small className="entity-row-source-line">
+                    <StatusPill tone={candidate.unresolvedCount ? 'warning' : toneForDeckStatus(candidate.status)} className="workspace-source-pill">
+                      {candidate.unresolvedCount ? 'Review' : candidate.status || 'draft'}
+                    </StatusPill>
+                    <span>
+                      {formatCount(candidate.cardCount, 'card')} - {candidate.activeVariantName || 'Default Build'} - {[candidate.format, candidate.status].filter(Boolean).join(' - ')}
+                      {candidate.candidateCount ? ` - ${candidate.candidateCount} candidates` : ''}
+                      {candidate.unresolvedCount ? ` - ${candidate.unresolvedCount} unresolved` : ''}
+                    </span>
                   </small>
                 </span>
               </button>
@@ -1126,66 +2227,48 @@ function DecksWorkspace({
         {deck ? (
           <div className="deck-workspace">
             <div className="visual-management-header">
-              <div>
-                <h2>{deck.metadata.name}</h2>
-                <p>{deck.entries.reduce((total, entry) => total + entry.count, 0)} cards across Main, Sideboard, and Maybeboard</p>
+              <div className="deck-header-identity">
+                <DeckCoverBadge metadata={deck.metadata} cards={deck.availableCards} size="large" />
+                <div>
+                  <h2>{deck.metadata.name}</h2>
+                  <p>{formatCount(exportableEntries.reduce((total, entry) => total + entry.count, 0), 'card')} in {activeVariant?.name ?? 'Default Build'}; {formatCount(candidatePoolEntries.length, 'candidate')}</p>
+                </div>
+              </div>
+              <div className="deck-variant-toolbar" aria-label="Deck variants">
+                <label className="filter-field compact">
+                  <span>Variant</span>
+                  <select value={activeVariantId} onChange={(event) => setActiveVariant(event.target.value)}>
+                    {deck.metadata.variants.map((variant) => (
+                      <option key={variant.variantId} value={variant.variantId}>
+                        {variant.name} - {variant.status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button type="button" className="secondary-button compact" onClick={duplicateActiveVariant}>
+                  Duplicate
+                </button>
+                <button type="button" className="secondary-button compact" onClick={createBlankVariant}>
+                  Blank
+                </button>
               </div>
               <div className="export-actions">
+                <button type="button" className="secondary-button" onClick={() => setAddCardsOpen(true)}>
+                  Add cards
+                </button>
+                <button type="button" className="secondary-button" onClick={onOpenCardBrowser}>
+                  Compare
+                </button>
+                <button type="button" className="secondary-button" onClick={onOpenDashboard}>
+                  Dashboard
+                </button>
                 <button type="button" className="primary-button" disabled={busy || !dirty} onClick={() => void handleSaveDeck()}>
                   Save deck
-                </button>
-                <button type="button" className="secondary-button" onClick={() => void handleExportDeck('text')}>
-                  Export text
-                </button>
-                <button type="button" className="secondary-button" onClick={() => void handleExportDeck('cockatrice')}>
-                  Export .cod
                 </button>
               </div>
             </div>
 
-            <div className="deck-meta-grid">
-              <Field label="Name">
-                <input value={deck.metadata.name} onChange={(event) => updateMetadata({ name: event.target.value })} />
-              </Field>
-              <Field label="Format">
-                <input value={deck.metadata.format ?? ''} placeholder="Kitchen table, Commander, playtest..." onChange={(event) => updateMetadata({ format: event.target.value })} />
-              </Field>
-              <Field label="Status">
-                <select value={deck.metadata.status} onChange={(event) => updateMetadata({ status: event.target.value as DeckMetadata['status'] })}>
-                  {DECK_STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Tags">
-                <input value={joinTags(deck.metadata.tags)} placeholder="playtest, aggro" onChange={(event) => updateMetadata({ tags: splitTagInput(event.target.value) })} />
-              </Field>
-              <Field label="Linked project">
-                <select value={deck.metadata.linkedUniverseId ?? ''} onChange={(event) => updateMetadata({ linkedUniverseId: event.target.value || undefined })}>
-                  <option value="">None</option>
-                  {(library?.universes ?? []).map((universe) => (
-                    <option key={universe.id} value={universe.id}>
-                      {universe.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Linked set">
-                <select value={deck.metadata.linkedSetCode ?? ''} onChange={(event) => updateMetadata({ linkedSetCode: event.target.value || undefined })}>
-                  <option value="">None</option>
-                  {(library?.sets ?? []).map((set) => (
-                    <option key={set.setCode} value={set.setCode}>
-                      {set.setCode} - {set.setName}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Notes">
-                <textarea value={deck.metadata.notes ?? ''} rows={3} onChange={(event) => updateMetadata({ notes: event.target.value })} />
-              </Field>
-            </div>
+            <WorkModeNote mode={workMode} section="decks" />
 
             {deck.warnings.length > 0 ? (
               <div className="deck-warning-list">
@@ -1195,85 +2278,118 @@ function DecksWorkspace({
               </div>
             ) : null}
 
-            {(['main', 'side', 'maybe'] as const).map((section) => (
+            {deckLegalityIssues.length > 0 ? (
+              <div className="deck-legality-list">
+                {deckLegalityIssues.map((issue) => (
+                  <p key={`${issue.title}-${issue.detail}`} className={issue.severity}>
+                    <strong>{issue.title}</strong>
+                    <span>{issue.detail}</span>
+                  </p>
+                ))}
+              </div>
+            ) : null}
+
+            <DeckCommanderSlots deck={deck} />
+
+            <div className="deck-stat-grid">
+              {deckMetricItems.map((item) => (
+                <WorkspaceMetric key={item.label} label={item.label} value={item.value} note={item.note} icon={item.icon} />
+              ))}
+            </div>
+
+            {deckRoleSummary.length ? (
+              <div className="deck-role-summary" aria-label="Deck role distribution">
+                {deckRoleSummary.map((row) => (
+                  <span key={row.label}>
+                    <strong>{row.count}</strong>
+                    {row.label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="deck-board-tabs" role="group" aria-label="Deck boards">
+              {(['main', 'side', 'maybe'] as const).map((section) => (
+                <button
+                  key={section}
+                  type="button"
+                  aria-pressed={activeDeckSection === section}
+                  className={`deck-board-tab ${activeDeckSection === section ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveDeckSection(section);
+                    setSelectedDeckEntryIndex(null);
+                  }}
+                >
+                  <span>{deckSectionLabel(section)}</span>
+                  <strong>{deckSectionCounts[section]}</strong>
+                </button>
+              ))}
+            </div>
+
+            <div className="collection-table-toolbar deck-view-toolbar">
+              <span className="filter-count-note">{deckSectionLabel(activeDeckSection)} view</span>
+              <div className="segmented-control collection-view-mode segmented-icon-control deck-view-mode" role="group" aria-label="Deck view mode">
+                {DECK_VIEW_MODE_OPTIONS.map(({ mode, label, icon }) => (
+                  <button key={mode} type="button" className={deckViewMode === mode ? 'active' : ''} title={`${label} view`} aria-label={`${label} view`} onClick={() => setDeckViewMode(mode)}>
+                    <Icon name={icon} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {deckViewMode === 'board' ? (
               <DeckSectionList
-                key={section}
-                section={section}
+                section={activeDeckSection}
                 entries={deck.entries}
-                onOpenCard={onOpenCard}
-                onUpdateEntry={updateEntry}
-                onRemoveEntry={removeEntry}
+                activeVariantId={activeVariantId}
+                selectedIndex={selectedDeckEntryIndex}
+                onSelectEntry={setSelectedDeckEntryIndex}
+                onPreviewEntry={setPreviewDeckEntryIndex}
               />
-            ))}
+            ) : (
+              <DeckEntryViews
+                mode={deckViewMode}
+                entries={visibleDeckRows}
+                selectedIndex={selectedDeckEntryIndex}
+                onSelectEntry={setSelectedDeckEntryIndex}
+                onPreviewEntry={setPreviewDeckEntryIndex}
+              />
+            )}
           </div>
         ) : (
           <div className="workspace-preview-hero">
             <div className="tile-art-placeholder large">Decks</div>
             <div>
               <h2>No deck selected</h2>
-              <p>Create a deck from the left panel, then add cards from any set in the right panel.</p>
+              <p>Create a deck from the left panel, then add cards from the deck workspace.</p>
             </div>
           </div>
         )}
       </section>
 
-      {showRightPanel ? <PanelResizeHandle label="Resize deck card browser panel" onResize={onResizeRightPanel} /> : null}
+      {showRightPanel ? <PanelResizeHandle label="Resize deck inspector panel" onResize={onResizeRightPanel} /> : null}
       {showRightPanel ? (
         <aside className="workspace-inspector-panel">
-          <WorkspacePanelToolbar label="Hide deck card browser" icon="collapseLeft" onClick={() => onShowRightPanelChange(false)} />
-          <h2>Card Browser</h2>
-          <p className="workspace-copy">Add cards from any set. Cards default into Main and can move sections after they are added.</p>
-          <label className="search-field">
-            <Icon name="search" />
-            <input value={cardQuery} placeholder="Search all cards..." onChange={(event) => setCardQuery(event.target.value)} />
-          </label>
-          <div className="deck-card-browser">
-            {filteredCards.map((card) => (
-              <button key={`${card.setCode}-${card.cardId}`} type="button" className="entity-row clickable" disabled={!deck} onClick={() => addCard(card)}>
-                <Icon name="cards" />
-                <span>
-                  <strong>{card.name}</strong>
-                  <small>
-                    {card.setCode} {card.collectorNumber} - {card.typeLine || card.rarity}
-                  </small>
-                </span>
-              </button>
-            ))}
-            {!filteredCards.length ? <p className="workspace-copy">No authored cards match the current search.</p> : null}
-          </div>
-          <h2>Collection Cards</h2>
-          <p className="workspace-copy">Add isolated collection rows to this deck. Saving the deck does not copy them into Cards or Sets.</p>
-          <Field label="Collection">
-            <select value={selectedDeckCollectionId} onChange={(event) => void handleSelectDeckCollection(event.target.value)}>
-              <option value="">No collection</option>
-              {deckCollections.map((candidate) => (
-                <option key={candidate.collectionId} value={candidate.collectionId}>
-                  {candidate.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <label className="search-field">
-            <Icon name="search" />
-            <input value={collectionQuery} placeholder="Search collection cards..." onChange={(event) => setCollectionQuery(event.target.value)} />
-          </label>
-          <div className="deck-card-browser collection-browser">
-            {filteredDeckCollectionEntries.map((entry) => (
-              <button key={entry.entryId} type="button" className={`entity-row clickable ${entry.reviewStatus === 'needs_review' ? 'needs-review' : ''}`} disabled={!deck} onClick={() => addCollectionCard(entry)}>
-                <Icon name="collections" />
-                <span>
-                  <strong>{entry.cardName}</strong>
-                  <small>
-                    {entry.quantity} available - {collectionPrintLabel(entry)} - {entry.reviewStatus === 'needs_review' ? 'review' : 'matched'}
-                  </small>
-                </span>
-              </button>
-            ))}
-            {!filteredDeckCollectionEntries.length ? <p className="workspace-copy">No collection rows match the current search.</p> : null}
-          </div>
+          <WorkspacePanelToolbar label="Hide deck inspector panel" icon="collapseLeft" onClick={() => onShowRightPanelChange(false)} />
+          <DeckInspectorPanel
+            deck={deck}
+            entry={selectedDeckEntry}
+            entryIndex={selectedDeckEntryIndex}
+            library={library}
+            deckTagSuggestions={decks.flatMap((candidate) => candidate.tags)}
+            onUpdateMetadata={updateMetadata}
+            onUpdateActiveVariant={updateActiveVariant}
+            onUpdateEntry={updateEntry}
+            onRemoveEntry={removeEntry}
+            onArchiveActiveVariant={archiveActiveVariant}
+            onClearEntry={() => setSelectedDeckEntryIndex(null)}
+            onOpenCard={onOpenCard}
+            onOpenCardBrowser={onOpenCardBrowser}
+            onOpenDashboard={onOpenDashboard}
+          />
         </aside>
       ) : (
-        <button type="button" className="collapsed-panel-strip right" onClick={() => onShowRightPanelChange(true)} title="Show deck card browser" aria-label="Show deck card browser">
+        <button type="button" className="collapsed-panel-strip right" onClick={() => onShowRightPanelChange(true)} title="Show deck inspector" aria-label="Show deck inspector">
           <Icon name="collapseLeft" />
         </button>
       )}
@@ -1284,19 +2400,7 @@ function DecksWorkspace({
           resultsLabel={`${filteredDecks.length} matching decks`}
           activeFilterCount={activeDeckFilterCount}
           onClose={() => setFiltersOpen(false)}
-          onResetFilters={() =>
-            setDeckFilters({
-              status: 'all',
-              tag: '',
-              format: '',
-              linkedUniverseId: 'all',
-              linkedSetCode: 'all',
-              unresolved: 'all',
-              mainCount: '',
-              sideCount: '',
-              maybeCount: ''
-            })
-          }
+          onResetFilters={() => setDeckFilters(defaultDeckFiltersForProject(selectedUniverseId))}
           results={
             <div className="filter-result-list">
               {filteredDecks.length ? (
@@ -1305,22 +2409,12 @@ function DecksWorkspace({
                     <Icon name="decks" />
                     <span>
                       <strong>{candidate.name}</strong>
-                      <small>{candidate.cardCount} cards - {candidate.status}</small>
+                      <small>{formatCount(candidate.cardCount, 'card')} - {candidate.status}</small>
                     </span>
                   </button>
                 ))
               ) : (
-                <FilteredEmptyState title="No decks match" detail="Reset filters or clear the deck search." showClearSearch={Boolean(query.trim())} showResetFilters={activeDeckFilterCount > 0} onClearSearch={() => setQuery('')} onResetFilters={() => setDeckFilters({
-                  status: 'all',
-                  tag: '',
-                  format: '',
-                  linkedUniverseId: 'all',
-                  linkedSetCode: 'all',
-                  unresolved: 'all',
-                  mainCount: '',
-                  sideCount: '',
-                  maybeCount: ''
-                })} />
+                <FilteredEmptyState title="No decks match" detail="Reset filters or clear the deck search." showClearSearch={Boolean(query.trim())} showResetFilters={activeDeckFilterCount > 0} onClearSearch={() => setQuery('')} onResetFilters={() => setDeckFilters(defaultDeckFiltersForProject(selectedUniverseId))} />
               )}
             </div>
           }
@@ -1337,11 +2431,48 @@ function DecksWorkspace({
             </label>
             <label className="filter-field">
               <span>Tags</span>
-              <input value={deckFilters.tag} placeholder="playtest, aggro..." onChange={(event) => setDeckFilters((current) => ({ ...current, tag: event.target.value }))} />
+              <input value={deckFilters.tag} placeholder="playtest, testing labels..." onChange={(event) => setDeckFilters((current) => ({ ...current, tag: event.target.value }))} />
+            </label>
+            <label className="filter-field">
+              <span>Play style</span>
+              <input value={deckFilters.playStyle} placeholder="Aggro, Tokens, Voltron..." onChange={(event) => setDeckFilters((current) => ({ ...current, playStyle: event.target.value }))} />
             </label>
             <label className="filter-field">
               <span>Format text</span>
-              <input value={deckFilters.format} placeholder="Commander, kitchen table..." onChange={(event) => setDeckFilters((current) => ({ ...current, format: event.target.value }))} />
+              <input list="deck-filter-format-options" value={deckFilters.format} placeholder="Commander, kitchen table..." onChange={(event) => setDeckFilters((current) => ({ ...current, format: event.target.value }))} />
+              <datalist id="deck-filter-format-options">
+                {DECK_FORMAT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </datalist>
+            </label>
+            <label className="filter-field">
+              <span>Color identity</span>
+              <select value={deckFilters.colorIdentity} onChange={(event) => setDeckFilters((current) => ({ ...current, colorIdentity: event.target.value }))}>
+                <option value="all">All identities</option>
+                {COLOR_IDENTITY_OPTIONS.map((identity) => (
+                  <option key={identity} value={identity}>
+                    {colorIdentityLabel(identity)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>Commander bracket</span>
+              <select value={deckFilters.commanderBracket} onChange={(event) => setDeckFilters((current) => ({ ...current, commanderBracket: event.target.value }))}>
+                <option value="all">All brackets</option>
+                {COMMANDER_BRACKET_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="filter-field">
+              <span>Commander</span>
+              <input value={deckFilters.commander} placeholder="Atraxa, Mira..." onChange={(event) => setDeckFilters((current) => ({ ...current, commander: event.target.value }))} />
             </label>
             <label className="filter-field">
               <span>Project</span>
@@ -1386,6 +2517,27 @@ function DecksWorkspace({
           </div>
         </BrowseFilterOverlay>
       ) : null}
+      {addCardsOpen && deck ? (
+        <DeckAddCardsOverlay
+          deck={deck}
+          onAddCard={addCard}
+          onAddCollectionEntry={addCollectionCard}
+          onStatus={onStatus}
+          onClose={() => setAddCardsOpen(false)}
+        />
+      ) : null}
+      {deck && previewDeckEntry ? (
+        <DeckCardPreviewOverlay
+          deck={deck}
+          entry={previewDeckEntry}
+          entryIndex={previewDeckEntryIndex ?? -1}
+          onUpdateEntry={updateEntry}
+          onRemoveEntry={removeEntry}
+          onOpenCard={onOpenCard}
+          onStatus={onStatus}
+          onClose={() => setPreviewDeckEntryIndex(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -1393,40 +2545,40 @@ function DecksWorkspace({
 function DeckSectionList({
   section,
   entries,
-  onOpenCard,
-  onUpdateEntry,
-  onRemoveEntry
+  activeVariantId,
+  selectedIndex,
+  onSelectEntry,
+  onPreviewEntry
 }: {
   section: DeckEntry['section'];
   entries: DeckState['entries'];
-  onOpenCard: (setCode: string, cardId: string) => Promise<void> | void;
-  onUpdateEntry: (index: number, next: Partial<DeckEntry>) => void;
-  onRemoveEntry: (index: number) => void;
+  activeVariantId: string;
+  selectedIndex: number | null;
+  onSelectEntry: (index: number) => void;
+  onPreviewEntry: (index: number) => void;
 }) {
-  const sectionEntries = entries.map((entry, index) => ({ entry, index })).filter(({ entry }) => entry.section === section);
+  const sectionEntries = entries.map((entry, index) => ({ entry, index })).filter(({ entry }) => (!entry.deckVariantId || entry.deckVariantId === activeVariantId) && !entry.markedForDeletion && entry.section === section);
   const total = sectionEntries.reduce((sum, { entry }) => sum + entry.count, 0);
   return (
     <section className="deck-section">
       <div className="deck-section-heading">
-        <h3>{section === 'main' ? 'Main' : section === 'side' ? 'Sideboard' : 'Maybeboard'}</h3>
-        <span>{total} cards</span>
+        <h3>{deckSectionLabel(section)}</h3>
+        <span>{formatCount(total, 'card')}</span>
       </div>
       {sectionEntries.length === 0 ? <p className="workspace-copy">No cards in this section.</p> : null}
       <div className="deck-entry-list">
         {sectionEntries.map(({ entry, index }) => (
-          <div key={`${entry.setCode}-${entry.cardId}-${index}`} className={`deck-entry-row ${entry.warning ? 'unresolved' : ''}`}>
-            <input aria-label="Count" type="number" min="1" value={entry.count} onChange={(event) => onUpdateEntry(index, { count: Number(event.target.value) })} />
-            <button type="button" className="deck-entry-name" onClick={() => void onOpenCard(entry.setCode, entry.cardId)}>
-              <strong>{entry.card?.name ?? entry.nameSnapshot ?? entry.cardId}</strong>
-              <small>{entry.warning ?? `${entry.setCode} - ${entry.card?.typeLine ?? entry.cardId}`}</small>
+          <div key={`${entry.setCode}-${entry.cardId}-${index}`} className="deck-entry-row-shell">
+            <button type="button" className={`deck-entry-row compact ${entry.warning ? 'unresolved' : ''} ${selectedIndex === index ? 'selected' : ''}`} onClick={() => onSelectEntry(index)}>
+              <span className="deck-entry-count">{entry.count}</span>
+              <DeckEntryThumb entry={entry} />
+              <span className="deck-entry-name">
+                <strong>{entry.card?.name ?? entry.nameSnapshot ?? entry.cardId}</strong>
+                <small>{entry.warning ?? `${entry.setCode} - ${entry.card?.typeLine ?? entry.cardId}${entry.variantId ? ` / ${entry.variantId}` : ''}${entry.candidateStatus && entry.candidateStatus !== 'active' ? ` - ${candidateStatusLabel(entry.candidateStatus)}` : ''}${entry.roles?.length ? ` - ${entry.roles.map(deckRoleLabel).join(', ')}` : ''}`}</small>
+              </span>
             </button>
-            <select value={entry.section} onChange={(event) => onUpdateEntry(index, { section: event.target.value as DeckEntry['section'] })}>
-              <option value="main">Main</option>
-              <option value="side">Side</option>
-              <option value="maybe">Maybe</option>
-            </select>
-            <button type="button" className="icon-button" onClick={() => onRemoveEntry(index)} title="Remove card">
-              <Icon name="trash" />
+            <button type="button" className="icon-button deck-entry-view-button" title={`Preview ${entry.card?.name ?? entry.nameSnapshot ?? entry.cardId}`} aria-label={`Preview ${entry.card?.name ?? entry.nameSnapshot ?? entry.cardId}`} onClick={() => onPreviewEntry(index)}>
+              <Icon name="view" />
             </button>
           </div>
         ))}
@@ -1435,10 +2587,498 @@ function DeckSectionList({
   );
 }
 
+function DeckEntryThumb({ entry }: { entry: DeckState['entries'][number] }) {
+  const metadata = metadataFromDeckCard(entry.card);
+  const imageSrc = imageUrlForMetadata(metadata, 'small');
+  const fallback = entry.card?.name ?? entry.nameSnapshot ?? entry.cardId;
+  return (
+    <span className={`deck-entry-thumb ${imageSrc ? 'has-art' : ''}`} aria-hidden="true">
+      {imageSrc ? <img src={imageSrc} alt="" loading="lazy" /> : <span>{fallback.slice(0, 2).toUpperCase()}</span>}
+    </span>
+  );
+}
+
+function deckSectionLabel(section: DeckEntry['section']): string {
+  if (section === 'side') {
+    return 'Sideboard';
+  }
+  if (section === 'maybe') {
+    return 'Maybeboard';
+  }
+  return 'Main board';
+}
+
+function candidateStatusLabel(value: DeckEntry['candidateStatus']): string {
+  if (value === 'candidate') {
+    return 'Candidate';
+  }
+  if (value === 'testing') {
+    return 'Testing';
+  }
+  if (value === 'locked') {
+    return 'Locked';
+  }
+  if (value === 'cut') {
+    return 'Cut';
+  }
+  return 'Active';
+}
+
+function deckRoleLabel(role: string): string {
+  const labels: Record<string, string> = {
+    ramp: 'Ramp',
+    mana_source: 'Mana source',
+    fixing: 'Fixing',
+    draw: 'Draw',
+    targeted_removal: 'Removal',
+    board_wipe: 'Board wipe',
+    stack_interaction: 'Stack interaction',
+    protection: 'Protection',
+    recursion: 'Recursion',
+    tutor: 'Tutor',
+    finisher: 'Finisher',
+    enabler: 'Enabler',
+    payoff: 'Payoff',
+    synergy_piece: 'Synergy',
+    utility: 'Utility',
+    threat: 'Threat',
+    land: 'Land',
+    commander: 'Commander',
+    sideboard_tech: 'Sideboard tech'
+  };
+  const normalized = role.toLowerCase().replace(/[\s-]+/g, '_');
+  return labels[normalized] ?? normalized.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function deckCardReferenceValue(reference?: DeckMetadata['commander']): string {
+  if (!reference) {
+    return '';
+  }
+  return `${reference.setCode}::${reference.cardId}::${reference.variantId ?? ''}`;
+}
+
+function deckCardReferenceFromValue(deck: DeckState, value: string): DeckMetadata['commander'] | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const [setCode = '', cardId = '', variantId = ''] = value.split('::');
+  const card = deck.availableCards.find((candidate) => candidate.setCode === setCode && candidate.cardId === cardId);
+  if (!card) {
+    return undefined;
+  }
+  return {
+    setCode: card.setCode,
+    cardId: card.cardId,
+    variantId: variantId || card.variants.find((variant) => variant.isPrimary)?.variantId,
+    nameSnapshot: card.name
+  };
+}
+
+function deckCardOptionValue(card: DeckCardOption): string {
+  return `${card.setCode}::${card.cardId}::${card.variants.find((variant) => variant.isPrimary)?.variantId ?? ''}`;
+}
+
+function deckCardOptionLabel(card: DeckCardOption): string {
+  return `${card.name} - ${card.setCode} ${card.collectorNumber}`;
+}
+
+function colorIdentityLabel(identity: string): string {
+  if (identity === 'C') {
+    return 'C - Colorless';
+  }
+  if (identity === 'WUBRG') {
+    return 'WUBRG - Five color';
+  }
+  return identity;
+}
+
+function DeckCommanderSlots({ deck }: { deck: DeckState }) {
+  const commander = deck.metadata.commander;
+  const partner = deck.metadata.partnerCommanders[0];
+  const cover = deck.metadata.coverCard ?? commander;
+  const slots = [
+    { label: 'Commander', value: commander?.nameSnapshot ?? 'Set in inspector' },
+    { label: 'Partner', value: partner?.nameSnapshot ?? 'None' },
+    { label: 'Cover', value: cover?.nameSnapshot ?? 'No cover card' }
+  ];
+  return (
+    <div className="deck-commander-slots" aria-label="Commander and cover slots">
+      {slots.map((slot) => (
+        <div key={slot.label} className={!slot.value || slot.value === 'Set in inspector' || slot.value === 'None' || slot.value === 'No cover card' ? 'empty' : ''}>
+          <span>{slot.label}</span>
+          <strong>{slot.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DeckInspectorPanel({
+  deck,
+  entry,
+  entryIndex,
+  library,
+  deckTagSuggestions,
+  onUpdateMetadata,
+  onUpdateActiveVariant,
+  onUpdateEntry,
+  onRemoveEntry,
+  onArchiveActiveVariant,
+  onClearEntry,
+  onOpenCard,
+  onOpenCardBrowser,
+  onOpenDashboard
+}: {
+  deck: DeckState | null;
+  entry?: DeckState['entries'][number];
+  entryIndex: number | null;
+  library: LibraryState | null;
+  deckTagSuggestions: string[];
+  onUpdateMetadata: (next: Partial<DeckMetadata>) => void;
+  onUpdateActiveVariant: (next: Partial<DeckState['variants'][number]>) => void;
+  onUpdateEntry: (index: number, next: Partial<DeckEntry>) => void;
+  onRemoveEntry: (index: number) => void;
+  onArchiveActiveVariant: () => void;
+  onClearEntry: () => void;
+  onOpenCard: (setCode: string, cardId: string, variantId?: string) => Promise<void> | void;
+  onOpenCardBrowser: () => void;
+  onOpenDashboard: () => void;
+}) {
+  if (!deck) {
+    return (
+      <div className="workspace-card">
+        <h2>Deck Inspector</h2>
+        <p className="workspace-copy">Choose a deck from the left panel.</p>
+      </div>
+    );
+  }
+
+  if (entry && entryIndex !== null) {
+    return (
+      <div className="workspace-card deck-inspector-panel">
+        <div className="inspector-heading-row">
+          <div>
+            <h2>Deck Entry Inspector</h2>
+            <p className="workspace-copy">{entry.card?.name ?? entry.nameSnapshot ?? entry.cardId}</p>
+          </div>
+          <button type="button" className="secondary-button" onClick={onClearEntry}>
+            Deck Inspector
+          </button>
+        </div>
+        <Field label="Count">
+          <input type="number" min="1" value={entry.count} onChange={(event) => onUpdateEntry(entryIndex, { count: Number(event.target.value) })} />
+        </Field>
+        <Field label="Board">
+          <select value={entry.section} onChange={(event) => onUpdateEntry(entryIndex, { section: event.target.value as DeckEntry['section'] })}>
+            <option value="main">Main</option>
+            <option value="side">Sideboard</option>
+            <option value="maybe">Maybeboard</option>
+          </select>
+        </Field>
+        <Field label="Candidate status">
+          <select value={entry.candidateStatus ?? 'active'} onChange={(event) => onUpdateEntry(entryIndex, { candidateStatus: event.target.value as DeckEntry['candidateStatus'] })}>
+            <option value="active">Active</option>
+            <option value="candidate">Candidate</option>
+            <option value="testing">Testing</option>
+            <option value="locked">Locked</option>
+            <option value="cut">Cut</option>
+          </select>
+        </Field>
+        {entry.card?.variants.length ? (
+          <Field label="Variant">
+            <select value={entry.variantId ?? entry.card.variants.find((variant) => variant.isPrimary)?.variantId ?? ''} onChange={(event) => onUpdateEntry(entryIndex, { variantId: event.target.value || undefined })}>
+              {entry.card.variants.map((variant) => (
+                <option key={variant.variantId} value={variant.variantId}>
+                  {variant.isPrimary ? '* ' : ''}{variant.displayName}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
+        <Field label="Role in deck">
+          <TagEditor
+            value={entry.roles ?? []}
+            suggestions={DECK_ROLE_SUGGESTIONS}
+            placeholder="Ramp, Draw, Removal..."
+            ariaLabel="Deck entry roles"
+            onChange={(roles) => onUpdateEntry(entryIndex, { roles, roleSource: 'manual', roleConfidence: 1 })}
+          />
+        </Field>
+        <div className="grid-3 compact-filter-grid">
+          <Field label="Impact">
+            <input type="number" min="0" max="5" value={entry.impactRating ?? 0} onChange={(event) => onUpdateEntry(entryIndex, { impactRating: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} />
+          </Field>
+          <Field label="Synergy">
+            <input type="number" min="0" max="5" value={entry.synergyRating ?? 0} onChange={(event) => onUpdateEntry(entryIndex, { synergyRating: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} />
+          </Field>
+          <Field label="Quality">
+            <input type="number" min="0" max="5" value={entry.qualityRating ?? 0} onChange={(event) => onUpdateEntry(entryIndex, { qualityRating: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} />
+          </Field>
+        </div>
+        <Field label="Entry tags">
+          <TagEditor value={entry.entryTags ?? []} suggestions={deckTagSuggestions} placeholder="combo, meta call..." ariaLabel="Deck entry tags" onChange={(entryTags) => onUpdateEntry(entryIndex, { entryTags })} />
+        </Field>
+        <Field label="Flags">
+          <TagEditor value={entry.flags ?? []} suggestions={['off-plan', 'needs testing', 'too slow', 'budget cut', 'upgrade target']} placeholder="off-plan, needs testing..." ariaLabel="Deck entry flags" onChange={(flags) => onUpdateEntry(entryIndex, { flags })} />
+        </Field>
+        <Field label="Synergy notes">
+          <textarea value={entry.entryNotes ?? ''} rows={4} onChange={(event) => onUpdateEntry(entryIndex, { entryNotes: event.target.value || undefined })} />
+        </Field>
+        <Field label="Name snapshot">
+          <input value={entry.nameSnapshot ?? entry.card?.name ?? ''} onChange={(event) => onUpdateEntry(entryIndex, { nameSnapshot: event.target.value || undefined })} />
+        </Field>
+        <div className="collection-detail-grid">
+          <div className="readonly-line">
+            <strong>Set</strong>
+            <span>{entry.setCode}</span>
+          </div>
+          <div className="readonly-line">
+            <strong>Card ID</strong>
+            <span>{entry.cardId}</span>
+          </div>
+          <div className="readonly-line">
+            <strong>Role source</strong>
+            <span>{entry.roleSource ?? 'none'}{entry.roleConfidence ? ` - ${Math.round(entry.roleConfidence * 100)}%` : ''}</span>
+          </div>
+        </div>
+        <div className="export-actions">
+          <button type="button" className="secondary-button" onClick={() => onUpdateEntry(entryIndex, { starred: !entry.starred })}>
+            {entry.starred ? 'Unstar' : 'Star'}
+          </button>
+          <button type="button" className="secondary-button" onClick={() => onUpdateEntry(entryIndex, { markedForDeletion: !entry.markedForDeletion, candidateStatus: entry.markedForDeletion ? entry.candidateStatus : 'cut' })}>
+            {entry.markedForDeletion ? 'Keep' : 'Mark delete'}
+          </button>
+          {entry.card ? (
+            <button type="button" className="secondary-button" onClick={() => void onOpenCard(entry.setCode, entry.cardId, entry.variantId)}>
+              Open in Maker
+            </button>
+          ) : null}
+          <button type="button" className="secondary-button danger" onClick={() => onRemoveEntry(entryIndex)}>
+            Remove
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const deckCardOptions = deck.availableCards;
+  const commanderValue = deckCardReferenceValue(deck.metadata.commander);
+  const partnerValue = deckCardReferenceValue(deck.metadata.partnerCommanders[0]);
+  const coverValue = deckCardReferenceValue(deck.metadata.coverCard ?? deck.metadata.commander);
+  const playStyleSuggestions = [...DECK_PLAY_STYLE_SUGGESTIONS, ...deckTagSuggestions, ...deck.availableCards.flatMap((card) => card.tags)];
+  const currentVariant = deck.metadata.variants.find((variant) => variant.variantId === activeDeckVariantId(deck)) ?? deck.activeVariant;
+
+  return (
+    <div className="workspace-card deck-inspector-panel">
+      <h2>Deck Inspector</h2>
+      <p className="workspace-copy">Edit deck metadata, or select a card row in the center to edit that entry.</p>
+      <div className="inspector-heading-row">
+        <div>
+          <strong>{currentVariant?.name ?? 'Default Build'}</strong>
+          <p className="workspace-copy">{currentVariant?.status ?? 'draft'} variant</p>
+        </div>
+        <div className="export-actions">
+          <button type="button" className="secondary-button compact" onClick={onOpenCardBrowser}>
+            Compare
+          </button>
+          <button type="button" className="secondary-button compact" onClick={onOpenDashboard}>
+            Dashboard
+          </button>
+        </div>
+      </div>
+      <Field label="Variant name">
+        <input value={currentVariant?.name ?? ''} onChange={(event) => onUpdateActiveVariant({ name: event.target.value || 'Untitled Variant' })} />
+      </Field>
+      <div className="grid-2">
+        <Field label="Variant status">
+          <select value={currentVariant?.status ?? 'draft'} onChange={(event) => onUpdateActiveVariant({ status: event.target.value as DeckState['variants'][number]['status'] })}>
+            <option value="draft">Draft</option>
+            <option value="testing">Testing</option>
+            <option value="locked">Locked</option>
+            <option value="final">Final</option>
+            <option value="archived">Archived</option>
+          </select>
+        </Field>
+        <Field label="Variant identity">
+          <select value={currentVariant?.colorIdentity ?? ''} onChange={(event) => onUpdateActiveVariant({ colorIdentity: event.target.value || undefined })}>
+            <option value="">Use deck identity</option>
+            {COLOR_IDENTITY_OPTIONS.map((identity) => (
+              <option key={identity} value={identity}>
+                {colorIdentityLabel(identity)}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="grid-2">
+        <Field label="Variant commander">
+          <select value={deckCardReferenceValue(currentVariant?.commander)} onChange={(event) => onUpdateActiveVariant({ commander: deckCardReferenceFromValue(deck, event.target.value) })}>
+            <option value="">Use deck commander</option>
+            {deckCardOptions.map((card) => (
+              <option key={`variant-commander-${deckCardOptionValue(card)}`} value={deckCardOptionValue(card)}>
+                {deckCardOptionLabel(card)}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Variant partner">
+          <select
+            value={deckCardReferenceValue(currentVariant?.partnerCommanders?.[0])}
+            onChange={(event) => {
+              const partner = deckCardReferenceFromValue(deck, event.target.value);
+              onUpdateActiveVariant({ partnerCommanders: partner ? [partner] : [] });
+            }}
+          >
+            <option value="">Use deck partner</option>
+            {deckCardOptions.map((card) => (
+              <option key={`variant-partner-${deckCardOptionValue(card)}`} value={deckCardOptionValue(card)}>
+                {deckCardOptionLabel(card)}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <Field label="Variant tags">
+        <TagEditor value={currentVariant?.tags ?? []} suggestions={[...DECK_PLAY_STYLE_SUGGESTIONS, ...deckTagSuggestions]} placeholder="budget, testing, cEDH..." ariaLabel="Deck variant tags" onChange={(tags) => onUpdateActiveVariant({ tags })} />
+      </Field>
+      <Field label="Variant notes">
+        <textarea value={currentVariant?.notes ?? ''} rows={3} onChange={(event) => onUpdateActiveVariant({ notes: event.target.value || undefined })} />
+      </Field>
+      <button type="button" className="secondary-button danger" disabled={deck.metadata.variants.length <= 1} onClick={onArchiveActiveVariant}>
+        Archive variant
+      </button>
+      <Field label="Name">
+        <input value={deck.metadata.name} onChange={(event) => onUpdateMetadata({ name: event.target.value })} />
+      </Field>
+      <Field label="Format">
+        <input list="deck-format-options" value={deck.metadata.format ?? ''} placeholder="Commander, Modern, Kitchen Table..." onChange={(event) => onUpdateMetadata({ format: event.target.value })} />
+        <datalist id="deck-format-options">
+          {DECK_FORMAT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </datalist>
+      </Field>
+      <Field label="Play style">
+        <TagEditor value={deck.metadata.playStyleTags} suggestions={playStyleSuggestions} placeholder="Aggro, Control, Tokens..." ariaLabel="Deck play style tags" onChange={(playStyleTags) => onUpdateMetadata({ playStyleTags })} />
+      </Field>
+      <div className="grid-2">
+        <Field label="Color identity">
+          <select value={deck.metadata.colorIdentity ?? ''} onChange={(event) => onUpdateMetadata({ colorIdentity: event.target.value || undefined })}>
+            <option value="">Unset</option>
+            {COLOR_IDENTITY_OPTIONS.map((identity) => (
+              <option key={identity} value={identity}>
+                {colorIdentityLabel(identity)}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Commander bracket">
+          <select value={deck.metadata.commanderBracket ?? ''} onChange={(event) => onUpdateMetadata({ commanderBracket: event.target.value || undefined })}>
+            <option value="">None</option>
+            {COMMANDER_BRACKET_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <Field label="Commander">
+        <select
+          value={commanderValue}
+          onChange={(event) => {
+            const previousCommanderValue = deckCardReferenceValue(deck.metadata.commander);
+            const nextCommander = deckCardReferenceFromValue(deck, event.target.value);
+            const currentCoverValue = deckCardReferenceValue(deck.metadata.coverCard);
+            const shouldUseCommanderCover = !currentCoverValue || currentCoverValue === previousCommanderValue;
+            onUpdateMetadata({ commander: nextCommander, coverCard: shouldUseCommanderCover ? nextCommander : deck.metadata.coverCard });
+          }}
+        >
+          <option value="">No commander</option>
+          {deckCardOptions.map((card) => (
+            <option key={deckCardOptionValue(card)} value={deckCardOptionValue(card)}>
+              {deckCardOptionLabel(card)}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <div className="grid-2">
+        <Field label="Partner / second commander">
+          <select
+            value={partnerValue}
+            onChange={(event) => {
+              const partner = deckCardReferenceFromValue(deck, event.target.value);
+              onUpdateMetadata({ partnerCommanders: partner ? [partner] : [] });
+            }}
+          >
+            <option value="">None</option>
+            {deckCardOptions.map((card) => (
+              <option key={deckCardOptionValue(card)} value={deckCardOptionValue(card)}>
+                {deckCardOptionLabel(card)}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Cover card">
+          <select value={coverValue} onChange={(event) => onUpdateMetadata({ coverCard: deckCardReferenceFromValue(deck, event.target.value) })}>
+            <option value="">{deck.metadata.commander ? 'Use commander' : 'No cover card'}</option>
+            {deckCardOptions.map((card) => (
+              <option key={deckCardOptionValue(card)} value={deckCardOptionValue(card)}>
+                {deckCardOptionLabel(card)}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <Field label="Description">
+        <textarea value={deck.metadata.description ?? ''} rows={3} onChange={(event) => onUpdateMetadata({ description: event.target.value || undefined })} />
+      </Field>
+      <Field label="Status">
+        <select value={deck.metadata.status} onChange={(event) => onUpdateMetadata({ status: event.target.value as DeckMetadata['status'] })}>
+          {DECK_STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Tags">
+        <TagEditor value={deck.metadata.tags} suggestions={deckTagSuggestions} placeholder="project notes, testing labels..." ariaLabel="Deck tags" onChange={(tags) => onUpdateMetadata({ tags })} />
+      </Field>
+      <Field label="Linked project">
+        <select value={deck.metadata.linkedUniverseId ?? ''} onChange={(event) => onUpdateMetadata({ linkedUniverseId: event.target.value || undefined })}>
+          <option value="">None</option>
+          {(library?.universes ?? []).map((universe) => (
+            <option key={universe.id} value={universe.id}>
+              {universe.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Linked set">
+        <select value={deck.metadata.linkedSetCode ?? ''} onChange={(event) => onUpdateMetadata({ linkedSetCode: event.target.value || undefined })}>
+          <option value="">None</option>
+          {(library?.sets ?? []).map((set) => (
+            <option key={set.setCode} value={set.setCode}>
+              {set.setCode} - {set.setName}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Notes">
+        <textarea value={deck.metadata.notes ?? ''} rows={6} onChange={(event) => onUpdateMetadata({ notes: event.target.value })} />
+      </Field>
+    </div>
+  );
+}
+
 function ReferenceWorkspace({
   library,
   project,
   activeCardId,
+  selectedUniverseId,
   referenceCatalog,
   showLeftPanel,
   showRightPanel,
@@ -1455,6 +3095,7 @@ function ReferenceWorkspace({
   | 'library'
   | 'project'
   | 'activeCardId'
+  | 'selectedUniverseId'
   | 'referenceCatalog'
   | 'showLeftPanel'
   | 'showRightPanel'
@@ -1470,13 +3111,27 @@ function ReferenceWorkspace({
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<ReferenceCategory | 'all'>('all');
   const [selectedId, setSelectedId] = useState('');
-  const [mode, setMode] = useState<'terms' | 'rules'>('terms');
+  const [mode, setMode] = useState<ReferenceMode>('terms');
   const [ruleKind, setRuleKind] = useState<ReferenceRuleKind | 'all'>('all');
   const [selectedRuleId, setSelectedRuleId] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [termFilters, setTermFilters] = useState<ReferenceTermFilters>(defaultReferenceTermFilters);
   const [ruleFilters, setRuleFilters] = useState<ReferenceRuleFilters>(defaultReferenceRuleFilters);
   const [createOpen, setCreateOpen] = useState(false);
+  const [officialView, setOfficialView] = useState<OfficialCardCatalogView>('prints');
+  const [officialStatus, setOfficialStatus] = useState<OfficialCardCatalogStatus | null>(null);
+  const [officialResult, setOfficialResult] = useState<OfficialCardSearchResult | null>(null);
+  const [officialOffset, setOfficialOffset] = useState(0);
+  const [selectedOfficialId, setSelectedOfficialId] = useState('');
+  const [officialLoading, setOfficialLoading] = useState(false);
+  const [officialSyncing, setOfficialSyncing] = useState(false);
+  const [officialAutoSyncStarted, setOfficialAutoSyncStarted] = useState(false);
+  const [officialAdding, setOfficialAdding] = useState(false);
+  const [collections, setCollections] = useState<CollectionSummary[]>([]);
+  const [officialCollectionId, setOfficialCollectionId] = useState('');
+  const [officialCollectionName, setOfficialCollectionName] = useState('Official Cards');
+  const [officialOwnerName, setOfficialOwnerName] = useState('Kyle');
+  const [officialQuantity, setOfficialQuantity] = useState(1);
   const terms = referenceCatalog?.terms ?? [];
   const rules = referenceCatalog?.rules?.entries ?? [];
   const termById = useMemo(() => new Map(terms.map((term) => [term.id, term])), [terms]);
@@ -1490,7 +3145,7 @@ function ReferenceWorkspace({
     };
   }, [sourceLabelById, terms, usageIndex]);
   const ruleFilterOptions = useMemo(() => buildReferenceRuleFilterOptions(rules), [rules]);
-  const activeReferenceFilterCount = mode === 'terms' ? activeReferenceTermFilterCount(category, termFilters) : activeReferenceRuleFilterCount(ruleKind, ruleFilters);
+  const activeReferenceFilterCount = mode === 'terms' ? activeReferenceTermFilterCount(category, termFilters) : mode === 'rules' ? activeReferenceRuleFilterCount(ruleKind, ruleFilters) : 0;
   const activeCardLabel = usageIndex.cardOptions.find((card) => card.value === activeCardId)?.label ?? '';
   const categoryCounts = useMemo(() => {
     const counts = new Map<ReferenceCategory | 'all', number>([['all', terms.length]]);
@@ -1514,9 +3169,85 @@ function ReferenceWorkspace({
   }, [query, ruleFilters, ruleKind, rules, termById]);
   const displayedTerms = filteredTerms.slice(0, 240);
   const displayedRules = filteredRules.slice(0, 240);
+  const officialCards = officialResult?.cards ?? [];
   const selected = displayedTerms.find((term) => term.id === selectedId) ?? displayedTerms[0];
   const selectedRule = displayedRules.find((rule) => rule.id === selectedRuleId) ?? displayedRules[0];
+  const selectedOfficial = officialCards.find((card) => card.id === selectedOfficialId) ?? officialCards[0];
   const selectedUsage = selected ? termUsageMatches(selected.id, usageIndex) : [];
+  const ownerSuggestions = useMemo(() => collectionOwnerSuggestions(collections.flatMap((collection) => collection.ownerNames ?? [])), [collections]);
+  const officialShowingStart = officialResult?.total ? officialResult.offset + 1 : 0;
+  const officialShowingEnd = officialResult ? Math.min(officialResult.offset + officialResult.cards.length, officialResult.total) : 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      fetchOfficialCardStatus().catch((error: unknown) => {
+        onStatus(error instanceof Error ? error.message : String(error));
+        return null;
+      }),
+      fetchCollections().catch((error: unknown) => {
+        onStatus(error instanceof Error ? error.message : String(error));
+        return [] as CollectionSummary[];
+      })
+    ]).then(([status, loadedCollections]) => {
+      if (!cancelled) {
+        setOfficialStatus(status);
+        setCollections(loadedCollections);
+        setOfficialCollectionId(loadedCollections[0]?.collectionId ?? '');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [onStatus]);
+
+  useEffect(() => {
+    setOfficialOffset(0);
+  }, [officialView, query]);
+
+  useEffect(() => {
+    if (mode !== 'official-cards') {
+      return;
+    }
+    let cancelled = false;
+    setOfficialLoading(true);
+    void searchOfficialCardCatalog({ view: officialView, query, limit: REFERENCE_OFFICIAL_PAGE_SIZE, offset: officialOffset })
+      .then((result) => {
+        if (!cancelled) {
+          setOfficialResult(result);
+          setOfficialStatus(result.status);
+          setSelectedOfficialId((current) => current && result.cards.some((card) => card.id === current) ? current : result.cards[0]?.id ?? '');
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setOfficialResult(null);
+          onStatus(error instanceof Error ? error.message : String(error));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setOfficialLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, officialOffset, officialView, onStatus, query]);
+
+  useEffect(() => {
+    if (mode !== 'official-cards' || officialAutoSyncStarted || officialSyncing || !officialStatus) {
+      return;
+    }
+    const source = officialStatusForView(officialStatus, officialView);
+    if (source.available) {
+      return;
+    }
+    setOfficialAutoSyncStarted(true);
+    onStatus('Official card catalog is missing; syncing live in the background. This can take a few minutes the first time.');
+    void syncOfficialCards();
+  }, [mode, officialAutoSyncStarted, officialStatus, officialSyncing, officialView, onStatus]);
+
   const resetTermFilters = () => {
     setCategory('all');
     setTermFilters(defaultReferenceTermFilters);
@@ -1528,10 +3259,55 @@ function ReferenceWorkspace({
   const resetCurrentFilters = () => {
     if (mode === 'terms') {
       resetTermFilters();
-    } else {
+    } else if (mode === 'rules') {
       resetRuleFilters();
+    } else {
+      setQuery('');
     }
   };
+
+  async function syncOfficialCards() {
+    if (officialSyncing) {
+      return;
+    }
+    setOfficialSyncing(true);
+    try {
+      const status = await syncOfficialCardCatalog('both');
+      setOfficialStatus(status);
+      const result = await searchOfficialCardCatalog({ view: officialView, query, limit: REFERENCE_OFFICIAL_PAGE_SIZE, offset: officialOffset });
+      setOfficialResult(result);
+      onStatus(`Synced official card catalog. ${formatCount(status.prints.count + status.oracle.count, 'card record')} cached.`);
+    } catch (error) {
+      onStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setOfficialSyncing(false);
+    }
+  }
+
+  async function addSelectedOfficialToCollection() {
+    if (!selectedOfficial || selectedOfficial.view !== 'prints') {
+      onStatus('Switch to Prints before adding an official card to a collection.');
+      return;
+    }
+    setOfficialAdding(true);
+    try {
+      const result = await addOfficialCardToCollection({
+        cardId: selectedOfficial.id,
+        collectionId: officialCollectionId || undefined,
+        collectionName: officialCollectionId ? undefined : officialCollectionName,
+        linkedUniverseId: selectedUniverseId,
+        quantity: officialQuantity,
+        ownerName: normalizeCollectionOwnerName(officialOwnerName)
+      });
+      setCollections(result.collections);
+      setOfficialCollectionId(result.collection.metadata.collectionId);
+      onStatus(`Added ${selectedOfficial.name} to ${result.collection.metadata.name}.`);
+    } catch (error) {
+      onStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setOfficialAdding(false);
+    }
+  }
 
   return (
     <>
@@ -1539,16 +3315,16 @@ function ReferenceWorkspace({
       {showLeftPanel ? (
         <EntityListPanel
           title="References"
-          subtitle={mode === 'terms' ? `${terms.length} terms` : `${rules.length} rules`}
-          newLabel="New reference"
+          subtitle={mode === 'terms' ? `${terms.length} terms` : mode === 'rules' ? `${rules.length} rules` : officialResult ? officialPageSubtitle(officialResult, officialView) : officialCatalogSubtitle(officialStatus, officialView)}
+          newLabel={mode === 'official-cards' ? (officialSyncing ? 'Syncing official cards' : 'Sync official cards') : 'New reference'}
           activeFilterCount={activeReferenceFilterCount}
-          onOpenFilters={() => setFiltersOpen(true)}
-          onNew={() => setCreateOpen(true)}
+          onOpenFilters={mode === 'official-cards' ? undefined : () => setFiltersOpen(true)}
+          onNew={mode === 'official-cards' ? () => void syncOfficialCards() : () => setCreateOpen(true)}
           onCollapse={() => onShowLeftPanelChange(false)}
           searchControl={
             <label className="search-field">
               <Icon name="search" />
-              <input value={query} placeholder={mode === 'terms' ? 'Search terms...' : 'Search rules...'} onChange={(event) => setQuery(event.target.value)} />
+              <input value={query} placeholder={mode === 'terms' ? 'Search terms...' : mode === 'rules' ? 'Search rules...' : 'Search official cards...'} onChange={(event) => setQuery(event.target.value)} />
             </label>
           }
         >
@@ -1569,7 +3345,8 @@ function ReferenceWorkspace({
                   </span>
                 </button>
               ))
-            : ruleKinds.map((item) => (
+            : mode === 'rules'
+              ? ruleKinds.map((item) => (
                 <button key={item.id} type="button" className={`entity-row clickable ${ruleKind === item.id ? 'selected' : ''}`} onClick={() => setRuleKind(item.id)}>
                   <Icon name="guide" />
                   <span>
@@ -1577,7 +3354,27 @@ function ReferenceWorkspace({
                     <small>{ruleCounts.get(item.id) ?? 0} entries</small>
                   </span>
                 </button>
-              ))}
+	              ))
+              : (
+                <OfficialCardReferenceList
+                  cards={officialCards}
+                  selectedId={selectedOfficial?.id ?? ''}
+                  view={officialView}
+                  status={officialStatus}
+                  result={officialResult}
+                  loading={officialLoading}
+                  syncing={officialSyncing}
+                  showingStart={officialShowingStart}
+                  showingEnd={officialShowingEnd}
+                  query={query}
+                  onViewChange={setOfficialView}
+                  onSelect={setSelectedOfficialId}
+                  onSync={() => void syncOfficialCards()}
+                  onPreviousPage={() => setOfficialOffset((offset) => Math.max(0, offset - REFERENCE_OFFICIAL_PAGE_SIZE))}
+                  onNextPage={() => setOfficialOffset((offset) => offset + REFERENCE_OFFICIAL_PAGE_SIZE)}
+                  onClearSearch={() => setQuery('')}
+                />
+              )}
         </EntityListPanel>
       ) : null}
       {showLeftPanel ? <PanelResizeHandle label="Resize reference categories panel" onResize={onResizeLeftPanel} /> : null}
@@ -1589,15 +3386,19 @@ function ReferenceWorkspace({
       <section className="workspace-canvas reference-canvas">
         <div className="visual-management-header">
           <div>
-            <h2>{mode === 'terms' ? referenceCategories.find((item) => item.id === category)?.label ?? 'References' : ruleKinds.find((item) => item.id === ruleKind)?.label ?? 'Rules'}</h2>
+            <h2>{mode === 'terms' ? referenceCategories.find((item) => item.id === category)?.label ?? 'References' : mode === 'rules' ? ruleKinds.find((item) => item.id === ruleKind)?.label ?? 'Rules' : 'Official Cards'}</h2>
             <p>
               {mode === 'terms'
                 ? referenceCatalog
                   ? `${resultCountLabel(filteredTerms.length, displayedTerms.length, 'terms')} from ${referenceCatalog.sources.length} sources`
                   : 'Reference catalog loading.'
-                : referenceCatalog?.rules
+                : mode === 'rules'
+                  ? referenceCatalog?.rules
                   ? `${resultCountLabel(filteredRules.length, displayedRules.length, 'rules')} from ${referenceCatalog.rules.effectiveDate ?? 'current rules'}`
-                  : 'Rules snapshot not synced yet.'}
+                  : 'Rules snapshot not synced yet.'
+                  : officialResult
+                    ? `${resultCountLabel(officialResult.total, officialCards.length, officialView === 'prints' ? 'prints' : 'Oracle cards')} from Scryfall`
+                    : officialCatalogSubtitle(officialStatus, officialView)}
             </p>
           </div>
           <div className="segmented-control reference-header-mode">
@@ -1620,7 +3421,9 @@ function ReferenceWorkspace({
             }}
           />
         ) : null}
-        {mode === 'terms' ? (
+        {mode === 'official-cards' ? (
+          <OfficialCardReferenceCanvas card={selectedOfficial} view={officialView} status={officialStatus} loading={officialLoading} syncing={officialSyncing} query={query} onSync={() => void syncOfficialCards()} onClearSearch={() => setQuery('')} />
+        ) : mode === 'terms' ? (
           <div className="reference-term-grid">
             {displayedTerms.map((term) => (
               <button key={term.id} type="button" className={`reference-term-card ${selected?.id === term.id ? 'selected' : ''}`} onClick={() => setSelectedId(term.id)}>
@@ -1666,7 +3469,27 @@ function ReferenceWorkspace({
       {showRightPanel ? (
         <section className="workspace-inspector-panel">
           <WorkspacePanelToolbar label="Hide reference detail panel" icon="collapseRight" onClick={() => onShowRightPanelChange(false)} />
-          {mode === 'terms' ? <ReferenceTermDetail term={selected} catalog={referenceCatalog} usage={selectedUsage} /> : <ReferenceRuleDetail rule={selectedRule} catalog={referenceCatalog} />}
+          {mode === 'official-cards' ? (
+            <OfficialCardDetail
+              card={selectedOfficial}
+              collections={collections}
+              collectionId={officialCollectionId}
+              collectionName={officialCollectionName}
+              ownerName={officialOwnerName}
+              ownerSuggestions={ownerSuggestions}
+              quantity={officialQuantity}
+              adding={officialAdding}
+              onCollectionIdChange={setOfficialCollectionId}
+              onCollectionNameChange={setOfficialCollectionName}
+              onOwnerNameChange={setOfficialOwnerName}
+              onQuantityChange={setOfficialQuantity}
+              onAdd={() => void addSelectedOfficialToCollection()}
+            />
+          ) : mode === 'terms' ? (
+            <ReferenceTermDetail term={selected} catalog={referenceCatalog} usage={selectedUsage} />
+          ) : (
+            <ReferenceRuleDetail rule={selectedRule} catalog={referenceCatalog} />
+          )}
         </section>
       ) : null}
       {!showRightPanel ? (
@@ -1763,7 +3586,7 @@ function ReferenceWorkspace({
           }
         >
           <ReferenceFilterControls
-            mode={mode}
+            mode={mode === 'terms' ? 'terms' : 'rules'}
             category={category}
             ruleKind={ruleKind}
             categories={referenceCategories}
@@ -1781,6 +3604,206 @@ function ReferenceWorkspace({
         </BrowseFilterOverlay>
       ) : null}
     </>
+  );
+}
+
+function OfficialCardReferenceList({
+  cards,
+  selectedId,
+  view,
+  status,
+  result,
+  loading,
+  syncing,
+  showingStart,
+  showingEnd,
+  query,
+  onViewChange,
+  onSelect,
+  onSync,
+  onPreviousPage,
+  onNextPage,
+  onClearSearch
+}: {
+  cards: OfficialCardSearchCard[];
+  selectedId: string;
+  view: OfficialCardCatalogView;
+  status: OfficialCardCatalogStatus | null;
+  result: OfficialCardSearchResult | null;
+  loading: boolean;
+  syncing: boolean;
+  showingStart: number;
+  showingEnd: number;
+  query: string;
+  onViewChange: (view: OfficialCardCatalogView) => void;
+  onSelect: (id: string) => void;
+  onSync: () => void;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
+  onClearSearch: () => void;
+}) {
+  const source = officialStatusForView(status, view);
+  const pageLabel = result && result.total ? `${showingStart.toLocaleString()}-${showingEnd.toLocaleString()} of ${formatCount(result.total, view === 'prints' ? 'print' : 'card')}` : source.available ? `0 of ${formatCount(0, view === 'prints' ? 'print' : 'card')}` : 'Catalog not synced';
+  const hasPrevious = Boolean(result && result.offset > 0);
+  const hasNext = Boolean(result && result.offset + result.cards.length < result.total);
+  return (
+    <>
+      <div className="reference-official-browser-tools">
+        <div className="segmented-actions" role="group" aria-label="Official card catalog view">
+          <button type="button" className={`secondary-button compact ${view === 'prints' ? 'active' : ''}`} onClick={() => onViewChange('prints')}>
+            Prints
+          </button>
+          <button type="button" className={`secondary-button compact ${view === 'oracle' ? 'active' : ''}`} onClick={() => onViewChange('oracle')}>
+            Oracle
+          </button>
+        </div>
+        <button type="button" className="secondary-button compact" disabled={syncing} onClick={onSync}>
+          {syncing ? 'Syncing catalog...' : 'Sync Catalog'}
+        </button>
+        <div className="official-pagination reference-official-pagination" aria-live="polite">
+          <span>{loading ? 'Loading...' : pageLabel}</span>
+          <button type="button" className="secondary-button compact" disabled={loading || !hasPrevious} onClick={onPreviousPage}>
+            Prev
+          </button>
+          <button type="button" className="secondary-button compact" disabled={loading || !hasNext} onClick={onNextPage}>
+            Next
+          </button>
+        </div>
+      </div>
+      <div className="reference-official-card-list" aria-label="Official Magic cards">
+        {cards.map((card) => (
+          <button key={card.id} type="button" className={`entity-row clickable official-card-entity ${selectedId === card.id ? 'selected' : ''}`} onClick={() => onSelect(card.id)}>
+            <Icon name={card.view === 'prints' ? 'collections' : 'guide'} />
+            <span>
+              <strong>{card.name}</strong>
+              <small>{officialCardListLine(card)}</small>
+            </span>
+          </button>
+        ))}
+      </div>
+      {loading && !cards.length ? (
+        <div className="preview-empty compact-empty">
+          <strong>Loading official cards</strong>
+          <span>Searching the local Scryfall cache.</span>
+        </div>
+      ) : null}
+      {!loading && !cards.length ? (
+        <FilteredEmptyState
+          title={syncing && !source.available ? 'Syncing official cards' : source.available ? 'No official cards match' : 'Official cards not synced'}
+          detail={syncing && !source.available ? 'Downloading the local Scryfall cache in the background.' : source.available ? 'Clear search or switch catalog view.' : 'Sync the catalog to search official Magic cards locally.'}
+          showClearSearch={Boolean(query.trim())}
+          showResetFilters={false}
+          onClearSearch={onClearSearch}
+          onResetFilters={() => undefined}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function OfficialCardReferenceCanvas({
+  card,
+  view,
+  status,
+  loading,
+  syncing,
+  query,
+  onSync,
+  onClearSearch
+}: {
+  card: OfficialCardSearchCard | undefined;
+  view: OfficialCardCatalogView;
+  status: OfficialCardCatalogStatus | null;
+  loading: boolean;
+  syncing: boolean;
+  query: string;
+  onSync: () => void;
+  onClearSearch: () => void;
+}) {
+  const source = officialStatusForView(status, view);
+  if (!card) {
+    return (
+      <div className="preview-empty official-reference-empty">
+        <strong>{syncing && !source.available ? 'Syncing official cards' : loading ? 'Loading official cards' : source.available ? 'No official card selected' : 'Official catalog not synced'}</strong>
+        <span>{syncing && !source.available ? 'Downloading the local Scryfall cache in the background.' : source.available ? 'Use the left panel to search and page through cached Magic cards.' : 'Sync the official catalog to browse Magic cards from the local cache.'}</span>
+        <div className="preview-empty-actions">
+          {query.trim() ? (
+            <button type="button" className="secondary-button compact" onClick={onClearSearch}>
+              Clear Search
+            </button>
+          ) : null}
+          {!source.available ? (
+            <button type="button" className="primary-button" disabled={syncing} onClick={onSync}>
+              {syncing ? 'Syncing catalog...' : 'Sync Catalog'}
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+  const imageUrl = officialCardImageUrl(card);
+  return (
+    <div className="workspace-card official-reference-card-view">
+      <div className="reference-detail-heading">
+        <span>{card.view === 'prints' ? 'Official print' : 'Oracle card'}</span>
+        <strong>{officialCardLine(card)}</strong>
+      </div>
+      <div className="official-reference-heading">
+        <div>
+          <h2>{card.name}</h2>
+          <p className="workspace-copy">{card.typeLine || 'Official Magic card'}</p>
+        </div>
+        <div className="official-reference-symbols">
+          {card.manaCost ? <ManaCostSymbols value={card.manaCost} /> : null}
+          {card.colorIdentity.length ? <ColorIdentitySymbols value={card.colorIdentity.join('')} /> : <span>Colorless</span>}
+        </div>
+      </div>
+      <div className="official-reference-body">
+        <div className="official-reference-image-frame">
+          {imageUrl ? (
+            <img src={imageUrl} alt={`${card.name} official card image`} />
+          ) : (
+            <div className="preview-empty compact-empty">
+              <strong>No image cached</strong>
+              <span>{card.name}</span>
+            </div>
+          )}
+        </div>
+        <div className="official-reference-rules">
+          <p className="official-card-text">{card.oracleText || 'Oracle text is not available in the local cache for this card.'}</p>
+          {card.flavorText ? <p className="official-card-text flavor">{card.flavorText}</p> : null}
+          {card.cardFaces?.length ? (
+            <div className="official-face-list">
+              {card.cardFaces.map((face, index) => (
+                <div key={`${face.name ?? card.name}:${index}`} className="official-face-row">
+                  <strong>{face.name ?? `Face ${index + 1}`}</strong>
+                  <span>{face.typeLine ?? card.typeLine ?? 'Card face'}</span>
+                  {face.oracleText ? <p>{face.oracleText}</p> : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <dl className="reference-meta official-reference-meta">
+            <dt>Mana value</dt>
+            <dd>{typeof card.manaValue === 'number' ? card.manaValue : '-'}</dd>
+            <dt>Layout</dt>
+            <dd>{card.layout || '-'}</dd>
+            {card.view === 'prints' ? (
+              <>
+                <dt>Print</dt>
+                <dd>{[card.setCode, card.collectorNumber].filter(Boolean).join(' ') || '-'}</dd>
+                <dt>Set</dt>
+                <dd>{card.setName || '-'}</dd>
+                <dt>Released</dt>
+                <dd>{card.releasedAt || '-'}</dd>
+              </>
+            ) : null}
+            <dt>Source</dt>
+            <dd>{card.scryfallUri ? <a href={card.scryfallUri} target="_blank" rel="noreferrer">Scryfall</a> : 'Scryfall cache'}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1871,6 +3894,117 @@ function ReferenceRuleDetail({ rule, catalog }: { rule: ReferenceRuleEntry | und
   );
 }
 
+function OfficialCardDetail({
+  card,
+  collections,
+  collectionId,
+  collectionName,
+  ownerName,
+  ownerSuggestions,
+  quantity,
+  adding,
+  onCollectionIdChange,
+  onCollectionNameChange,
+  onOwnerNameChange,
+  onQuantityChange,
+  onAdd
+}: {
+  card: OfficialCardSearchCard | undefined;
+  collections: CollectionSummary[];
+  collectionId: string;
+  collectionName: string;
+  ownerName: string;
+  ownerSuggestions: string[];
+  quantity: number;
+  adding: boolean;
+  onCollectionIdChange: (value: string) => void;
+  onCollectionNameChange: (value: string) => void;
+  onOwnerNameChange: (value: string) => void;
+  onQuantityChange: (value: number) => void;
+  onAdd: () => void;
+}) {
+  if (!card) {
+    return (
+      <div className="workspace-card">
+        <h2>Official Cards</h2>
+        <p className="inventory-note">Sync the catalog, then search for an official Magic card.</p>
+      </div>
+    );
+  }
+  const imageUrl = officialCardImageUrl(card);
+  const canAddToCollection = card.view === 'prints';
+  return (
+    <div className="workspace-card reference-detail official-card-detail">
+      <div className="reference-detail-heading">
+        <span>{card.view === 'prints' ? 'Official print' : 'Oracle card'}</span>
+        <strong>{officialCardLine(card)}</strong>
+      </div>
+      <h2>{card.name}</h2>
+      {imageUrl ? <img className="official-card-detail-image" src={imageUrl} alt={`${card.name} official card image`} /> : null}
+      <p className="official-card-text">{card.oracleText || 'Oracle text is not available in the local cache for this card.'}</p>
+      {card.flavorText ? <p className="official-card-text flavor">{card.flavorText}</p> : null}
+      <dl className="reference-meta">
+        <dt>Type</dt>
+        <dd>{card.typeLine || '-'}</dd>
+        <dt>Mana cost</dt>
+        <dd>{card.manaCost ? <ManaCostSymbols value={card.manaCost} /> : '-'}</dd>
+        <dt>Colors</dt>
+        <dd>{card.colorIdentity.length ? <ColorIdentitySymbols value={card.colorIdentity.join('')} /> : 'Colorless'}</dd>
+        {card.view === 'prints' ? (
+          <>
+            <dt>Print</dt>
+            <dd>{[card.setCode, card.collectorNumber].filter(Boolean).join(' ') || '-'}</dd>
+            <dt>Set</dt>
+            <dd>{card.setName || '-'}</dd>
+            <dt>Rarity</dt>
+            <dd>{card.rarity || '-'}</dd>
+          </>
+        ) : null}
+        <dt>Source</dt>
+        <dd>{card.scryfallUri ? <a href={card.scryfallUri} target="_blank" rel="noreferrer">Scryfall</a> : 'Scryfall cache'}</dd>
+      </dl>
+      <div className="collection-official-panel">
+        <strong>Add to Collection</strong>
+        {canAddToCollection ? (
+          <>
+            <Field label="Collection">
+              <select value={collectionId} onChange={(event) => onCollectionIdChange(event.target.value)}>
+                <option value="">New collection</option>
+                {collections.map((collection) => (
+                  <option key={collection.collectionId} value={collection.collectionId}>
+                    {collection.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            {!collectionId ? (
+              <Field label="New collection name">
+                <input value={collectionName} onChange={(event) => onCollectionNameChange(event.target.value)} />
+              </Field>
+            ) : null}
+            <Field label="Owner">
+              <input list="official-reference-owner-options" value={ownerName} onChange={(event) => onOwnerNameChange(event.target.value)} onBlur={(event) => onOwnerNameChange(normalizeCollectionOwnerName(event.target.value))} />
+              <datalist id="official-reference-owner-options">
+                {ownerSuggestions.map((owner) => (
+                  <option key={owner} value={owner} />
+                ))}
+              </datalist>
+            </Field>
+            <Field label="Quantity">
+              <input type="number" min="1" value={quantity} onChange={(event) => onQuantityChange(Math.max(1, Number(event.target.value) || 1))} />
+            </Field>
+            <button type="button" className="primary-button" disabled={adding || (!collectionId && !collectionName.trim())} onClick={onAdd}>
+              {adding ? 'Adding...' : 'Add to Collection'}
+            </button>
+          </>
+        ) : (
+          <p className="workspace-copy">Switch to Prints to add an exact set and collector-number identity to a collection.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function labelForCategory(category: ReferenceCategory): string {
   return referenceCategories.find((item) => item.id === category)?.label ?? category;
 }
@@ -1883,8 +4017,131 @@ function resultCountLabel(total: number, displayed: number, noun: string): strin
   return displayed < total ? `${displayed} of ${total} matching ${noun}` : `${total} matching ${noun}`;
 }
 
+function officialPageSubtitle(result: OfficialCardSearchResult, view: OfficialCardCatalogView): string {
+  if (!result.total) {
+    return `0 ${view === 'prints' ? 'prints' : 'Oracle cards'}`;
+  }
+  const start = result.offset + 1;
+  const end = Math.min(result.offset + result.cards.length, result.total);
+  return `${start.toLocaleString()}-${end.toLocaleString()} of ${formatCount(result.total, view === 'prints' ? 'print' : 'card')}`;
+}
+
+function officialCatalogSubtitle(status: OfficialCardCatalogStatus | null, view: OfficialCardCatalogView): string {
+  const source = officialStatusForView(status, view);
+  return source.available ? `${formatCount(source.count, view === 'prints' ? 'print' : 'card')} cached` : 'Official catalog not synced';
+}
+
+function officialStatusForView(status: OfficialCardCatalogStatus | null, view: OfficialCardCatalogView) {
+  return view === 'prints'
+    ? status?.prints ?? { available: false, count: 0 }
+    : status?.oracle ?? { available: false, count: 0 };
+}
+
+function officialCardLine(card: OfficialCardSearchCard): string {
+  if (card.view === 'prints') {
+    return [card.setCode, card.collectorNumber, card.rarity].filter(Boolean).join(' - ') || card.setName || 'Print';
+  }
+  return card.typeLine || 'Oracle';
+}
+
+function officialCardListLine(card: OfficialCardSearchCard): string {
+  if (card.view === 'prints') {
+    return [card.setCode, card.collectorNumber, card.typeLine || card.setName].filter(Boolean).join(' - ');
+  }
+  return card.typeLine || card.oracleText || 'Oracle card';
+}
+
+function officialCardImageUrl(card: OfficialCardSearchCard): string {
+  const images = card.imageUris ?? card.cardFaces?.find((face) => face.imageUris)?.imageUris;
+  return images?.normal ?? images?.large ?? images?.png ?? images?.small ?? images?.artCrop ?? images?.borderCrop ?? '';
+}
+
+interface ProjectRelatedSummary {
+  sets: SetSummary[];
+  decks: DeckSummary[];
+  collections: CollectionSummary[];
+  authoredCardCount: number;
+  sourceCardCount: number;
+  ownedCardCount: number;
+  recommendedCardCount: number;
+  flaggedCardCount: number;
+  variantCount: number;
+  coverImageUrl?: string;
+}
+
+function summarizeProjectRelatedContent(projectId: string, sets: SetSummary[], decks: DeckSummary[], collections: CollectionSummary[]): ProjectRelatedSummary {
+  const setCodes = new Set(sets.map((set) => set.setCode));
+  const linkedDecks = decks.filter((deck) => deck.linkedUniverseId === projectId || (deck.linkedSetCode ? setCodes.has(deck.linkedSetCode) : false));
+  const linkedCollections = collections.filter((collection) =>
+    collection.linkedUniverseId === projectId || (collection.linkedSetCodes ?? []).some((setCode) => setCodes.has(setCode))
+  );
+  const sourceCollections = linkedCollections.filter((collection) => collection.listCategory !== 'flagged' && collection.listCategory !== 'wishlist');
+  const ownedCollections = linkedCollections.filter((collection) => collection.defaultOwnershipStatus === 'owned' || collection.purpose === 'owned');
+  const recommendationCollections = linkedCollections.filter((collection) => collection.listCategory === 'recommendation' || collection.defaultOwnershipStatus === 'recommended');
+  const flaggedCollections = linkedCollections.filter((collection) => collection.listCategory === 'flagged');
+  return {
+    sets,
+    decks: linkedDecks,
+    collections: linkedCollections,
+    authoredCardCount: sets.reduce((total, set) => total + set.cardCount, 0),
+    sourceCardCount: sourceCollections.reduce((total, collection) => total + collection.cardCount, 0),
+    ownedCardCount: ownedCollections.reduce((total, collection) => total + collection.cardCount, 0),
+    recommendedCardCount: recommendationCollections.reduce((total, collection) => total + collection.cardCount, 0),
+    flaggedCardCount: flaggedCollections.reduce((total, collection) => total + collection.cardCount, 0),
+    variantCount: linkedDecks.reduce((total, deck) => total + deck.variantCount, 0),
+    coverImageUrl: linkedDecks.find((deck) => deck.coverImageUrl)?.coverImageUrl
+  };
+}
+
+function projectListSummaryLine(setCount: number, summary: ProjectRelatedSummary, status: string): string {
+  const parts = [formatCount(setCount, 'set')];
+  if (summary.decks.length) {
+    parts.push(formatCount(summary.decks.length, 'deck'));
+  }
+  if (summary.sourceCardCount) {
+    parts.push(`${formatCount(summary.sourceCardCount, 'linked card')}`);
+  }
+  parts.push(status);
+  return parts.join(' - ');
+}
+
+function projectHeaderSummaryLine(summary: ProjectRelatedSummary, relatedStatus: 'loading' | 'ready' | 'error'): string {
+  if (relatedStatus === 'loading' && !summary.decks.length && !summary.collections.length) {
+    return 'Loading linked decks, binders, and lists...';
+  }
+  if (relatedStatus === 'error') {
+    return `${formatCount(summary.sets.length, 'set')} in this project. Linked content could not be refreshed.`;
+  }
+  return [
+    formatCount(summary.sets.length, 'set'),
+    formatCount(summary.decks.length, 'deck'),
+    `${formatCount(summary.sourceCardCount, 'linked card')} in binders/lists`,
+    formatCount(summary.variantCount, 'variant')
+  ].join(' - ');
+}
+
+function projectLinkedStatusLabel(summary: ProjectRelatedSummary, relatedStatus: 'loading' | 'ready' | 'error'): string {
+  if (relatedStatus === 'loading') {
+    return 'Loading...';
+  }
+  if (relatedStatus === 'error') {
+    return 'Refresh failed';
+  }
+  return `${formatCount(summary.decks.length, 'deck')} - ${formatCount(summary.collections.length, 'binder/list')}`;
+}
+
+function ProjectStat({ label, value }: { label: string; value: number }) {
+  return (
+    <span>
+      <strong>{value.toLocaleString()}</strong>
+      <small>{label}</small>
+    </span>
+  );
+}
+
 function ProjectsWorkspace({
   library,
+  project,
   selectedUniverseId,
   onCreateProject,
   onLibraryUpdated,
@@ -1900,10 +4157,14 @@ function ProjectsWorkspace({
   onResizeRightPanel,
   onShowLeftPanelChange,
   onShowRightPanelChange,
-  onStatus
+  onStatus,
+  saveShortcutToken,
+  deckRefreshToken,
+  collectionRefreshToken
 }: Pick<
   WorkspaceViewProps,
   | 'library'
+  | 'project'
   | 'selectedUniverseId'
   | 'onCreateProject'
   | 'onLibraryUpdated'
@@ -1920,6 +4181,9 @@ function ProjectsWorkspace({
   | 'onShowLeftPanelChange'
   | 'onShowRightPanelChange'
   | 'onStatus'
+  | 'saveShortcutToken'
+  | 'deckRefreshToken'
+  | 'collectionRefreshToken'
 >) {
   const [query, setQuery] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -1929,7 +4193,16 @@ function ProjectsWorkspace({
     setCount: ''
   });
   const [viewingSetCode, setViewingSetCode] = useState('');
+  const [deckSummaries, setDeckSummaries] = useState<DeckSummary[]>([]);
+  const [collectionSummaries, setCollectionSummaries] = useState<CollectionSummary[]>([]);
+  const [relatedStatus, setRelatedStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const projectSetCount = (projectId: string) => library?.sets.filter((set) => set.universeId === projectId).length ?? 0;
+  const projectSummaryFor = (projectId: string) => summarizeProjectRelatedContent(
+    projectId,
+    library?.sets.filter((set) => set.universeId === projectId) ?? [],
+    deckSummaries,
+    collectionSummaries
+  );
   const activeProjectFilterCount = countActiveFilters([
     { value: projectFilters.status, defaultValue: 'all' },
     { value: projectFilters.tag, defaultValue: '' },
@@ -1947,6 +4220,32 @@ function ProjectsWorkspace({
   }, [library?.sets, library?.universes, projectFilters, query]);
   const activeProject = projects.find((projectItem) => projectItem.id === selectedUniverseId) ?? projects[0];
   const activeProjectSets = library?.sets.filter((set) => set.universeId === activeProject?.id) ?? [];
+  const activeProjectSummary = summarizeProjectRelatedContent(activeProject?.id ?? '', activeProjectSets, deckSummaries, collectionSummaries);
+  const activeProjectCoverUrl = activeProject?.coverImageUrl || activeProjectSummary.coverImageUrl;
+
+  useEffect(() => {
+    let cancelled = false;
+    setRelatedStatus('loading');
+    Promise.all([fetchDecks(), fetchCollections()])
+      .then(([nextDecks, nextCollections]) => {
+        if (cancelled) {
+          return;
+        }
+        setDeckSummaries(nextDecks);
+        setCollectionSummaries(nextCollections);
+        setRelatedStatus('ready');
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+        setRelatedStatus('error');
+        onStatus(error instanceof Error ? error.message : String(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [collectionRefreshToken, deckRefreshToken, onStatus]);
 
   return (
     <div className="management-workspace" style={{ gridTemplateColumns: buildManagementColumns(showLeftPanel, showRightPanel, leftPanelWidth, rightPanelWidth) }}>
@@ -1972,7 +4271,7 @@ function ProjectsWorkspace({
               <span>
                 <strong>{projectItem.name}</strong>
                 <small>
-                  {projectSetCount(projectItem.id)} sets - {projectItem.status ?? 'draft'}
+                  {projectListSummaryLine(projectSetCount(projectItem.id), projectSummaryFor(projectItem.id), projectItem.status ?? 'draft')}
                 </small>
               </span>
             </button>
@@ -1999,14 +4298,44 @@ function ProjectsWorkspace({
         <div className="visual-management-header">
           <div>
             <h2>{activeProject?.name ?? 'Projects'}</h2>
-            <p>{activeProject ? `${activeProjectSets.length} sets in this project` : 'Choose a project from the left panel.'}</p>
+            <p>{activeProject ? projectHeaderSummaryLine(activeProjectSummary, relatedStatus) : 'Choose a project from the left panel.'}</p>
           </div>
+          {activeProject ? (
+            <button type="button" className="primary-button" disabled={activeProject.id === selectedUniverseId} onClick={() => onUniverseSelect(activeProject.id)}>
+              {activeProject.id === selectedUniverseId ? 'Current project' : 'Switch to project'}
+            </button>
+          ) : null}
         </div>
+        {activeProject ? (
+          <section className="project-overview-band" aria-label="Project content summary">
+            {activeProjectCoverUrl ? (
+              <img className="project-cover-art" src={activeProjectCoverUrl} alt="" />
+            ) : (
+              <span className="tile-art-placeholder large">{activeProject.name.slice(0, 3).toUpperCase()}</span>
+            )}
+            <div className="project-overview-copy">
+              <h3>{activeProject.name}</h3>
+              <p>{activeProject.description ?? 'Project workspace for linked sets, decks, binders, and lists.'}</p>
+              <div className="project-stat-strip" aria-label="Project linked content counts">
+                <ProjectStat label="Authored" value={activeProjectSummary.authoredCardCount} />
+                <ProjectStat label="Owned" value={activeProjectSummary.ownedCardCount} />
+                <ProjectStat label="Recommended" value={activeProjectSummary.recommendedCardCount} />
+                <ProjectStat label="Flagged" value={activeProjectSummary.flaggedCardCount} />
+                <ProjectStat label="Variants" value={activeProjectSummary.variantCount} />
+              </div>
+            </div>
+          </section>
+        ) : null}
         <div className="set-cover-grid">
           {activeProjectSets.map((set) => (
             <SetCoverTile
               key={set.setCode}
               set={set}
+              coverDraft={project?.setCode === set.setCode ? project.drafts[0] : undefined}
+              fallbackCoverUrl={activeProjectCoverUrl}
+              detailOverride={set.cardCount
+                ? undefined
+                : `${set.setCode} - authored shell - ${formatCount(activeProjectSummary.sourceCardCount, 'linked card')}`}
               selected={set.setCode === library?.selectedSetCode}
               onSelect={() => {
                 void onLoadSet(set.setCode);
@@ -2024,12 +4353,46 @@ function ProjectsWorkspace({
             </div>
           ) : null}
         </div>
+        {activeProject ? (
+          <section className="project-linked-section" aria-label="Linked project content">
+            <div className="section-heading-row">
+              <h3>Linked Content</h3>
+              <span>{projectLinkedStatusLabel(activeProjectSummary, relatedStatus)}</span>
+            </div>
+            <div className="project-linked-grid">
+              {activeProjectSummary.decks.map((deckItem) => (
+                <div key={deckItem.deckId} className="entity-row">
+                  <DeckCoverBadge metadata={deckItem} />
+                  <span>
+                    <strong>{deckItem.name}</strong>
+                    <small>{formatCount(deckItem.cardCount, 'card')} - {formatCount(deckItem.variantCount, 'variant')} - {deckItem.format}</small>
+                  </span>
+                </div>
+              ))}
+              {activeProjectSummary.collections.map((collectionItem) => (
+                <div key={collectionItem.collectionId} className="entity-row">
+                  <Icon name={collectionItem.kind === 'list' ? 'lists' : 'binders'} />
+                  <span>
+                    <strong>{collectionItem.name}</strong>
+                    <small>{formatCount(collectionItem.cardCount, 'card')} - {collectionItem.kind === 'list' ? listCategoryLabel(collectionItem.listCategory) : purposeLabel(collectionItem.purpose)}</small>
+                  </span>
+                </div>
+              ))}
+              {!activeProjectSummary.decks.length && !activeProjectSummary.collections.length ? (
+                <div className="preview-empty">
+                  <strong>No linked content yet</strong>
+                  <span>Linked decks, binders, and lists will appear here.</span>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
       </section>
       {showRightPanel ? <PanelResizeHandle label="Resize project inspector panel" onResize={onResizeRightPanel} /> : null}
       {showRightPanel ? (
       <section className="workspace-inspector-panel">
         <WorkspacePanelToolbar label="Hide project inspector panel" icon="collapseRight" onClick={() => onShowRightPanelChange(false)} />
-        <ProjectEditorPanel project={activeProject} sets={activeProjectSets} onLibraryUpdated={onLibraryUpdated} onStatus={onStatus} />
+        <ProjectEditorPanel project={activeProject} sets={activeProjectSets} saveShortcutToken={saveShortcutToken} onLibraryUpdated={onLibraryUpdated} onStatus={onStatus} />
       </section>
       ) : null}
       {!showRightPanel ? (
@@ -2065,7 +4428,7 @@ function ProjectsWorkspace({
                     <span>
                       <strong>{projectItem.name}</strong>
                       <small>
-                        {projectSetCount(projectItem.id)} sets - {projectItem.status ?? 'draft'}
+                        {formatCount(projectSetCount(projectItem.id), 'set')} - {projectItem.status ?? 'draft'}
                       </small>
                     </span>
                   </button>
@@ -2127,7 +4490,8 @@ function SetsWorkspace({
   onProjectLoaded,
   onLoadSet,
   onOpenCard,
-  onStatus
+  onStatus,
+  saveShortcutToken
 }: Pick<
   WorkspaceViewProps,
   | 'library'
@@ -2147,6 +4511,7 @@ function SetsWorkspace({
   | 'onLoadSet'
   | 'onOpenCard'
   | 'onStatus'
+  | 'saveShortcutToken'
 >) {
   const [query, setQuery] = useState('');
   const defaultSetProjectFilter = selectedUniverseId || 'all';
@@ -2159,6 +4524,8 @@ function SetsWorkspace({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedSetCode, setSelectedSetCode] = useState(project?.setCode ?? '');
   const [viewingCardId, setViewingCardId] = useState('');
+  const [setViewMode, setSetViewMode] = useState<SetViewMode>('grid');
+  const [selectedSetCardId, setSelectedSetCardId] = useState(activeCardIdForProject(project));
   const currentProject = library?.universes.find((universe) => universe.id === selectedUniverseId);
   const allSets = useMemo(() => library?.sets ?? [], [library]);
   const activeSetFilterCount = countActiveFilters([
@@ -2184,6 +4551,7 @@ function SetsWorkspace({
   useEffect(() => {
     if (project?.setCode) {
       setSelectedSetCode(project.setCode);
+      setSelectedSetCardId(activeCardIdForProject(project));
     }
   }, [project?.setCode]);
 
@@ -2196,7 +4564,7 @@ function SetsWorkspace({
       {showLeftPanel ? (
         <EntityListPanel
           title="Sets"
-          subtitle={`${sets.length} of ${allSets.length} sets`}
+          subtitle={`${formatCount(sets.length, 'set')} of ${formatCount(allSets.length, 'set')}`}
           newLabel="New set"
           activeFilterCount={activeSetFilterCount}
           onOpenFilters={() => setFiltersOpen(true)}
@@ -2222,7 +4590,7 @@ function SetsWorkspace({
               <Icon name="sets" />
               <span>
                 <strong>{set.setCode} - {set.setName}</strong>
-                <small>{set.cardCount} cards - {set.status}</small>
+                <small>{formatCount(set.cardCount, 'card')} - {set.status}</small>
               </span>
             </button>
           ))}
@@ -2248,21 +4616,32 @@ function SetsWorkspace({
         <div className="visual-management-header">
           <div>
             <h2>{selectedSet?.setName ?? 'Sets'}</h2>
-            <p>{selectedSet ? `${selectedSet.setCode} - ${selectedSet.cardCount} cards - ${selectedSet.status}` : 'Choose a set from the left panel.'}</p>
+            <p>{selectedSet ? `${selectedSet.setCode} - ${formatCount(selectedSet.cardCount, 'card')} - ${selectedSet.status}` : 'Choose a set from the left panel.'}</p>
           </div>
           <div className="header-action-row">
+            <div className="segmented-control collection-view-mode" role="group" aria-label="Set view mode">
+              {(['grid', 'list', 'single'] as SetViewMode[]).map((mode) => (
+                <button key={mode} type="button" className={setViewMode === mode ? 'active' : ''} onClick={() => setSetViewMode(mode)}>
+                  {mode === 'grid' ? 'Grid' : mode === 'list' ? 'List' : 'Single'}
+                </button>
+              ))}
+            </div>
             <button type="button" className="secondary-button" disabled={!selectedSet} onClick={() => selectedSet ? void exportSetPackage(selectedSet.setCode, onStatus) : undefined}>
               Export Set
             </button>
           </div>
         </div>
-        <CardImageGrid
+        <SetCardViews
+          mode={setViewMode}
           drafts={selectedSetDrafts}
+          selectedCardId={selectedSetCardId}
           emptyText={selectedSet ? 'Loading card renders for this set...' : 'Choose a set from the left panel.'}
+          onSelectCard={setSelectedSetCardId}
           onEdit={(cardId) => selectedSet ? void onOpenCard(selectedSet.setCode, cardId) : undefined}
-          onView={setViewingCardId}
-          onDelete={(draftToDelete) => onStatus(`Trash support is staged next; ${draftToDelete.name} was not deleted.`)}
-          onStatus={onStatus}
+          onView={(cardId) => {
+            setSelectedSetCardId(cardId);
+            setViewingCardId(cardId);
+          }}
         />
       </section>
       {showRightPanel ? <PanelResizeHandle label="Resize set inspector panel" onResize={onResizeRightPanel} /> : null}
@@ -2273,6 +4652,7 @@ function SetsWorkspace({
           library={library}
           project={currentProject}
           set={selectedSet}
+          saveShortcutToken={saveShortcutToken}
           onLibraryUpdated={onLibraryUpdated}
           onProjectLoaded={onProjectLoaded}
           onLoadSet={onLoadSet}
@@ -2322,7 +4702,7 @@ function SetsWorkspace({
                     <span>
                       <strong>{set.setCode} - {set.setName}</strong>
                       <small>
-                        {set.cardCount} cards - {set.status}
+                        {formatCount(set.cardCount, 'card')} - {set.status}
                       </small>
                     </span>
                   </button>
@@ -2380,6 +4760,9 @@ function SetsWorkspace({
 
 function SetCoverTile({
   set,
+  coverDraft,
+  fallbackCoverUrl,
+  detailOverride,
   selected,
   onSelect,
   onEdit,
@@ -2387,23 +4770,31 @@ function SetCoverTile({
   onDelete
 }: {
   set: SetSummary;
+  coverDraft?: CardDraft;
+  fallbackCoverUrl?: string;
+  detailOverride?: string;
   selected: boolean;
   onSelect: () => void;
   onEdit: () => void;
   onView: () => void;
   onDelete: () => void;
 }) {
+  const coverUrl = coverDraft && draftArtSrc(coverDraft) ? draftArtSrc(coverDraft) : fallbackCoverUrl;
   return (
     <button type="button" className={`set-cover-tile ${selected ? 'selected' : ''}`} onClick={onSelect}>
-      <span className="tile-art-placeholder">{set.setCode}</span>
+      {coverUrl ? <img className="set-cover-art" src={coverUrl} alt="" /> : <span className="tile-art-placeholder">{set.setCode}</span>}
       <span className="tile-copy">
         <strong>{set.setName}</strong>
         <small>
-          {set.setCode} - {set.cardCount} cards - {set.status}
+          {detailOverride ?? `${set.setCode} - ${formatCount(set.cardCount, 'card')} - ${set.status}`}
         </small>
       </span>
     </button>
   );
+}
+
+function activeCardIdForProject(project: EditorProject | null | undefined): string {
+  return project?.drafts[0]?.cardId ?? '';
 }
 
 function CardImageGrid({
@@ -2434,7 +4825,7 @@ function CardImageGrid({
     <div className="card-image-grid">
       {drafts.map((draft) => (
         <button
-          key={draft.cardId}
+          key={`${draft.cardId}-${draft.variantId}`}
           type="button"
           className="card-image-tile"
           onClick={() => onEdit(draft.cardId)}
@@ -2532,7 +4923,7 @@ function SetBrowserModal({
 }: {
   setCode: string;
   onClose: () => void;
-  onOpenCard: (setCode: string, cardId: string) => Promise<void> | void;
+  onOpenCard: (setCode: string, cardId: string, variantId?: string) => Promise<void> | void;
   onStatus: (message: string) => void;
 }) {
   const [loaded, setLoaded] = useState<EditorProject | null>(null);
@@ -2561,7 +4952,7 @@ function SetBrowserModal({
         <div className="visual-management-header">
           <div>
             <h2>{loaded?.setName ?? setCode}</h2>
-            <p>{loaded ? `${loaded.drafts.length} cards` : 'Loading cards...'}</p>
+            <p>{loaded ? formatCount(loaded.drafts.length, 'card') : 'Loading cards...'}</p>
           </div>
           <button type="button" className="icon-button" onClick={onClose} title="Close">
             x
@@ -2621,6 +5012,7 @@ function EntityListPanel({
   onCollapse?: () => void;
 }) {
   const visibleSearch = searchControl ?? filterControls;
+  const canFilter = Boolean(onOpenFilters || onToggleFilters || activeFilterCount > 0);
   return (
     <aside className="entity-list-panel">
       <div className="panel-heading">
@@ -2634,7 +5026,7 @@ function EntityListPanel({
               <Icon name="collapseLeft" />
             </button>
           ) : null}
-          <FilterButton label={`Filter ${title.toLowerCase()}`} activeCount={activeFilterCount} onClick={onOpenFilters ?? onToggleFilters ?? (() => undefined)} />
+          {canFilter ? <FilterButton label={`Filter ${title.toLowerCase()}`} activeCount={activeFilterCount} onClick={onOpenFilters ?? onToggleFilters ?? (() => undefined)} /> : null}
           <button type="button" className="icon-button" onClick={onNew} title={newLabel}>
             <Icon name="new" />
           </button>
@@ -2666,7 +5058,7 @@ function ProjectSummaryCard({ project, sets }: { project?: UniverseSummary; sets
       <div className="entity-row">
         <Icon name="sets" />
         <span>
-          <strong>{projectSets.length} sets</strong>
+          <strong>{formatCount(projectSets.length, 'set')}</strong>
           <small>Project library and export grouping</small>
         </span>
       </div>
@@ -2679,13 +5071,13 @@ function SetSummaryCard({ project, sets, activeSetCode }: { project?: UniverseSu
   return (
     <div className="workspace-card">
       <h2>{project?.name ?? 'Current Project'}</h2>
-      <p className="workspace-copy">{sets.length} sets are available in this project. Use the plus button in the Sets panel to create another one.</p>
+      <p className="workspace-copy">{formatCount(sets.length, 'set')} {sets.length === 1 ? 'is' : 'are'} available in this project. Use the plus button in the Sets panel to create another one.</p>
       {activeSet ? (
         <div className="entity-row">
           <Icon name="sets" />
           <span>
             <strong>{activeSet.setCode} - {activeSet.setName}</strong>
-            <small>{activeSet.cardCount} cards - {activeSet.status}</small>
+            <small>{formatCount(activeSet.cardCount, 'card')} - {activeSet.status}</small>
           </span>
         </div>
       ) : null}
@@ -2696,29 +5088,47 @@ function SetSummaryCard({ project, sets, activeSetCode }: { project?: UniverseSu
 function ProjectEditorPanel({
   project,
   sets,
+  saveShortcutToken,
   onLibraryUpdated,
   onStatus
 }: {
   project?: UniverseSummary;
   sets: SetSummary[];
+  saveShortcutToken: number;
   onLibraryUpdated: (library: LibraryState) => void;
   onStatus: (message: string) => void;
 }) {
   const [name, setName] = useState(project?.name ?? '');
   const [description, setDescription] = useState(project?.description ?? '');
   const [status, setStatus] = useState(project?.status ?? 'draft');
-  const [tags, setTags] = useState(joinTags(project?.tags));
+  const [tags, setTags] = useState<string[]>(project?.tags ?? []);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setName(project?.name ?? '');
     setDescription(project?.description ?? '');
     setStatus(project?.status ?? 'draft');
-    setTags(joinTags(project?.tags));
+    setTags(project?.tags ?? []);
   }, [project?.description, project?.id, project?.name, project?.status, project?.tags]);
+
+  useEffect(() => {
+    if (!saveShortcutToken) {
+      return;
+    }
+    void handleSave();
+  }, [saveShortcutToken]);
 
   async function handleSave() {
     if (!project) {
+      onStatus('No project is selected to save.');
+      return;
+    }
+    if (busy) {
+      onStatus('Project save is already in progress.');
+      return;
+    }
+    if (!name.trim()) {
+      onStatus('Project name is required before saving.');
       return;
     }
     setBusy(true);
@@ -2728,7 +5138,7 @@ function ProjectEditorPanel({
         name,
         description,
         status,
-        tags: splitTagInput(tags)
+        tags
       });
       onLibraryUpdated(next);
       onStatus(`Saved project ${name}.`);
@@ -2741,7 +5151,7 @@ function ProjectEditorPanel({
 
   return (
     <div className="workspace-card">
-      <h2>Project</h2>
+      <h2>Project Inspector</h2>
       <Field label="Project name">
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </Field>
@@ -2759,7 +5169,7 @@ function ProjectEditorPanel({
           </select>
         </Field>
         <Field label="Tags">
-          <input value={tags} placeholder="priority, teaching" onChange={(event) => setTags(event.target.value)} />
+          <TagEditor value={tags} suggestions={[...(project?.tags ?? []), ...sets.flatMap((set) => set.tags)]} placeholder="priority, teaching" ariaLabel="Project tags" onChange={setTags} />
         </Field>
       </div>
       <div className="form-actions">
@@ -2770,7 +5180,7 @@ function ProjectEditorPanel({
       <div className="entity-row">
         <Icon name="sets" />
         <span>
-          <strong>{sets.length} sets</strong>
+          <strong>{formatCount(sets.length, 'set')}</strong>
           <small>Selected project contents</small>
         </span>
       </div>
@@ -2782,6 +5192,7 @@ function SetEditorPanel({
   library,
   project,
   set,
+  saveShortcutToken,
   onLibraryUpdated,
   onProjectLoaded,
   onLoadSet,
@@ -2790,6 +5201,7 @@ function SetEditorPanel({
   library: LibraryState | null;
   project?: UniverseSummary;
   set?: SetSummary;
+  saveShortcutToken: number;
   onLibraryUpdated: (library: LibraryState) => void;
   onProjectLoaded: (project: EditorProject) => void;
   onLoadSet: (setCode: string) => Promise<void> | void;
@@ -2797,7 +5209,7 @@ function SetEditorPanel({
 }) {
   const [setName, setSetName] = useState(set?.setName ?? '');
   const [status, setStatus] = useState(set?.status ?? 'draft');
-  const [tags, setTags] = useState(joinTags(set?.tags));
+  const [tags, setTags] = useState<string[]>(set?.tags ?? []);
   const [universeId, setUniverseId] = useState(set?.universeId ?? project?.id ?? '');
   const [codeEditing, setCodeEditing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -2805,13 +5217,29 @@ function SetEditorPanel({
   useEffect(() => {
     setSetName(set?.setName ?? '');
     setStatus(set?.status ?? 'draft');
-    setTags(joinTags(set?.tags));
+    setTags(set?.tags ?? []);
     setUniverseId(set?.universeId ?? project?.id ?? '');
     setCodeEditing(false);
   }, [project?.id, set?.setCode, set?.setName, set?.status, set?.tags, set?.universeId]);
 
+  useEffect(() => {
+    if (!saveShortcutToken) {
+      return;
+    }
+    void handleSave();
+  }, [saveShortcutToken]);
+
   async function handleSave() {
     if (!set) {
+      onStatus('No set is selected to save.');
+      return;
+    }
+    if (busy) {
+      onStatus('Set save is already in progress.');
+      return;
+    }
+    if (!setName.trim() || !universeId) {
+      onStatus('Set name and project are required before saving.');
       return;
     }
     const nextUniverse = universeId || set.universeId;
@@ -2829,7 +5257,7 @@ function SetEditorPanel({
         setName,
         status,
         universeId: nextUniverse,
-        tags: splitTagInput(tags)
+        tags
       });
       onLibraryUpdated(result.library);
       onProjectLoaded(result.project);
@@ -2843,7 +5271,7 @@ function SetEditorPanel({
 
   return (
     <div className="workspace-card">
-      <h2>Set</h2>
+      <h2>Set Inspector</h2>
       <Field label="Set code">
         <div className="inline-edit-row">
           <input value={set?.setCode ?? ''} readOnly />
@@ -2877,7 +5305,7 @@ function SetEditorPanel({
           </select>
         </Field>
         <Field label="Tags">
-          <input value={tags} placeholder="demo, commander" onChange={(event) => setTags(event.target.value)} />
+          <TagEditor value={tags} suggestions={library?.sets.flatMap((setOption) => setOption.tags) ?? []} placeholder="demo, commander" ariaLabel="Set tags" onChange={setTags} />
         </Field>
       </div>
       <Field label="Set name">
@@ -2900,7 +5328,7 @@ function SetEditorPanel({
       <div className="entity-row">
         <Icon name="cards" />
         <span>
-          <strong>{set?.cardCount ?? 0} cards</strong>
+          <strong>{formatCount(set?.cardCount ?? 0, 'card')}</strong>
           <small>Selected set contents</small>
         </span>
       </div>
@@ -2983,9 +5411,9 @@ function LibraryWorkspace({
     <div className="management-workspace" style={{ gridTemplateColumns: buildManagementColumns(showLeftPanel, showRightPanel, leftPanelWidth, rightPanelWidth) }}>
       {showLeftPanel ? (
         <EntityListPanel
-          title="Library"
+          title="Gallery"
           subtitle={`${libraryItems.length} visual items`}
-          newLabel="New library item"
+          newLabel="New gallery item"
           activeFilterCount={activeLibraryFilterCount}
           onOpenFilters={() => setFiltersOpen(true)}
           onNew={onCreateLibraryAsset}
@@ -2993,7 +5421,7 @@ function LibraryWorkspace({
           searchControl={
             <label className="search-field">
               <Icon name="search" />
-              <input value={query} placeholder="Search library..." onChange={(event) => setQuery(event.target.value)} />
+              <input value={query} placeholder="Search gallery..." onChange={(event) => setQuery(event.target.value)} />
             </label>
           }
         >
@@ -3008,7 +5436,7 @@ function LibraryWorkspace({
           ))}
           {!libraryItems.length ? (
             <FilteredEmptyState
-              title="No library items match"
+              title="No gallery items match"
               detail="Assets may be hidden by search or filters."
               showClearSearch={Boolean(query.trim())}
               showResetFilters={activeLibraryFilterCount > 0}
@@ -3018,9 +5446,9 @@ function LibraryWorkspace({
           ) : null}
         </EntityListPanel>
       ) : null}
-      {showLeftPanel ? <PanelResizeHandle label="Resize library list panel" onResize={onResizeLeftPanel} /> : null}
+      {showLeftPanel ? <PanelResizeHandle label="Resize gallery list panel" onResize={onResizeLeftPanel} /> : null}
       {!showLeftPanel ? (
-        <button type="button" className="collapsed-panel-strip left" onClick={() => onShowLeftPanelChange(true)} title="Show library panel" aria-label="Show library panel">
+        <button type="button" className="collapsed-panel-strip left" onClick={() => onShowLeftPanelChange(true)} title="Show gallery panel" aria-label="Show gallery panel">
           <Icon name="collapseRight" />
         </button>
       ) : null}
@@ -3037,26 +5465,26 @@ function LibraryWorkspace({
           ) : (
             <div className="preview-empty">
               <strong>No asset selected</strong>
-              <span>Choose a library item from the left panel.</span>
+              <span>Choose a gallery item from the left panel.</span>
             </div>
           )}
         </div>
       </section>
-      {showRightPanel ? <PanelResizeHandle label="Resize library inspector panel" onResize={onResizeRightPanel} /> : null}
+      {showRightPanel ? <PanelResizeHandle label="Resize gallery inspector panel" onResize={onResizeRightPanel} /> : null}
       {showRightPanel ? (
       <section className="workspace-inspector-panel">
-        <WorkspacePanelToolbar label="Hide library inspector panel" icon="collapseRight" onClick={() => onShowRightPanelChange(false)} />
+        <WorkspacePanelToolbar label="Hide gallery inspector panel" icon="collapseRight" onClick={() => onShowRightPanelChange(false)} />
         <LibraryAssetEditorPanel item={selectedItem} itemCount={libraryItems.length} />
       </section>
       ) : null}
       {!showRightPanel ? (
-        <button type="button" className="collapsed-panel-strip right" onClick={() => onShowRightPanelChange(true)} title="Show library inspector" aria-label="Show library inspector">
+        <button type="button" className="collapsed-panel-strip right" onClick={() => onShowRightPanelChange(true)} title="Show gallery inspector" aria-label="Show gallery inspector">
           <Icon name="collapseLeft" />
         </button>
       ) : null}
       {filtersOpen ? (
         <BrowseFilterOverlay
-          title="Browse Library"
+          title="Browse Gallery"
           subtitle="Filter visual inputs by asset source, permissions, and assignment."
           resultsLabel={`${libraryItems.length} matching assets`}
           activeFilterCount={activeLibraryFilterCount}
@@ -3085,7 +5513,7 @@ function LibraryWorkspace({
               ) : (
                 <FilteredEmptyState
                   title="No assets match"
-                  detail="Reset filters or clear the library search."
+                  detail="Reset filters or clear the gallery search."
                   showClearSearch={Boolean(query.trim())}
                   showResetFilters={activeLibraryFilterCount > 0}
                   onClearSearch={() => setQuery('')}
@@ -3145,8 +5573,8 @@ function LibraryWorkspace({
 function LibraryAssetEditorPanel({ item, itemCount }: { item?: LibraryItem; itemCount: number }) {
   return (
     <div className="workspace-card">
-      <h2>{item?.name ?? 'Library'}</h2>
-      <p className="workspace-copy">{item ? `${item.kind} for ${item.detail}.` : 'Choose a library item from the left panel.'}</p>
+      <h2>{item ? 'Gallery Asset Inspector' : 'Gallery Inspector'}</h2>
+      <p className="workspace-copy">{item ? `${item.kind} for ${item.detail}.` : 'Choose a gallery item from the left panel.'}</p>
       <Field label="Asset name">
         <input value={item?.name ?? ''} readOnly />
       </Field>
@@ -3220,12 +5648,18 @@ function buildManagementColumns(showLeftPanel: boolean, showRightPanel: boolean,
   return columns.join(' ');
 }
 
-function SettingsWorkspace({ project, showCollectionsRailItem, onShowCollectionsRailItemChange }: Pick<WorkspaceViewProps, 'project' | 'showCollectionsRailItem' | 'onShowCollectionsRailItemChange'>) {
+function SettingsWorkspace({
+  project,
+  showCardsRailItem,
+  onShowCardsRailItemChange,
+  showCollectionsRailItem,
+  onShowCollectionsRailItemChange
+}: Pick<WorkspaceViewProps, 'project' | 'showCardsRailItem' | 'onShowCardsRailItemChange' | 'showCollectionsRailItem' | 'onShowCollectionsRailItemChange'>) {
   return (
     <div className="workspace-grid">
       <div className="workspace-card">
         <h2>Settings</h2>
-        <p className="workspace-copy">Project-level preferences will live here as the editor becomes a Mac app shell.</p>
+        <p className="workspace-copy">Adjust local editor preferences for the active workspace. These settings are local to this browser session.</p>
         <div className="entity-row">
           <Icon name="settings" />
           <span>
@@ -3234,9 +5668,14 @@ function SettingsWorkspace({ project, showCollectionsRailItem, onShowCollections
           </span>
         </div>
         <label className="checkbox-row">
-          <input type="checkbox" checked={showCollectionsRailItem} onChange={(event) => onShowCollectionsRailItemChange(event.target.checked)} />
-          Show Collections in the rail
+          <input type="checkbox" checked={showCardsRailItem} onChange={(event) => onShowCardsRailItemChange(event.target.checked)} />
+          Show Cards in the side rail
         </label>
+        <label className="checkbox-row">
+          <input type="checkbox" checked={showCollectionsRailItem} onChange={(event) => onShowCollectionsRailItemChange(event.target.checked)} />
+          Show Collections in the side rail
+        </label>
+        <p className="workspace-copy">You can also change these from View &gt; Panels.</p>
       </div>
     </div>
   );

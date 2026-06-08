@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CARD_LAYOUTS, normalizeLayoutId } from './frameSupport.js';
 
 const optionalText = z.preprocess((value) => {
   if (value === undefined || value === null || value === '') {
@@ -36,32 +37,17 @@ const booleanCell = (fallback: boolean) =>
     return ['true', '1', 'yes', 'y'].includes(String(value).toLowerCase());
   }, z.boolean());
 
-export const cardLayoutSchema = z.enum([
-  'normal',
-  'split',
-  'flip',
-  'transform',
-  'modal_dfc',
-  'meld',
-  'adventure',
-  'saga',
-  'class',
-  'case',
-  'battle',
-  'plane',
-  'scheme',
-  'phenomenon',
-  'vanguard',
-  'dungeon',
-  'token'
-]);
+export const cardLayoutSchema = z.preprocess((value) => normalizeLayoutId(String(value ?? 'normal')), z.enum(CARD_LAYOUTS));
 
 export const cardModeSchema = z.enum(['custom', 'reskin', 'token', 'imported', 'placeholder']);
-export const cardStatusSchema = z.enum(['idea', 'draft', 'review', 'playtest', 'final', 'cut']);
+export const cardStatusSchema = z.enum(['idea', 'draft', 'review', 'playtest', 'final', 'cut', 'archived']);
 export const raritySchema = z.enum(['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus', 'token']);
 export const exportTargetSchema = z.enum(['images', 'cockatrice', 'print_pdf', 'gallery']);
 export const imageFormatSchema = z.enum(['png', 'jpg', 'jpeg', 'webp']);
 export const rulesTextReminderModeSchema = z.enum(['auto', 'off']);
+export const cardVariantKindSchema = z.enum(['mechanics_test', 'wording_test', 'visual_alternate', 'finish_alternate', 'print_alternate', 'history_snapshot']);
+export const cardVariantStatusSchema = z.enum(['active', 'testing', 'final', 'archived']);
+export const cardVariantExportPolicySchema = z.enum(['default', 'optional', 'excluded']);
 
 export const setRecordSchema = z
   .object({
@@ -154,6 +140,88 @@ export const cardFaceRecordSchema = z
     layout_variant: optionalText
   })
   .transform((row) => ({
+    cardId: row.card_id,
+    faceIndex: row.face_index,
+    faceName: row.face_name,
+    manaCost: row.mana_cost,
+    typeLine: row.type_line,
+    oracleText: row.oracle_text,
+    flavorText: row.flavor_text,
+    power: row.power,
+    toughness: row.toughness,
+    loyalty: row.loyalty,
+    defense: row.defense,
+    colors: row.colors,
+    frameType: row.frame_type,
+    artId: row.art_id,
+    artistDisplay: row.artist_display,
+    watermark: row.watermark,
+    rulesTextSizeHint: row.rules_text_size_hint,
+    rulesTextPaddingTop: row.rules_text_padding_top,
+    rulesTextPaddingRight: row.rules_text_padding_right,
+    rulesTextPaddingBottom: row.rules_text_padding_bottom,
+    rulesTextPaddingLeft: row.rules_text_padding_left,
+    rulesTextReminderMode: row.rules_text_reminder_mode,
+    layoutVariant: row.layout_variant
+  }));
+
+export const cardVariantRecordSchema = z
+  .object({
+    variant_id: cardIdText,
+    card_id: cardIdText,
+    display_name: z.preprocess((value) => String(value ?? '').trim() || 'Variant 1', z.string()),
+    kind: z.preprocess((value) => String(value ?? '').trim() || 'mechanics_test', cardVariantKindSchema),
+    status: z.preprocess((value) => String(value ?? '').trim() || 'active', cardVariantStatusSchema),
+    is_primary: booleanCell(false),
+    export_policy: z.preprocess((value) => String(value ?? '').trim() || 'default', cardVariantExportPolicySchema),
+    tags: optionalText,
+    notes: optionalText,
+    created_at: optionalText,
+    updated_at: optionalText
+  })
+  .transform((row) => ({
+    variantId: row.variant_id,
+    cardId: row.card_id,
+    displayName: row.display_name,
+    kind: row.kind,
+    status: row.status,
+    isPrimary: row.is_primary,
+    exportPolicy: row.export_policy,
+    tags: row.tags ? row.tags.split(';').map((tag) => tag.trim()).filter(Boolean) : [],
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
+
+export const cardVariantFaceRecordSchema = z
+  .object({
+    variant_id: cardIdText,
+    card_id: cardIdText,
+    face_index: integerCell(0),
+    face_name: requiredText,
+    mana_cost: optionalText,
+    type_line: requiredText,
+    oracle_text: optionalText,
+    flavor_text: optionalText,
+    power: optionalText,
+    toughness: optionalText,
+    loyalty: optionalText,
+    defense: optionalText,
+    colors: optionalText,
+    frame_type: requiredText,
+    art_id: optionalText,
+    artist_display: optionalText,
+    watermark: optionalText,
+    rules_text_size_hint: z.preprocess((value) => (value === '' || value === undefined ? 'auto' : String(value)), z.string()),
+    rules_text_padding_top: optionalNumberCell,
+    rules_text_padding_right: optionalNumberCell,
+    rules_text_padding_bottom: optionalNumberCell,
+    rules_text_padding_left: optionalNumberCell,
+    rules_text_reminder_mode: z.preprocess((value) => (value === '' || value === undefined ? 'auto' : String(value)), rulesTextReminderModeSchema),
+    layout_variant: optionalText
+  })
+  .transform((row) => ({
+    variantId: row.variant_id,
     cardId: row.card_id,
     faceIndex: row.face_index,
     faceName: row.face_name,
@@ -342,6 +410,8 @@ export const assetPackManifestSchema = z
 export type SetRecord = z.output<typeof setRecordSchema>;
 export type CardRecord = z.output<typeof cardRecordSchema>;
 export type CardFaceRecord = z.output<typeof cardFaceRecordSchema>;
+export type CardVariantRecord = z.output<typeof cardVariantRecordSchema>;
+export type CardVariantFaceRecord = z.output<typeof cardVariantFaceRecordSchema>;
 export type ArtManifestRecord = z.output<typeof artManifestRecordSchema> & { absolutePath?: string };
 export type ExportProfile = z.output<typeof exportProfileSchema>;
 export type AssetPackManifest = z.output<typeof assetPackManifestSchema>;
@@ -354,6 +424,8 @@ export interface ForgeProject {
   set: SetRecord;
   cards: CardRecord[];
   faces: CardFaceRecord[];
+  variants: CardVariantRecord[];
+  variantFaces: CardVariantFaceRecord[];
   art: Record<string, ArtManifestRecord>;
   exportProfiles: ExportProfile[];
 }

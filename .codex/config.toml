@@ -1,0 +1,13 @@
+# Project-scoped Codex hook configuration for Homebrew Forge.
+# Keeps the local launcher/app window healthy for human review after Codex work.
+
+[hooks]
+
+[[hooks.Stop]]
+matcher = ".*"
+
+[[hooks.Stop.hooks]]
+type = "command"
+command = "/bin/zsh scripts/codex/homebrew-forge-launcher-health-hook.sh"
+timeout = 120
+statusMessage = "Checking Homebrew Forge launcher health"

@@ -1,0 +1,21 @@
+{
+  "collectionId": "squirrel-away",
+  "name": "Squirrel Away",
+  "description": "Partner's modified Squirrel Away decklist imported from /Users/kyle/Downloads/squirreled_away_chatterfang_updated_decklist.csv and enriched with Scryfall IDs, print metadata, and image URI references.",
+  "linkedUniverseId": "squirrel-far-away",
+  "gameId": "mtg",
+  "purpose": "owned",
+  "source": "generic",
+  "kind": "binder",
+  "listCategory": "general",
+  "tags": [],
+  "defaultEntryTags": [],
+  "defaultOwnershipStatus": "owned",
+  "defaultStarred": false,
+  "defaultFlagged": false,
+  "defaultProxy": false,
+  "defaultHomebrew": false,
+  "linkedSetCodes": [],
+  "createdAt": "2026-06-05T17:51:06.000Z",
+  "updatedAt": "2026-06-08T01:42:17.662Z"
+}

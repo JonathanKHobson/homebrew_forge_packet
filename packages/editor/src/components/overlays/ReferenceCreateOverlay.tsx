@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { createReference } from '../../api/client.js';
 import { Field } from '../Field.js';
+import { TagEditor } from '../TagEditor.js';
 import { OverlayShell } from './OverlayShell.js';
 import {
   REFERENCE_CATEGORIES,
@@ -32,7 +33,7 @@ interface ReferenceFormState {
   reminderText: string;
   typicalColors: string;
   aliases: string;
-  tags: string;
+  tags: string[];
   sourceNotes: string;
   parentType: string;
   ruleNumber: string;
@@ -69,7 +70,7 @@ const INITIAL_FORM: ReferenceFormState = {
   reminderText: '',
   typicalColors: '',
   aliases: '',
-  tags: '',
+  tags: [],
   sourceNotes: '',
   parentType: '',
   ruleNumber: '',
@@ -88,6 +89,7 @@ export function ReferenceCreateOverlay({ catalog, onCreated, onStatus, onClose }
     const name = form.name.trim().toLowerCase();
     return catalog?.terms.find((term) => term.category === form.category && term.name.toLowerCase() === name);
   }, [catalog?.terms, form.category, form.name]);
+  const tagSuggestions = useMemo(() => catalog?.terms.flatMap((term) => term.tags) ?? [], [catalog?.terms]);
 
   const update = (patch: Partial<ReferenceFormState>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -249,8 +251,8 @@ export function ReferenceCreateOverlay({ catalog, onCreated, onStatus, onClose }
               </Field>
             </>
           ) : null}
-          <Field label="Tags" hint="Comma separated">
-            <input value={form.tags} placeholder="stargate, replicators, keyword" onChange={(event) => update({ tags: event.target.value })} />
+          <Field label="Tags">
+            <TagEditor value={form.tags} suggestions={tagSuggestions} placeholder="stargate, replicators, keyword" ariaLabel="Reference tags" onChange={(tags) => update({ tags })} />
           </Field>
           <Field label="Source notes">
             <input value={form.sourceNotes} placeholder="Where this came from or why it exists." onChange={(event) => update({ sourceNotes: event.target.value })} />
@@ -299,7 +301,7 @@ function buildRequest(form: ReferenceFormState, workflowStatus: ReferenceWorkflo
     reminderText: form.reminderText,
     typicalColors: splitList(form.typicalColors).map((color) => color.toUpperCase()),
     aliases: splitList(form.aliases),
-    tags: splitList(form.tags),
+    tags: form.tags,
     sourceNotes: form.sourceNotes,
     details: {
       parentType: form.parentType,
@@ -399,7 +401,7 @@ function objectToForm(row: Record<string, unknown>): Partial<ReferenceFormState>
     reminderText: stringValue(row.reminderText ?? row.reminder),
     typicalColors: listValue(row.typicalColors ?? row.colors),
     aliases: listValue(row.aliases ?? row.alias),
-    tags: listValue(row.tags ?? row.tag),
+    tags: splitList(listValue(row.tags ?? row.tag)),
     sourceNotes: stringValue(row.sourceNotes ?? row.source),
     parentType: stringValue(row.parentType ?? row.parent),
     ruleNumber: stringValue(row.ruleNumber ?? row.number),

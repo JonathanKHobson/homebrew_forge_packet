@@ -1,34 +1,49 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { exportCollection, exportDeck, exportSource, fetchCollection, fetchCollections, fetchDecks, fetchPreview, importCards } from '../api/client.js';
-import type { CardDraft, CollectionEntry, CollectionExportTarget, CollectionState, CollectionSummary, DeckSummary, EditorProject, ExportSourceTarget, ImportCardsSummary, PreviewResponse } from '../domain/editorTypes.js';
+import type { CardDraft, CardVariantExportMode, CollectionEntry, CollectionExportTarget, CollectionState, CollectionSummary, DeckSummary, EditorProject, ExportSourceTarget, ImportCardsSummary, PreviewResponse } from '../domain/editorTypes.js';
+import type { WorkspaceSection } from '../domain/editorUiTypes.js';
 import type { TransferEntity } from '../domain/transferFlowTypes.js';
 import { transferEntityLabels } from '../domain/transferFlowTypes.js';
+import { formatCount } from '../domain/uiText.js';
 import { CollectionImportPanel } from './CollectionImportPanel.js';
+import { DeckImportPanel } from './DeckImportPanel.js';
 import { Icon } from './Icon.js';
 import { ImportExportPanel } from './ImportExportPanel.js';
+import { LibraryImportPanel } from './LibraryImportPanel.js';
 import { OverlayShell } from './overlays/OverlayShell.js';
+import { ReferenceImportPanel } from './ReferenceImportPanel.js';
+import { SetImportPanel } from './SetImportPanel.js';
 
 export type TransferDialogMode = 'import' | 'export';
 
 interface TransferDialogProps {
   mode: TransferDialogMode;
   project: EditorProject | null;
+  activeWorkspace: WorkspaceSection;
   draft: CardDraft | null;
   preview: PreviewResponse | null;
   onProjectLoaded: (project: EditorProject) => void;
   onStatus: (message: string) => void;
+  onOpenPrint?: () => void;
   onClose: () => void;
 }
 
-const transferEntities: TransferEntity[] = ['cards', 'decks', 'collections', 'sets', 'projects', 'library', 'references'];
+const transferEntities: TransferEntity[] = ['cards', 'decks', 'sets', 'projects', 'library', 'collections', 'references'];
 
-export function TransferDialog({ mode, project, draft, preview, onProjectLoaded, onStatus, onClose }: TransferDialogProps) {
-  const [entity, setEntity] = useState<TransferEntity>(mode === 'import' ? 'cards' : 'sets');
+export function TransferDialog({ mode, project, activeWorkspace, draft, preview, onProjectLoaded, onStatus, onOpenPrint, onClose }: TransferDialogProps) {
+  const initialEntity = transferEntityForWorkspace(activeWorkspace);
+  const [entity, setEntity] = useState<TransferEntity>(initialEntity);
+  const scopeLabelId = `${mode}-transfer-scope-label`;
+
+  useEffect(() => {
+    setEntity(initialEntity);
+  }, [initialEntity, mode]);
+
   return (
     <OverlayShell
       title={mode === 'import' ? 'Import' : 'Export'}
       eyebrow="File"
-      subtitle={mode === 'import' ? 'Bring cards, decks, collections, sets, projects, assets, or references into the workspace.' : 'Send cards, decks, collections, sets, projects, assets, or references out of the workspace.'}
+      subtitle={mode === 'import' ? 'Bring cards, decks, sets, projects, gallery assets, collections, or references into the workspace.' : 'Send cards, decks, sets, projects, gallery assets, collections, or references out of the workspace.'}
       dirty={false}
       footer={
         <button type="button" className="secondary-button" onClick={onClose}>
@@ -38,22 +53,40 @@ export function TransferDialog({ mode, project, draft, preview, onProjectLoaded,
       onClose={onClose}
     >
       <div className="transfer-hub-layout">
-        <nav className="transfer-entity-nav" aria-label={`${mode} entity`}>
-          {transferEntities.map((item) => (
-            <button key={item} type="button" className={entity === item ? 'selected' : ''} onClick={() => setEntity(item)}>
-              <Icon name={iconForEntity(item)} />
-              <span>{transferEntityLabels[item]}</span>
-            </button>
-          ))}
-        </nav>
+        <div className="transfer-scope-panel">
+          <div className="transfer-scope-label" id={scopeLabelId}>
+            Transfer scope
+          </div>
+          <nav className="transfer-entity-nav" aria-labelledby={scopeLabelId}>
+            {transferEntities.map((item) => (
+              <button key={item} type="button" className={entity === item ? 'selected' : ''} aria-current={entity === item ? 'page' : undefined} onClick={() => setEntity(item)}>
+                <Icon name={iconForEntity(item)} />
+                <span>{transferEntityLabels[item]}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
         {mode === 'import' ? (
           <ImportDialogContent entity={entity} project={project} onProjectLoaded={onProjectLoaded} onStatus={onStatus} />
         ) : (
-          <ExportDialogContent entity={entity} project={project} draft={draft} preview={preview} onStatus={onStatus} />
+          <ExportDialogContent entity={entity} project={project} draft={draft} preview={preview} onStatus={onStatus} onOpenPrint={onOpenPrint} />
         )}
       </div>
     </OverlayShell>
   );
+}
+
+function transferEntityForWorkspace(section: WorkspaceSection): TransferEntity {
+  if (section === 'decks' || section === 'sets' || section === 'projects' || section === 'library') {
+    return section;
+  }
+  if (section === 'reference') {
+    return 'references';
+  }
+  if (section === 'collections' || section === 'binders' || section === 'lists') {
+    return 'collections';
+  }
+  return 'cards';
 }
 
 function ImportDialogContent({
@@ -62,65 +95,77 @@ function ImportDialogContent({
   onProjectLoaded,
   onStatus
 }: Pick<TransferDialogProps, 'project' | 'onProjectLoaded' | 'onStatus'> & { entity: TransferEntity }) {
-  if (entity === 'cards' || entity === 'sets') {
+  if (entity === 'cards') {
     return (
       <div className="workspace-card transfer-hub-card">
-        <h3>{entity === 'cards' ? 'Cards' : 'Sets'}</h3>
+        <h3>Cards</h3>
         <p className="workspace-copy">
-          {entity === 'cards'
-            ? 'Import card CSV/XML into the active set or use the Cards plus button for a single-card creation import.'
-            : 'Import set-shaped CSV/XML into the active set. Creating a brand-new set with an attached import file lives in the Sets plus overlay.'}
+          Import authored card files into the active set. Use Homebrew Forge CSV when the upload includes variants, tags, notes, status, or export policy.
         </p>
         <ImportExportPanel project={project} onProjectLoaded={onProjectLoaded} onStatus={onStatus} defaultOpen />
         <CollectionToSetImportPanel entity={entity} project={project} onProjectLoaded={onProjectLoaded} onStatus={onStatus} />
       </div>
     );
   }
+  if (entity === 'sets') {
+    return (
+      <div className="workspace-card transfer-hub-card">
+        <h3>Sets</h3>
+        <p className="workspace-copy">
+          Create a new set from an uploaded card file. This asks for set identity first, then imports the cards into that new set.
+        </p>
+        <SetImportPanel project={project} onProjectLoaded={onProjectLoaded} onStatus={onStatus} />
+      </div>
+    );
+  }
   if (entity === 'decks') {
     return (
-      <StagedTransferCard
-        icon="decks"
-        title="Deck Import"
-        body="Deck text, Cockatrice .cod, and markdown deck imports are staged for the deck importer. Existing deck export is already wired in Export > Decks."
-        actions={['Text decklists', 'Cockatrice .cod', 'Markdown decklists']}
-      />
+      <div className="workspace-card transfer-hub-card">
+        <h3>Decks</h3>
+        <p className="workspace-copy">
+          Import decklists as new decks or merge them into existing deck storage. Deck CSV can include optional variant_id for deck-specific variant selection.
+        </p>
+        <DeckImportPanel project={project} onStatus={onStatus} />
+      </div>
     );
   }
   if (entity === 'collections') {
     return (
       <div className="workspace-card transfer-hub-card">
         <h3>Collections</h3>
-        <p className="workspace-copy">Import scanner CSV from ManaBox, TCGplayer, Dragon Shield, Delver, or a generic card list.</p>
+        <p className="workspace-copy">Import scanner CSV, generic CSV, plain text lists, or Cockatrice .cod/XML into an isolated collection. Unresolved rows stay available for review.</p>
         <CollectionImportPanel onStatus={onStatus} />
       </div>
     );
   }
   if (entity === 'library') {
     return (
-      <StagedTransferCard
-        icon="assets"
-        title="Library Import"
-        body="Use the Library plus overlay for single asset upload, URL, local path, metadata, and optional card assignment. Bulk CSV-backed asset import is staged here."
-        actions={['Bulk image selection', 'CSV metadata', 'URL manifest']}
-      />
+      <div className="workspace-card transfer-hub-card">
+        <h3>Gallery</h3>
+        <p className="workspace-copy">
+          Import URL, local-path, or data-URI asset rows into a set gallery. CSV rows can assign assets to card IDs, card names, or specific variant IDs.
+        </p>
+        <LibraryImportPanel project={project} onProjectLoaded={onProjectLoaded} onStatus={onStatus} />
+      </div>
     );
   }
   if (entity === 'references') {
     return (
-      <StagedTransferCard
-        icon="guide"
-        title="Reference Import"
-        body="Reference import will align after the active Reference implementation lands. The current Reference plus overlay remains owned by that separate branch."
-        actions={['Terms CSV', 'Rules glossary', 'Project notes']}
-      />
+      <div className="workspace-card transfer-hub-card">
+        <h3>References</h3>
+        <p className="workspace-copy">
+          Import local custom or homebrew reference terms from CSV. Official snapshot imports remain separate so reviewed official data is not overwritten by accident.
+        </p>
+        <ReferenceImportPanel onStatus={onStatus} />
+      </div>
     );
   }
   return (
     <StagedTransferCard
       icon="universes"
       title="Project Import"
-      body="Project import will package multiple sets, decks, and library assets. The data contract is staged so this does not invent a parallel project store."
-      actions={['Project package', 'Multi-set import', 'Deck bundle']}
+      body="Project import will package multiple sets, decks, and gallery assets. The data contract is staged so this does not invent a parallel project store."
+      actions={['Project package', 'Multi-set import', 'Deck package']}
     />
   );
 }
@@ -130,13 +175,14 @@ function ExportDialogContent({
   project,
   draft,
   preview,
-  onStatus
-}: Pick<TransferDialogProps, 'project' | 'draft' | 'preview' | 'onStatus'> & { entity: TransferEntity }) {
+  onStatus,
+  onOpenPrint
+}: Pick<TransferDialogProps, 'project' | 'draft' | 'preview' | 'onStatus' | 'onOpenPrint'> & { entity: TransferEntity }) {
   if (entity === 'cards') {
-    return <CardExportPanel project={project} draft={draft} preview={preview} onStatus={onStatus} />;
+    return <CardExportPanel project={project} draft={draft} preview={preview} onStatus={onStatus} onOpenPrint={onOpenPrint} />;
   }
   if (entity === 'sets') {
-    return <SetExportPanel project={project} onStatus={onStatus} />;
+    return <SetExportPanel project={project} onStatus={onStatus} onOpenPrint={onOpenPrint} />;
   }
   if (entity === 'decks') {
     return <DeckExportPanel onStatus={onStatus} />;
@@ -161,15 +207,15 @@ function ExportDialogContent({
     <StagedTransferCard
       icon="universes"
       title="Project Export"
-      body="Project export will collect project sets, decks, cards, library assets, and references into one package after the holding-group model is finalized."
+      body="Project export will collect project sets, decks, cards, gallery assets, and references into one package after the holding-group model is finalized."
       actions={['Project archive', 'All project sets', 'Linked decks']}
     />
   );
 }
 
-function CardExportPanel({ project, draft, preview, onStatus }: Pick<TransferDialogProps, 'project' | 'draft' | 'preview' | 'onStatus'>) {
-  const [selectedCardId, setSelectedCardId] = useState(draft?.cardId ?? '');
-  const selectedDraft = useMemo(() => project?.drafts.find((candidate) => candidate.cardId === selectedCardId) ?? draft ?? null, [draft, project?.drafts, selectedCardId]);
+function CardExportPanel({ project, draft, preview, onStatus, onOpenPrint }: Pick<TransferDialogProps, 'project' | 'draft' | 'preview' | 'onStatus' | 'onOpenPrint'>) {
+  const [selectedDraftKey, setSelectedDraftKey] = useState(draft ? draftKey(draft) : '');
+  const selectedDraft = useMemo(() => project?.drafts.find((candidate) => draftKey(candidate) === selectedDraftKey) ?? draft ?? null, [draft, project?.drafts, selectedDraftKey]);
   const [selectedPreview, setSelectedPreview] = useState<PreviewResponse | null>(selectedDraft?.cardId === draft?.cardId ? preview : null);
   const [busy, setBusy] = useState(false);
 
@@ -219,10 +265,10 @@ function CardExportPanel({ project, draft, preview, onStatus }: Pick<TransferDia
       <h3>Cards</h3>
       <p className="workspace-copy">Export the current card or choose another card from the active set.</p>
       <FieldLike label="Card">
-        <select value={selectedCardId} disabled={!project} onChange={(event) => setSelectedCardId(event.target.value)}>
+        <select value={selectedDraftKey} disabled={!project} onChange={(event) => setSelectedDraftKey(event.target.value)}>
           {(project?.drafts ?? []).map((candidate) => (
-            <option key={candidate.cardId} value={candidate.cardId}>
-              {candidate.collectorNumber} - {candidate.name}
+            <option key={draftKey(candidate)} value={draftKey(candidate)}>
+              {candidate.collectorNumber} - {candidate.name} / {candidate.variantDisplayName}
             </option>
           ))}
         </select>
@@ -234,13 +280,17 @@ function CardExportPanel({ project, draft, preview, onStatus }: Pick<TransferDia
         <button type="button" className="secondary-button" disabled>
           SVG
         </button>
+        <button type="button" className="secondary-button" disabled={!selectedDraft || !onOpenPrint} onClick={onOpenPrint}>
+          Print proof...
+        </button>
       </div>
     </div>
   );
 }
 
-function SetExportPanel({ project, onStatus }: Pick<TransferDialogProps, 'project' | 'onStatus'>) {
+function SetExportPanel({ project, onStatus, onOpenPrint }: Pick<TransferDialogProps, 'project' | 'onStatus' | 'onOpenPrint'>) {
   const [busyTarget, setBusyTarget] = useState<string>('');
+  const [variantMode, setVariantMode] = useState<CardVariantExportMode>('primary');
 
   async function downloadTarget(target: ExportSourceTarget) {
     if (!project) {
@@ -248,7 +298,7 @@ function SetExportPanel({ project, onStatus }: Pick<TransferDialogProps, 'projec
     }
     setBusyTarget(target);
     try {
-      const result = await exportSource({ setCode: project.setCode, target });
+      const result = await exportSource({ setCode: project.setCode, target, variantMode });
       downloadContent(result.filename, result.mimeType, result.encoding, result.content);
       onStatus(result.sync ? `Exported ${result.filename}. Synced ${result.sync.imageCount} Cockatrice images.` : `Exported ${result.filename}.`);
     } catch (error) {
@@ -262,6 +312,14 @@ function SetExportPanel({ project, onStatus }: Pick<TransferDialogProps, 'projec
     <div className="workspace-card transfer-hub-card">
       <h3>Sets</h3>
       <p className="workspace-copy">Generate files for Cockatrice or pull the active set source CSVs for AI/table editing.</p>
+      <FieldLike label="Variants">
+        <select value={variantMode} onChange={(event) => setVariantMode(event.target.value as CardVariantExportMode)}>
+          <option value="primary">Primary only</option>
+          <option value="default">Default export variants</option>
+          <option value="all_active">All active variants</option>
+          <option value="all">All variants including archived</option>
+        </select>
+      </FieldLike>
       <div className="export-actions">
         <button type="button" className="primary-button" disabled={!project || busyTarget === 'cockatrice_zip'} onClick={() => void downloadTarget('cockatrice_zip')}>
           {busyTarget === 'cockatrice_zip' ? 'Exporting...' : 'Cockatrice ZIP'}
@@ -277,6 +335,9 @@ function SetExportPanel({ project, onStatus }: Pick<TransferDialogProps, 'projec
         </button>
         <button type="button" className="secondary-button" disabled={!project || busyTarget === 'art_csv'} onClick={() => void downloadTarget('art_csv')}>
           Art Manifest CSV
+        </button>
+        <button type="button" className="secondary-button" disabled={!project || !onOpenPrint} onClick={onOpenPrint}>
+          Print proof...
         </button>
       </div>
     </div>
@@ -331,7 +392,7 @@ function DeckExportPanel({ onStatus }: Pick<TransferDialogProps, 'onStatus'>) {
         <select value={selectedDeckId} disabled={!decks.length} onChange={(event) => setSelectedDeckId(event.target.value)}>
           {decks.map((deck) => (
             <option key={deck.deckId} value={deck.deckId}>
-              {deck.name} - {deck.cardCount} cards
+              {deck.name} - {formatCount(deck.cardCount, 'card')}
             </option>
           ))}
         </select>
@@ -396,7 +457,7 @@ function CollectionExportPanel({ onStatus }: Pick<TransferDialogProps, 'onStatus
         <select value={selectedCollectionId} disabled={!collections.length} onChange={(event) => setSelectedCollectionId(event.target.value)}>
           {collections.map((collection) => (
             <option key={collection.collectionId} value={collection.collectionId}>
-              {collection.name} - {collection.cardCount} cards
+              {collection.name} - {formatCount(collection.cardCount, 'card')}
             </option>
           ))}
         </select>
@@ -487,6 +548,7 @@ function CollectionToSetImportPanel({
       .filter((entry) => includeReviewRows || entry.reviewStatus === 'matched')
       .filter((entry) => !needle || `${entry.cardName} ${entry.setCode ?? ''} ${entry.collectorNumber ?? ''} ${entry.reviewNotes ?? ''}`.toLowerCase().includes(needle));
   }, [collection?.entries, includeReviewRows, query]);
+  const reviewRowCount = collection?.entries.filter((entry) => entry.reviewStatus === 'needs_review').length ?? 0;
 
   async function runImport(dryRun: boolean) {
     if (!project || !collection || importRows.length === 0) {
@@ -505,7 +567,7 @@ function CollectionToSetImportPanel({
       if (!dryRun) {
         onProjectLoaded(result.project);
       }
-      onStatus(dryRun ? `Dry-run prepared ${result.summary.importedCards} collection draft cards.` : `Imported ${result.summary.importedCards} collection draft cards into ${project.setCode}.`);
+      onStatus(dryRun ? `Dry-run prepared ${formatCount(result.summary.importedCards, 'collection draft card')}.` : `Imported ${formatCount(result.summary.importedCards, 'collection draft card')} into ${project.setCode}.`);
     } catch (error) {
       onStatus(error instanceof Error ? error.message : String(error));
     } finally {
@@ -524,7 +586,7 @@ function CollectionToSetImportPanel({
           <select value={selectedCollectionId} disabled={busy === 'load' || !collections.length} onChange={(event) => void selectCollection(event.target.value)}>
             {collections.map((candidate) => (
               <option key={candidate.collectionId} value={candidate.collectionId}>
-                {candidate.name} - {candidate.cardCount} cards
+                {candidate.name} - {formatCount(candidate.cardCount, 'card')}
               </option>
             ))}
           </select>
@@ -539,22 +601,22 @@ function CollectionToSetImportPanel({
         Include needs-review rows
       </label>
       <div className="staged-action-list">
-        <span>{importRows.length} rows selected</span>
-        <span>{collection?.entries.filter((entry) => entry.reviewStatus === 'needs_review').length ?? 0} need review</span>
+        <span>{formatCount(importRows.length, 'row')} selected</span>
+        <span>{formatCount(reviewRowCount, 'row')} {reviewRowCount === 1 ? 'needs' : 'need'} review</span>
       </div>
       <div className="export-actions">
         <button type="button" className="secondary-button" disabled={!project || busy !== '' || importRows.length === 0} onClick={() => void runImport(true)}>
-          Dry Run
+          Dry run
         </button>
-        <button type="button" className="primary-button" disabled={!project || busy !== '' || importRows.length === 0} onClick={() => void runImport(false)}>
-          {busy === 'import' ? 'Importing...' : 'Copy To Active Set'}
+        <button type="button" className="secondary-button" disabled={!project || busy !== '' || importRows.length === 0} onClick={() => void runImport(false)}>
+          {busy === 'import' ? 'Importing...' : 'Copy to active set'}
         </button>
       </div>
       {summary ? (
         <div className="import-summary">
-          <strong>{summary.dryRun ? 'Dry Run' : 'Import'} Summary</strong>
-          <span>{summary.importedCards} draft cards copied from collection rows</span>
-          <span>{summary.warnings.length} warnings</span>
+          <strong>{summary.dryRun ? 'Dry run' : 'Import'} summary</strong>
+          <span>{formatCount(summary.importedCards, 'draft card')} copied from collection rows</span>
+          <span>{formatCount(summary.warnings.length, 'warning')}</span>
         </div>
       ) : null}
     </div>
@@ -582,8 +644,8 @@ function LibraryExportPanel({ project, onStatus }: Pick<TransferDialogProps, 'pr
 
   return (
     <div className="workspace-card transfer-hub-card">
-      <h3>Library</h3>
-      <p className="workspace-copy">Export the active set art manifest now. Full binary asset packaging is staged for the library asset phase.</p>
+      <h3>Gallery</h3>
+      <p className="workspace-copy">Export the active set art manifest now. Full binary asset packaging is staged for the gallery asset phase.</p>
       <div className="export-actions">
         <button type="button" className="primary-button" disabled={busy || !project} onClick={() => void downloadLibraryManifest()}>
           Art Manifest CSV
@@ -640,6 +702,10 @@ function iconForEntity(entity: TransferEntity): 'cards' | 'decks' | 'collections
     return 'assets';
   }
   return 'guide';
+}
+
+function draftKey(draft: CardDraft): string {
+  return `${draft.cardId}::${draft.variantId}`;
 }
 
 function downloadContent(filename: string, mimeType: string, encoding: 'text' | 'base64', content: string): void {

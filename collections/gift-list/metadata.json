@@ -1,0 +1,24 @@
+{
+  "collectionId": "gift-list",
+  "name": "Gift List",
+  "description": "Cards to buy, gift, or request from someone else.",
+  "gameId": "mtg",
+  "purpose": "research",
+  "source": "generic",
+  "kind": "list",
+  "listCategory": "gift",
+  "tags": [
+    "gift"
+  ],
+  "defaultEntryTags": [
+    "gift"
+  ],
+  "defaultOwnershipStatus": "wanted",
+  "defaultStarred": false,
+  "defaultFlagged": false,
+  "defaultProxy": false,
+  "defaultHomebrew": false,
+  "linkedSetCodes": [],
+  "createdAt": "2026-06-08T01:38:55.120Z",
+  "updatedAt": "2026-06-08T01:38:55.120Z"
+}

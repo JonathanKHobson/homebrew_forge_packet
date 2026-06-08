@@ -6,6 +6,6 @@ export const transferEntityLabels: Record<TransferEntity, string> = {
   collections: 'Collections',
   sets: 'Sets',
   projects: 'Projects',
-  library: 'Library',
+  library: 'Gallery',
   references: 'References'
 };

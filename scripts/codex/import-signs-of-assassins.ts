@@ -1,0 +1,1123 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  COLLECTION_ENTRY_HEADERS,
+  DECK_ENTRY_HEADERS,
+  collectionEntrySchema,
+  collectionMetadataSchema,
+  deckEntrySchema,
+  deckMetadataSchema,
+  deckVariantSchema,
+  importCollectionCsv,
+  officialCardCatalogStatus,
+  parseCsvRecords,
+  readCollectionState,
+  saveCollection,
+  saveDeck,
+  writeCsvRecords,
+  type CollectionEntry,
+  type CollectionMetadata,
+  type DeckEntry,
+  type DeckVariant
+} from '../../packages/forge/src/index.ts';
+
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(SCRIPT_DIR, '../..');
+const SOURCE_CSV = '/Users/kyle/Documents/My Games/Magic The Gathering/own cards to import/assassin cards for assassin deck.csv';
+
+const PROJECT_ID = 'assassin-deck-candidates';
+const PROJECT_NAME = 'Signs of Assassins';
+const SET_CODE = 'SOA';
+const SET_NAME = 'Signs of Assassins';
+const BINDER_ID = 'assassin-candidate-binder';
+const RECOMMENDATIONS_ID = 'recommendations';
+const FLAGGED_ID = 'flagged';
+const DECK_ID = 'signs-of-assassins';
+const OWNER_NAME = 'Kyle';
+const COMMANDER_NAME = "Altaïr Ibn-La'Ahad";
+const COMMANDER_SCRYFALL_ID = '358026de-ab7c-4a17-8cac-cfbee391b127';
+const BATCH_TAGS = ['batch-001', 'assassin', 'commander', 'mardu', 'manabox', 'signs-of-assassins'];
+const COMMANDER_COLORS = new Set(['B', 'R', 'W']);
+const BASIC_LANDS = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']);
+const KNOWN_OFF_COLOR = new Set(['Chishiro, the Shattered Blade', 'Eivor, Wolf-Kissed', 'Bountiful Landscape', 'Forest']);
+
+const SET_HEADERS = ['set_code', 'set_name', 'set_type', 'version', 'default_language', 'default_asset_pack', 'default_export_profile', 'author', 'status', 'tags', 'notes'];
+const CARD_HEADERS = ['card_id', 'set_code', 'collector_number', 'name', 'layout', 'mode', 'source_card_name', 'source_set_code', 'rarity', 'color_identity', 'tags', 'status', 'print_count', 'export_name_override', 'notes'];
+const FACE_HEADERS = ['card_id', 'face_index', 'face_name', 'mana_cost', 'type_line', 'oracle_text', 'flavor_text', 'power', 'toughness', 'loyalty', 'defense', 'colors', 'frame_type', 'art_id', 'artist_display', 'watermark', 'rules_text_size_hint', 'rules_text_padding_top', 'rules_text_padding_right', 'rules_text_padding_bottom', 'rules_text_padding_left', 'rules_text_reminder_mode', 'layout_variant'];
+const VARIANT_HEADERS = ['variant_id', 'card_id', 'display_name', 'kind', 'status', 'is_primary', 'export_policy', 'tags', 'notes', 'created_at', 'updated_at'];
+const ART_HEADERS = ['art_id', 'file_path', 'source_url', 'source_type', 'artist', 'license', 'permission_status', 'checksum_sha256', 'position_x', 'position_y', 'scale', 'crop_x', 'crop_y', 'crop_w', 'crop_h', 'notes'];
+const EXPORT_HEADERS = ['profile_id', 'target', 'image_format', 'width_px', 'height_px', 'quality', 'include_bleed', 'bleed_px', 'include_crop_marks', 'include_playtest_watermark', 'watermark_text', 'allow_placeholder_art', 'filename_template'];
+
+interface CsvRow {
+  [key: string]: string | undefined;
+}
+
+interface ScryfallCard {
+  id: string;
+  name: string;
+  set?: string;
+  set_name?: string;
+  collector_number?: string;
+  mana_cost?: string;
+  cmc?: number;
+  mana_value?: number;
+  type_line?: string;
+  oracle_text?: string;
+  flavor_text?: string;
+  power?: string;
+  toughness?: string;
+  colors?: string[];
+  color_identity?: string[];
+  rarity?: string;
+  lang?: string;
+  finishes?: string[];
+  scryfall_uri?: string;
+  image_uris?: Record<string, string>;
+  card_faces?: Array<Record<string, unknown>>;
+  prices?: Record<string, string | null>;
+}
+
+interface Candidate {
+  entry: CollectionEntry;
+  card: ScryfallCard;
+  owned: boolean;
+  name: string;
+  keyName: string;
+  setCode: string;
+  cardId: string;
+  manaValue: number;
+  typeLine: string;
+  oracleText: string;
+  colorIdentity: string[];
+  roles: string[];
+  tags: string[];
+  quantity: number;
+}
+
+interface VariantDefinition {
+  id: string;
+  name: string;
+  description: string;
+  status: DeckVariant['status'];
+  tags: string[];
+  ownedOnly: boolean;
+  landTarget: number;
+  includeRecommendations: string[];
+  roleWeights: Record<string, number>;
+  notes: string;
+}
+
+interface PickedCard {
+  candidate: Candidate;
+  count: number;
+}
+
+const RECOMMENDATIONS: Array<{ name: string; roles: string[]; tags: string[]; notes: string; land?: boolean; basicCount?: number }> = [
+  { name: 'Command Tower', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'gap-filler'], notes: 'Commander staple fixing for BRW variants.', land: true },
+  { name: 'Nomad Outpost', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'mardu'], notes: 'Budget Mardu tri-land to stabilize colors.', land: true },
+  { name: 'Path of Ancestry', roles: ['land', 'fixing', 'assassin'], tags: ['land', 'fixing', 'tribal'], notes: 'Fixes commander colors and scries when casting Assassins.', land: true },
+  { name: "Rogue's Passage", roles: ['land', 'evasion'], tags: ['land', 'evasion'], notes: 'Gives key attackers a direct unblockable line.', land: true },
+  { name: 'Unclaimed Territory', roles: ['land', 'fixing', 'assassin'], tags: ['land', 'fixing', 'tribal'], notes: 'Tribal fixing for Assassin-heavy builds.', land: true },
+  { name: 'Secluded Courtyard', roles: ['land', 'fixing', 'assassin'], tags: ['land', 'fixing', 'tribal'], notes: 'Second tribal land for Assassin density.', land: true },
+  { name: 'Exotic Orchard', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'Multiplayer fixing that usually covers Mardu colors.', land: true },
+  { name: 'Bojuka Bog', roles: ['land', 'graveyard', 'interaction'], tags: ['land', 'graveyard', 'interaction'], notes: 'Graveyard interaction from a land slot.', land: true },
+  { name: 'Caves of Koilos', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'Untapped WB fixing.', land: true },
+  { name: 'Battlefield Forge', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'Untapped RW fixing.', land: true },
+  { name: 'Sulfurous Springs', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'Untapped BR fixing.', land: true },
+  { name: 'Clifftop Retreat', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'RW check land for a smoother mana base.', land: true },
+  { name: 'Isolated Chapel', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'WB check land for a smoother mana base.', land: true },
+  { name: 'Dragonskull Summit', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'BR check land for a smoother mana base.', land: true },
+  { name: 'Temple of Malice', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'selection'], notes: 'BR scry land for budget smoothing.', land: true },
+  { name: 'Temple of Silence', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'selection'], notes: 'WB scry land for budget smoothing.', land: true },
+  { name: 'Temple of Triumph', roles: ['land', 'fixing'], tags: ['land', 'fixing', 'selection'], notes: 'RW scry land for budget smoothing.', land: true },
+  { name: 'Orzhov Basilica', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'WB bounce land for budget fixing.', land: true },
+  { name: 'Boros Garrison', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'RW bounce land for budget fixing.', land: true },
+  { name: 'Rakdos Carnarium', roles: ['land', 'fixing'], tags: ['land', 'fixing'], notes: 'BR bounce land for budget fixing.', land: true },
+  { name: 'Swamp', roles: ['land'], tags: ['land', 'basic-land'], notes: 'Ghost basic land slot for unscanned basics.', land: true, basicCount: 8 },
+  { name: 'Mountain', roles: ['land'], tags: ['land', 'basic-land'], notes: 'Ghost basic land slot for unscanned basics.', land: true, basicCount: 7 },
+  { name: 'Plains', roles: ['land'], tags: ['land', 'basic-land'], notes: 'Ghost basic land slot beyond scanned Plains copies.', land: true, basicCount: 5 },
+  { name: 'Cover of Darkness', roles: ['evasion', 'assassin'], tags: ['evasion', 'tribal', 'gap-filler'], notes: 'Makes chosen creature type hard to block and fits Assassin pressure.' },
+  { name: 'Reconnaissance', roles: ['protection', 'combat'], tags: ['combat', 'protection', 'puzzle'], notes: 'Lets attacks become safer and creates tricky combat sequencing.' },
+  { name: 'Dolmen Gate', roles: ['protection', 'combat'], tags: ['combat', 'protection'], notes: 'Protects attacking creatures so evasion pressure is easier to commit to.' },
+  { name: 'Whispersilk Cloak', roles: ['evasion', 'protection', 'equipment'], tags: ['evasion', 'protection', 'equipment'], notes: 'Unblockable plus shroud for a key Assassin.' },
+  { name: "Trailblazer's Boots", roles: ['evasion', 'equipment'], tags: ['evasion', 'equipment'], notes: 'Nonbasic landwalk is often close to unblockable in Commander.' },
+  { name: 'Key to the City', roles: ['evasion', 'draw'], tags: ['evasion', 'discard', 'draw'], notes: 'Unblockable outlet that can also stock graveyard lines.' },
+  { name: 'Lightning Greaves', roles: ['protection', 'haste', 'equipment'], tags: ['protection', 'equipment'], notes: 'Protects Altaïr and enables immediate combat value.' },
+  { name: 'Swiftfoot Boots', roles: ['protection', 'haste', 'equipment'], tags: ['protection', 'equipment'], notes: 'Second commander protection piece with equip flexibility.' },
+  { name: 'Maskwood Nexus', roles: ['assassin', 'artifact', 'synergy'], tags: ['tribal', 'artifact', 'assassin'], notes: 'Makes all creatures Assassins for Altaïr and tribal payoffs.' },
+  { name: "Herald's Horn", roles: ['assassin', 'artifact', 'ramp', 'draw'], tags: ['tribal', 'artifact', 'card-advantage'], notes: 'Reduces Assassin costs and digs for more creatures.' },
+  { name: "Vanquisher's Banner", roles: ['assassin', 'artifact', 'draw', 'payoff'], tags: ['tribal', 'artifact', 'draw'], notes: 'Tribal anthem and card draw for Assassin builds.' },
+  { name: 'Shared Animosity', roles: ['assassin', 'combat', 'finisher'], tags: ['tribal', 'combat', 'payoff'], notes: 'Converts wide Assassin attacks into real closing pressure.' },
+  { name: 'Isshin, Two Heavens as One', roles: ['combat', 'trigger', 'payoff'], tags: ['combat', 'attack-trigger'], notes: 'Doubles attack triggers for token and combat engines.' },
+  { name: 'The Master, Multiplied', roles: ['combat', 'token', 'exile'], tags: ['combat', 'token', 'exile'], notes: 'Prevents temporary tokens from being sacrificed, an experimental Altaïr engine piece.' },
+  { name: 'Buried Alive', roles: ['graveyard', 'tutor'], tags: ['graveyard', 'setup'], notes: 'Loads key Assassins into the graveyard for Altaïr without reanimating them directly.' },
+  { name: 'Entomb', roles: ['graveyard', 'tutor'], tags: ['graveyard', 'setup'], notes: 'One-card graveyard setup for Altaïr targets.' },
+  { name: 'Unmarked Grave', roles: ['graveyard', 'tutor'], tags: ['graveyard', 'setup'], notes: 'Budget graveyard setup for nonlegendary targets.' },
+  { name: 'Oriq Loremage', roles: ['graveyard', 'tutor'], tags: ['graveyard', 'setup'], notes: 'Repeatable graveyard loading for the Memory Corridor variant.' },
+  { name: 'Dauthi Voidwalker', roles: ['exile', 'graveyard', 'evasion'], tags: ['exile', 'graveyard', 'evasion'], notes: 'Exile pressure, shadow evasion, and a powerful temporary-cast line.' },
+  { name: 'Boros Charm', roles: ['protection', 'finisher'], tags: ['protection', 'combat'], notes: 'Protects the board or ends games with double strike/combat reach.' },
+  { name: "Teferi's Protection", roles: ['protection'], tags: ['protection', 'premium'], notes: 'Premium safety valve for commander turns and wide attacks.' },
+  { name: 'Skullclamp', roles: ['draw', 'artifact'], tags: ['draw', 'artifact'], notes: 'Turns small or temporary creatures into card flow.' },
+  { name: 'Anguished Unmaking', roles: ['removal'], tags: ['removal', 'interaction'], notes: 'Flexible Mardu-color permanent answer.' },
+  { name: 'Feed the Swarm', roles: ['removal'], tags: ['removal', 'enchantment-answer'], notes: 'Black answer to enchantments, covering a common Mardu gap.' },
+  { name: 'Wear // Tear', roles: ['removal'], tags: ['removal', 'artifact-answer', 'enchantment-answer'], notes: 'Efficient artifact/enchantment interaction.' },
+  { name: 'Arcane Signet', roles: ['ramp', 'fixing', 'artifact'], tags: ['ramp', 'fixing', 'artifact'], notes: 'Baseline Commander fixing rock.' },
+  { name: 'Rakdos Signet', roles: ['ramp', 'fixing', 'artifact'], tags: ['ramp', 'fixing', 'artifact'], notes: 'BR signet for two-color fixing.' },
+  { name: 'Boros Signet', roles: ['ramp', 'fixing', 'artifact'], tags: ['ramp', 'fixing', 'artifact'], notes: 'RW signet for two-color fixing.' },
+  { name: 'Orzhov Signet', roles: ['ramp', 'fixing', 'artifact'], tags: ['ramp', 'fixing', 'artifact'], notes: 'WB signet for two-color fixing.' },
+  { name: 'Talisman of Conviction', roles: ['ramp', 'fixing', 'artifact'], tags: ['ramp', 'fixing', 'artifact'], notes: 'RW two-mana fixing.' },
+  { name: 'Talisman of Hierarchy', roles: ['ramp', 'fixing', 'artifact'], tags: ['ramp', 'fixing', 'artifact'], notes: 'WB two-mana fixing.' },
+  { name: 'Talisman of Indulgence', roles: ['ramp', 'fixing', 'artifact'], tags: ['ramp', 'fixing', 'artifact'], notes: 'BR two-mana fixing.' },
+  { name: 'Fellwar Stone', roles: ['ramp', 'fixing', 'artifact'], tags: ['ramp', 'fixing', 'artifact'], notes: 'Two-mana multiplayer fixing.' }
+];
+
+const VARIANTS: VariantDefinition[] = [
+  {
+    id: 'hidden-blade-core',
+    name: 'Hidden Blade Core',
+    description: 'Owned-only baseline build using Kyle\'s scanned batch, with no ghost slots.',
+    status: 'testing',
+    tags: ['owned-only', 'baseline', 'assassin', 'mardu'],
+    ownedOnly: true,
+    landTarget: 36,
+    includeRecommendations: [],
+    roleWeights: { assassin: 4, evasion: 4, graveyard: 3, exile: 3, removal: 2, draw: 2, ramp: 2, protection: 2, combat: 2 },
+    notes: 'Baseline candidate build. If it falls below 36 lands, keep the land-light flag visible instead of hiding missing basics.'
+  },
+  {
+    id: 'rooftop-evasion',
+    name: 'Rooftop Evasion',
+    description: 'Owned-only combat build prioritizing flying, menace, unblockable lines, and attacks that are awkward to block.',
+    status: 'testing',
+    tags: ['owned-only', 'evasion', 'combat', 'assassin'],
+    ownedOnly: true,
+    landTarget: 36,
+    includeRecommendations: [],
+    roleWeights: { evasion: 6, assassin: 4, combat: 4, equipment: 3, protection: 3, draw: 2, removal: 2, graveyard: 1 },
+    notes: 'This variant tests the core feel of “you cannot block me” using only owned cards.'
+  },
+  {
+    id: 'memory-corridor',
+    name: 'Memory Corridor',
+    description: 'Graveyard/exile build with recommended setup pieces and ghost lands.',
+    status: 'draft',
+    tags: ['recommendation-enhanced', 'graveyard', 'exile', 'assassin'],
+    ownedOnly: false,
+    landTarget: 37,
+    includeRecommendations: ['Buried Alive', 'Entomb', 'Unmarked Grave', 'Oriq Loremage', 'Dauthi Voidwalker', 'Key to the City', 'Command Tower', 'Path of Ancestry', 'Nomad Outpost', 'Rogue\'s Passage', 'Bojuka Bog', 'Arcane Signet', 'Fellwar Stone'],
+    roleWeights: { graveyard: 7, exile: 6, assassin: 4, evasion: 4, tutor: 4, draw: 3, protection: 3, removal: 2, ramp: 2 },
+    notes: 'This variant loads the graveyard with useful Assassin bodies and uses exile/graveyard value without becoming a generic reanimator deck.'
+  },
+  {
+    id: 'brotherhood-arsenal',
+    name: 'Brotherhood Arsenal',
+    description: 'Equipment, artifact, and protection build with recommended support upgrades and ghost lands.',
+    status: 'draft',
+    tags: ['recommendation-enhanced', 'equipment', 'artifact', 'protection'],
+    ownedOnly: false,
+    landTarget: 36,
+    includeRecommendations: ['Whispersilk Cloak', 'Trailblazer\'s Boots', 'Lightning Greaves', 'Swiftfoot Boots', 'Skullclamp', 'Maskwood Nexus', 'Herald\'s Horn', 'Vanquisher\'s Banner', 'Command Tower', 'Nomad Outpost', 'Path of Ancestry', 'Arcane Signet', 'Boros Signet', 'Orzhov Signet', 'Rakdos Signet'],
+    roleWeights: { equipment: 7, artifact: 6, protection: 5, evasion: 4, assassin: 4, ramp: 4, draw: 3, removal: 2 },
+    notes: 'This variant asks whether the deck is better as a toolbelt: protect Altaïr, suit up evasive creatures, and let artifacts smooth the plan.'
+  },
+  {
+    id: 'nothing-is-true',
+    name: 'Nothing Is True',
+    description: 'Stronger recommendation-enhanced build focused on fixing, efficient setup, protection, and clean interaction.',
+    status: 'draft',
+    tags: ['recommendation-enhanced', 'stronger-build', 'balanced', 'mardu'],
+    ownedOnly: false,
+    landTarget: 37,
+    includeRecommendations: ['Command Tower', 'Nomad Outpost', 'Path of Ancestry', 'Exotic Orchard', 'Caves of Koilos', 'Battlefield Forge', 'Sulfurous Springs', 'Clifftop Retreat', 'Isolated Chapel', 'Dragonskull Summit', 'Buried Alive', 'Entomb', 'Cover of Darkness', 'Reconnaissance', 'Dolmen Gate', 'Lightning Greaves', 'Swiftfoot Boots', 'Boros Charm', 'Teferi\'s Protection', 'Anguished Unmaking', 'Feed the Swarm', 'Wear // Tear', 'Arcane Signet', 'Fellwar Stone'],
+    roleWeights: { fixing: 7, land: 5, ramp: 5, protection: 5, removal: 5, graveyard: 4, evasion: 4, draw: 3, assassin: 3, combat: 3 },
+    notes: 'This is the cleanest “make the deck work” variant: stronger mana, setup, protection, and answers before more speculative packages.'
+  },
+  {
+    id: 'everything-is-permitted',
+    name: 'Everything Is Permitted',
+    description: 'Experimental puzzle/evasion build using the most playful recommendation package.',
+    status: 'draft',
+    tags: ['recommendation-enhanced', 'experimental', 'puzzle', 'evasion'],
+    ownedOnly: false,
+    landTarget: 36,
+    includeRecommendations: ['Cover of Darkness', 'Reconnaissance', 'Dolmen Gate', 'Key to the City', 'Whispersilk Cloak', 'Trailblazer\'s Boots', 'Maskwood Nexus', 'Shared Animosity', 'Isshin, Two Heavens as One', 'The Master, Multiplied', 'Dauthi Voidwalker', 'Rogue\'s Passage', 'Unclaimed Territory', 'Secluded Courtyard', 'Path of Ancestry', 'Command Tower', 'Arcane Signet', 'Talisman of Conviction', 'Talisman of Hierarchy', 'Talisman of Indulgence'],
+    roleWeights: { evasion: 8, combat: 6, puzzle: 5, assassin: 5, exile: 4, token: 4, equipment: 3, protection: 3, draw: 2, ramp: 2 },
+    notes: 'This variant is where the weird lines live: unblockable puzzles, attack-trigger multiplication, type manipulation, and temporary-token experiments.'
+  }
+];
+
+async function main(): Promise<void> {
+  const now = new Date().toISOString();
+  const sourceContent = await readFile(SOURCE_CSV, 'utf8');
+  const sourceRows = parseCsvRecords(sourceContent) as CsvRow[];
+  const sourceRowsById = new Map(sourceRows.map((row) => [clean(row['Scryfall ID']).toLowerCase(), row]));
+  const officialStatus = await officialCardCatalogStatus(REPO_ROOT);
+  console.log(`Official-card cache: prints=${officialStatus.prints.available ? officialStatus.prints.count : 0}, oracle=${officialStatus.oracle.available ? officialStatus.oracle.count : 0}. Using targeted Scryfall fetch for this import.`);
+
+  const dryRun = await importCollectionCsv(REPO_ROOT, collectionImportRequest(sourceContent, true));
+  assertImportSummary(dryRun.summary);
+  console.log(`Dry-run ok: ${dryRun.summary.importedRows} rows, ${dryRun.summary.scryfallIdMatches} Scryfall ID matches, ${dryRun.summary.unresolvedRows} unresolved.`);
+
+  const importResult = await importCollectionCsv(REPO_ROOT, collectionImportRequest(sourceContent, false));
+  const importedIds = importResult.collection.entries.map((entry) => entry.scryfallId).filter((id): id is string => Boolean(id));
+  const ownedCardsById = await fetchScryfallCardsById(importedIds);
+  const duplicateCounts = countBy(importResult.collection.entries, (entry) => normalizedName(entry.cardName), (entry) => entry.quantity);
+  const enrichedOwnedEntries = importResult.collection.entries.map((entry) => enrichOwnedEntry(entry, ownedCardsById.get(clean(entry.scryfallId).toLowerCase()), sourceRowsById.get(clean(entry.scryfallId).toLowerCase()), duplicateCounts, now));
+  const binder = await saveCollection(REPO_ROOT, {
+    metadata: collectionMetadataSchema.parse({
+      ...importResult.collection.metadata,
+      name: "Assassin's Ledger",
+      description: 'Kyle owned ManaBox batch for the Signs of Assassins Commander deck family.',
+      linkedUniverseId: PROJECT_ID,
+      gameId: 'mtg',
+      purpose: 'owned',
+      source: 'manabox',
+      kind: 'binder',
+      listCategory: 'general',
+      tags: uniqueTags([...importResult.collection.metadata.tags, ...BATCH_TAGS]),
+      defaultEntryTags: BATCH_TAGS,
+      defaultOwnershipStatus: 'owned',
+      linkedSetCodes: uniqueTags([...(importResult.collection.metadata.linkedSetCodes ?? []), SET_CODE]),
+      accentColor: '#9b2f3f',
+      acquisitionNotes: 'batch-001 import from Kyle\'s ManaBox Assassin deck CSV.',
+      updatedAt: now
+    }),
+    entries: enrichedOwnedEntries
+  });
+
+  await ensureSignsOfAssassinsSet(now, coverImageUrlForCard(ownedCardsById.get(COMMANDER_SCRYFALL_ID)));
+  const flagged = await upsertFlaggedReviewList(binder.entries, now);
+  const recommendations = await upsertRecommendations(binder.entries, now);
+  const deck = await buildDeck(binder.entries, recommendations.entries, now);
+
+  const totals = verifyDeck(deck.entries);
+  const offColorCount = binder.entries.filter((entry) => KNOWN_OFF_COLOR.has(entry.cardName)).length;
+  console.log(JSON.stringify({
+    binder: {
+      id: binder.metadata.collectionId,
+      rows: binder.entries.length,
+      quantity: binder.entries.reduce((sum, entry) => sum + entry.quantity, 0),
+      owners: [...new Set(binder.entries.map((entry) => entry.ownerName))],
+      ownershipStatuses: [...new Set(binder.entries.map((entry) => entry.ownershipStatus))],
+	      offColorReviewRows: offColorCount
+	    },
+    flagged: {
+      rows: flagged.entries.filter((entry) => entry.tags.includes('signs-of-assassins')).length
+    },
+    recommendations: {
+      rows: recommendations.entries.length,
+      signsOfAssassinsRows: recommendations.entries.filter((entry) => entry.tags.includes('signs-of-assassins')).length
+    },
+    deck: {
+      id: deck.metadata.deckId,
+      variants: deck.metadata.variants.map((variant) => variant.variantId),
+      totals
+    }
+  }, null, 2));
+}
+
+function collectionImportRequest(content: string, dryRun: boolean) {
+  return {
+	    collectionId: BINDER_ID,
+	    name: "Assassin's Ledger",
+	    description: 'Kyle owned ManaBox batch for the Signs of Assassins Commander deck family.',
+    linkedUniverseId: PROJECT_ID,
+    gameId: 'mtg',
+    purpose: 'owned' as const,
+    kind: 'binder' as const,
+    listCategory: 'general' as const,
+    defaultOwnershipStatus: 'owned' as const,
+    defaultEntryTags: BATCH_TAGS,
+    source: 'manabox' as const,
+    contentFormat: 'csv' as const,
+    content,
+    mode: 'replace' as const,
+    dryRun
+  };
+}
+
+function assertImportSummary(summary: { importedRows: number; writtenRows: number; matchedRows: number; scryfallIdMatches: number; unresolvedRows: number; warnings: string[] }): void {
+  const expected = { importedRows: 169, writtenRows: 169, matchedRows: 169, scryfallIdMatches: 169, unresolvedRows: 0 };
+  for (const [key, value] of Object.entries(expected)) {
+    if (summary[key as keyof typeof expected] !== value) {
+      throw new Error(`Import dry-run mismatch for ${key}: expected ${value}, got ${summary[key as keyof typeof expected]}.`);
+    }
+  }
+  if (summary.warnings.length) {
+    throw new Error(`Import dry-run returned warnings: ${summary.warnings.join('; ')}`);
+  }
+}
+
+function enrichOwnedEntry(
+  entry: CollectionEntry,
+  card: ScryfallCard | undefined,
+  sourceRow: CsvRow | undefined,
+  duplicateCounts: Map<string, number>,
+  now: string
+): CollectionEntry {
+  const roles = inferRoles(card, entry.cardName);
+  const tags = uniqueTags([...BATCH_TAGS, ...roles, ...entry.tags]);
+  const duplicateCount = duplicateCounts.get(normalizedName(entry.cardName)) ?? entry.quantity;
+  const reviewNotes: string[] = [];
+  let needsImportReview = false;
+  if (duplicateCount > 1) {
+    tags.push('duplicate-name-review', 'flagged', 'review-queue');
+    reviewNotes.push(`Duplicate name review: ${entry.cardName} appears as ${duplicateCount} owned copies/prints in batch-001. Commander variants should use only one nonbasic copy; the binder preserves every owned print.`);
+    needsImportReview = true;
+  }
+  const colorIdentity = colorIdentityForCard(card);
+  if (KNOWN_OFF_COLOR.has(entry.cardName) || !isCommanderLegal(colorIdentity)) {
+    tags.push('off-color-review', 'flagged', 'review-queue');
+    reviewNotes.push('Color identity review: outside Altaïr\'s BRW Commander identity, so this card stays in the binder and is excluded from active variants.');
+    needsImportReview = true;
+  }
+  if (entry.cardName === COMMANDER_NAME) {
+    tags.push('commander-card');
+    reviewNotes.push('Commander and cover card for the Signs of Assassins deck family.');
+  }
+  const sourcePayload = {
+    source: 'manabox',
+    row: sourceRow ?? {},
+    enrichment: card
+  };
+  const marketPrice = marketPriceForCard(card, entry.finish);
+  return collectionEntrySchema.parse({
+    ...entry,
+    ownershipStatus: 'owned',
+    ownerName: OWNER_NAME,
+    sourceRow: JSON.stringify(sourcePayload),
+    previewArtSource: card ? 'scryfall' : entry.previewArtSource,
+    estimatedMarketPrice: entry.estimatedMarketPrice ?? marketPrice,
+    estimatedMarketCurrency: entry.estimatedMarketCurrency ?? (marketPrice === undefined ? undefined : 'USD'),
+    marketPriceSource: entry.marketPriceSource ?? (marketPrice === undefined ? undefined : 'scryfall'),
+    marketPriceUpdatedAt: entry.marketPriceUpdatedAt ?? (marketPrice === undefined ? undefined : now),
+	    tags: uniqueTags(tags),
+	    notes: entry.notes ?? noteForRoles(roles),
+	    reviewNotes: uniqueSentences([entry.reviewNotes, ...reviewNotes]).join(' '),
+    reviewStatus: needsImportReview ? 'needs_review' : entry.reviewStatus,
+    flagged: Boolean(entry.flagged || needsImportReview)
+	  });
+}
+
+async function upsertFlaggedReviewList(ownedEntries: CollectionEntry[], now: string): Promise<{ metadata: CollectionMetadata; entries: CollectionEntry[] }> {
+  const existing = await readCollectionState(REPO_ROOT, FLAGGED_ID).catch(async () => ({
+    metadata: collectionMetadataSchema.parse({
+      collectionId: FLAGGED_ID,
+      name: 'Flagged',
+      description: 'Cards needing attention, review, or follow-up.',
+      gameId: 'mtg',
+      purpose: 'mixed',
+      source: 'generic',
+      kind: 'list',
+      listCategory: 'flagged',
+      tags: ['flagged'],
+      defaultEntryTags: ['flagged'],
+      defaultOwnershipStatus: 'reference',
+      defaultFlagged: true,
+      linkedSetCodes: [],
+      createdAt: now,
+      updatedAt: now
+    }),
+    entries: [],
+    warnings: []
+  }));
+  const retainedEntries = existing.entries.filter((entry) => !entry.tags.includes('signs-of-assassins'));
+  const reviewEntries = ownedEntries
+    .filter((entry) => entry.flagged || entry.reviewStatus === 'needs_review' || entry.tags.includes('duplicate-name-review') || entry.tags.includes('off-color-review'))
+    .map((entry) =>
+      collectionEntrySchema.parse({
+        ...entry,
+        collectionId: FLAGGED_ID,
+        entryId: `flagged-signs-of-assassins-${slugify(entry.cardName)}-${clean(entry.setCode).toLowerCase()}-${clean(entry.collectorNumber).toLowerCase()}`,
+        reviewStatus: 'needs_review',
+        flagged: true,
+        tags: uniqueTags([...entry.tags, 'flagged', 'review-queue', 'signs-of-assassins']),
+        reviewNotes: uniqueSentences([entry.reviewNotes, 'Flagged by the Signs of Assassins import for duplicate-name or color-identity review.']).join(' ')
+      })
+    );
+  return saveCollection(REPO_ROOT, {
+    metadata: collectionMetadataSchema.parse({
+      ...existing.metadata,
+      name: 'Flagged',
+      description: 'Cards needing attention, review, or follow-up.',
+      purpose: 'mixed',
+      source: 'generic',
+      kind: 'list',
+      listCategory: 'flagged',
+      tags: uniqueTags([...(existing.metadata.tags ?? []), 'flagged', 'signs-of-assassins']),
+      defaultEntryTags: uniqueTags([...(existing.metadata.defaultEntryTags ?? []), 'flagged']),
+      defaultFlagged: true,
+      linkedSetCodes: uniqueTags([...(existing.metadata.linkedSetCodes ?? []), SET_CODE]),
+      updatedAt: now
+    }),
+    entries: [...retainedEntries, ...reviewEntries].sort((left, right) => left.cardName.localeCompare(right.cardName) || (left.setCode ?? '').localeCompare(right.setCode ?? ''))
+  });
+}
+
+async function upsertRecommendations(ownedEntries: CollectionEntry[], now: string): Promise<{ metadata: CollectionMetadata; entries: CollectionEntry[] }> {
+  const existing = await readCollectionState(REPO_ROOT, RECOMMENDATIONS_ID).catch(async () => ({
+    metadata: collectionMetadataSchema.parse({
+      collectionId: RECOMMENDATIONS_ID,
+      name: 'Recommendations',
+      description: 'Cards recommended for future deck or collection decisions.',
+      gameId: 'mtg',
+      purpose: 'research',
+      source: 'generic',
+      kind: 'list',
+      listCategory: 'recommendation',
+      tags: ['recommendations'],
+      defaultEntryTags: ['recommended'],
+      defaultOwnershipStatus: 'recommended',
+      linkedSetCodes: [],
+      createdAt: now,
+      updatedAt: now
+    }),
+    entries: [],
+    warnings: []
+  }));
+  const ownedNonbasicNames = new Set(ownedEntries.filter((entry) => !BASIC_LANDS.has(entry.cardName)).map((entry) => normalizedName(entry.cardName)));
+  const cardsByName = await fetchRecommendedCards();
+  const existingById = new Map(existing.entries.map((entry) => [clean(entry.scryfallId).toLowerCase() || entry.entryId, entry]));
+  for (const recommendation of RECOMMENDATIONS) {
+    if (ownedNonbasicNames.has(normalizedName(recommendation.name))) {
+      continue;
+    }
+    const card = cardsByName.get(normalizedName(recommendation.name));
+    if (!card) {
+      console.warn(`Recommendation skipped: ${recommendation.name} was not found on Scryfall.`);
+      continue;
+    }
+    const entryId = `recommendations-signs-of-assassins-${slugify(card.name)}`;
+    const key = card.id.toLowerCase();
+    const existingEntry = existingById.get(key);
+    const roles = uniqueTags([...recommendation.roles, ...inferRoles(card, card.name)]);
+    const tags = uniqueTags([
+      'recommended',
+      'ghost-slot',
+      'unowned',
+      'gap-filler',
+      'signs-of-assassins',
+      ...recommendation.tags,
+      ...roles
+    ]);
+    const price = marketPriceForCard(card, 'normal');
+    const entry = collectionEntrySchema.parse({
+      ...(existingEntry ?? {}),
+      collectionId: RECOMMENDATIONS_ID,
+      entryId: existingEntry?.entryId || entryId,
+      quantity: 1,
+      ownershipStatus: 'recommended',
+      ownerName: OWNER_NAME,
+      cardName: card.name,
+      setCode: clean(card.set).toUpperCase(),
+      setName: clean(card.set_name),
+      collectorNumber: clean(card.collector_number),
+      scryfallId: card.id,
+      finish: 'normal',
+      language: languageLabel(card.lang),
+      source: 'scryfall',
+      sourceRow: JSON.stringify({ source: 'scryfall', scryfall: card, recommendationContext: recommendation }),
+      matchKey: card.id,
+      matchStrategy: 'scryfall_id',
+      reviewStatus: 'matched',
+      reviewNotes: 'Recommendation-backed ghost slot for the Signs of Assassins deck family.',
+      previewArtSource: 'scryfall',
+      estimatedMarketPrice: price,
+      estimatedMarketCurrency: price === undefined ? undefined : 'USD',
+      marketPriceSource: price === undefined ? undefined : 'scryfall',
+      marketPriceUpdatedAt: price === undefined ? undefined : now,
+      tags,
+      notes: recommendation.notes,
+      flagged: false,
+      proxy: false,
+      homebrew: false
+    });
+    existingById.set(key, entry);
+  }
+  const entries = [...existingById.values()].sort((left, right) => left.cardName.localeCompare(right.cardName) || (left.setCode ?? '').localeCompare(right.setCode ?? ''));
+  const saved = await saveCollection(REPO_ROOT, {
+    metadata: collectionMetadataSchema.parse({
+      ...existing.metadata,
+      name: 'Recommendations',
+      description: 'Cards recommended for future deck or collection decisions.',
+      linkedUniverseId: PROJECT_ID,
+      purpose: 'research',
+      source: 'generic',
+      kind: 'list',
+      listCategory: 'recommendation',
+      tags: uniqueTags([...(existing.metadata.tags ?? []), 'recommendations', 'signs-of-assassins']),
+      defaultEntryTags: uniqueTags([...(existing.metadata.defaultEntryTags ?? []), 'recommended']),
+      defaultOwnershipStatus: 'recommended',
+      linkedSetCodes: uniqueTags([...(existing.metadata.linkedSetCodes ?? []), SET_CODE]),
+      updatedAt: now
+    }),
+    entries
+  });
+  return saved;
+}
+
+async function buildDeck(ownedEntries: CollectionEntry[], recommendationEntries: CollectionEntry[], now: string) {
+  const ownedCandidates = ownedEntries.map((entry) => candidateFromEntry(entry, true)).filter((candidate): candidate is Candidate => Boolean(candidate));
+  const recommendationCandidates = recommendationEntries.filter((entry) => entry.tags.includes('signs-of-assassins')).map((entry) => candidateFromEntry(entry, false)).filter((candidate): candidate is Candidate => Boolean(candidate));
+  const commanderCandidate = ownedCandidates.find((candidate) => candidate.cardId === COMMANDER_SCRYFALL_ID || candidate.name === COMMANDER_NAME);
+  if (!commanderCandidate) {
+    throw new Error(`Commander ${COMMANDER_NAME} was not found in the owned binder import.`);
+  }
+  const commanderReference = {
+    setCode: 'ACR',
+    cardId: COMMANDER_SCRYFALL_ID,
+    variantId: 'official-print',
+    nameSnapshot: COMMANDER_NAME
+  };
+  const variants = VARIANTS.map((definition) =>
+    deckVariantSchema.parse({
+      deckId: DECK_ID,
+      variantId: definition.id,
+      name: definition.name,
+      description: definition.description,
+      status: definition.status,
+      colorIdentity: 'BRW',
+      commander: commanderReference,
+      tags: uniqueTags(['assassin', 'mardu', ...definition.tags]),
+      notes: definition.notes,
+      createdAt: now,
+      updatedAt: now
+    })
+  );
+  const allEntries: DeckEntry[] = [];
+  for (const definition of VARIANTS) {
+    const picks = buildVariantPicks(definition, ownedCandidates, recommendationCandidates, commanderCandidate);
+    allEntries.push(...picks.map((pick, index) => deckEntryFromPick(definition, pick, index)));
+  }
+  const metadata = deckMetadataSchema.parse({
+    deckId: DECK_ID,
+    name: SET_NAME,
+    description: "Altaïr Commander deck-building workspace for Kyle's Assassin ledger, with owned-only and recommendation-enhanced variants.",
+    linkedUniverseId: PROJECT_ID,
+    linkedSetCode: SET_CODE,
+    format: 'Commander',
+    playStyleTags: ['evasion', 'unblockable', 'graveyard-setup', 'exile-value', 'assassin-typal', 'mardu', 'puzzle-combat'],
+    colorIdentity: 'BRW',
+    commander: commanderReference,
+    coverCard: commanderReference,
+    status: 'draft',
+    activeVariantId: 'hidden-blade-core',
+    variants,
+    tags: ['assassin', 'commander', 'mardu', 'signs-of-assassins', 'batch-001', 'deck-variants'],
+    notes: 'Imported owned cards are the source pool for this deck family, not a finalized 100. Ghost/recommended rows live in the Recommendations list and are visually marked as not owned in deck views. Owned-only variants intentionally keep missing land gaps visible.',
+    createdAt: now,
+    updatedAt: now
+  });
+  return saveDeck(REPO_ROOT, { metadata, entries: allEntries });
+}
+
+function buildVariantPicks(definition: VariantDefinition, ownedCandidates: Candidate[], recommendationCandidates: Candidate[], commanderCandidate: Candidate): PickedCard[] {
+  const allowedOwned = ownedCandidates.filter((candidate) => candidate.cardId !== commanderCandidate.cardId && !KNOWN_OFF_COLOR.has(candidate.name) && isCommanderLegal(candidate.colorIdentity));
+  const allowedRecommendations = definition.ownedOnly ? [] : recommendationCandidates.filter((candidate) => isCommanderLegal(candidate.colorIdentity));
+  const selected: PickedCard[] = [];
+  const chosenNonbasicNames = new Set<string>();
+  let landCount = 0;
+
+  const add = (candidate: Candidate, count = 1): boolean => {
+    if (totalCount(selected) >= 99) {
+      return false;
+    }
+    const adjustedCount = Math.min(count, 99 - totalCount(selected));
+    if (adjustedCount <= 0) {
+      return false;
+    }
+    const isBasic = BASIC_LANDS.has(candidate.name);
+    if (!isBasic && chosenNonbasicNames.has(candidate.keyName)) {
+      return false;
+    }
+    if (candidate.name === COMMANDER_NAME || KNOWN_OFF_COLOR.has(candidate.name) || !isCommanderLegal(candidate.colorIdentity)) {
+      return false;
+    }
+    if (!isBasic) {
+      chosenNonbasicNames.add(candidate.keyName);
+    }
+    selected.push({ candidate, count: adjustedCount });
+    if (candidate.roles.includes('land')) {
+      landCount += adjustedCount;
+    }
+    return true;
+  };
+
+  const ownedLands = allowedOwned.filter((candidate) => candidate.roles.includes('land')).sort((left, right) => scoreCandidate(right, definition) - scoreCandidate(left, definition));
+  if (definition.ownedOnly) {
+    for (const land of ownedLands) {
+      add(land, Math.min(land.quantity, 1));
+    }
+  } else {
+    for (const land of ownedLands) {
+      if (landCount >= Math.max(26, definition.landTarget - 10)) {
+        break;
+      }
+      add(land, Math.min(land.quantity, 1));
+    }
+    const preferredLands = allowedRecommendations
+      .filter((candidate) => candidate.roles.includes('land'))
+      .sort((left, right) => recommendedLandPriority(right, definition) - recommendedLandPriority(left, definition));
+    for (const land of preferredLands) {
+      if (landCount >= definition.landTarget) {
+        break;
+      }
+      const recommendation = RECOMMENDATIONS.find((item) => normalizedName(item.name) === land.keyName);
+      const count = recommendation?.basicCount && BASIC_LANDS.has(land.name) ? Math.min(recommendation.basicCount, definition.landTarget - landCount) : 1;
+      add(land, count);
+    }
+  }
+
+  for (const name of definition.includeRecommendations) {
+    const candidate = allowedRecommendations.find((item) => item.keyName === normalizedName(name));
+    if (candidate && !candidate.roles.includes('land')) {
+      add(candidate);
+    }
+  }
+
+  const fillerPool = [...allowedOwned, ...allowedRecommendations]
+    .filter((candidate) => !candidate.roles.includes('land'))
+    .sort((left, right) => scoreCandidate(right, definition) - scoreCandidate(left, definition) || left.manaValue - right.manaValue || left.name.localeCompare(right.name));
+  for (const candidate of fillerPool) {
+    if (totalCount(selected) >= 99) {
+      break;
+    }
+    add(candidate);
+  }
+
+  if (totalCount(selected) !== 99) {
+    throw new Error(`${definition.name} generated ${totalCount(selected)} main-deck cards instead of 99.`);
+  }
+  return selected;
+}
+
+function deckEntryFromPick(definition: VariantDefinition, pick: PickedCard, index: number): DeckEntry {
+  const roles = uniqueTags(pick.candidate.roles);
+  const tags = uniqueTags([
+    ...pick.candidate.tags,
+    definition.id,
+    pick.candidate.owned ? 'owned' : 'recommended',
+    pick.candidate.owned ? '' : 'ghost-slot',
+    pick.candidate.owned ? '' : 'unowned',
+    pick.candidate.owned ? '' : 'gap-filler'
+  ]);
+  const flags = uniqueTags([
+    definition.ownedOnly && pick.candidate.roles.includes('land') ? 'owned-only-land-pool' : '',
+    !pick.candidate.owned ? 'ghost-slot' : '',
+    !pick.candidate.owned ? 'unowned' : '',
+    definition.ownedOnly && roles.includes('land') ? landLightFlag(definition.id) : ''
+  ]);
+  return deckEntrySchema.parse({
+    deckId: DECK_ID,
+    entryId: `${definition.id}-${String(index + 1).padStart(3, '0')}-${slugify(pick.candidate.name)}`,
+    deckVariantId: definition.id,
+    section: 'main',
+    count: pick.count,
+    setCode: pick.candidate.setCode,
+    cardId: pick.candidate.cardId,
+    variantId: 'official-print',
+    nameSnapshot: pick.candidate.name,
+    candidateStatus: 'active',
+    roles,
+    roleSource: 'heuristic',
+    roleConfidence: pick.candidate.owned ? 0.78 : 0.86,
+    impactRating: ratingFor(pick.candidate, definition, 'impact'),
+    synergyRating: ratingFor(pick.candidate, definition, 'synergy'),
+    qualityRating: ratingFor(pick.candidate, definition, 'quality'),
+    entryTags: tags,
+    entryNotes: entryNotesFor(pick.candidate, definition),
+    flags,
+    starred: !pick.candidate.owned && pick.candidate.roles.some((role) => ['fixing', 'graveyard', 'evasion', 'protection'].includes(role)),
+    markedForDeletion: false
+  });
+}
+
+function landLightFlag(variantId: string): string {
+  return variantId === 'hidden-blade-core' || variantId === 'rooftop-evasion' ? 'land-light-review' : '';
+}
+
+function candidateFromEntry(entry: CollectionEntry, owned: boolean): Candidate | undefined {
+  const source = parseScryfallSource(entry.sourceRow);
+  if (!source || !entry.scryfallId || !entry.setCode) {
+    return undefined;
+  }
+  const roles = uniqueTags([...inferRoles(source, entry.cardName), ...entry.tags.filter((tag) => ROLE_TAGS.has(tag))]);
+  return {
+    entry,
+    card: source,
+    owned,
+    name: entry.cardName,
+    keyName: normalizedName(entry.cardName),
+    setCode: entry.setCode.toUpperCase(),
+    cardId: entry.scryfallId,
+    manaValue: manaValueForCard(source),
+    typeLine: typeLineForCard(source),
+    oracleText: oracleTextForCard(source),
+    colorIdentity: colorIdentityForCard(source),
+    roles,
+    tags: uniqueTags([...entry.tags, ...roles]),
+    quantity: Math.max(1, entry.quantity || 1)
+  };
+}
+
+const ROLE_TAGS = new Set(['land', 'fixing', 'assassin', 'evasion', 'graveyard', 'exile', 'ramp', 'draw', 'removal', 'wipe', 'protection', 'recursion', 'equipment', 'artifact', 'combat', 'tutor', 'token', 'puzzle', 'finisher', 'interaction', 'haste']);
+
+function inferRoles(card: ScryfallCard | undefined, fallbackName: string): string[] {
+  const typeLine = typeLineForCard(card).toLowerCase();
+  const oracle = oracleTextForCard(card).toLowerCase();
+  const name = fallbackName.toLowerCase();
+  const roles: string[] = [];
+  if (typeLine.includes('land')) roles.push('land');
+  if (typeLine.includes('assassin') || oracle.includes('assassin')) roles.push('assassin');
+  if (typeLine.includes('equipment') || oracle.includes('equip') || oracle.includes('attach')) roles.push('equipment');
+  if (typeLine.includes('artifact')) roles.push('artifact');
+  if (oracle.match(/can't be blocked|unblockable|flying|menace|fear|intimidate|skulk|shadow|landwalk|protection from|nonbasic landwalk/) || name.includes('passage')) roles.push('evasion');
+  if (oracle.includes('graveyard') || oracle.includes('surveil') || oracle.includes('mill') || oracle.includes('discard')) roles.push('graveyard');
+  if (oracle.includes('exile') || oracle.includes('foretell') || oracle.includes('plot')) roles.push('exile');
+  if (oracle.match(/add \{|treasure|search your library for .*land|mana of any color|cost .* less|spells.*cost/)) roles.push('ramp');
+  if (oracle.match(/draw (a|two|three|x|that many|cards?) card|look at the top|reveal the top|whenever you cast.*draw|card into your hand/)) roles.push('draw');
+  if (oracle.match(/destroy target|exile target|deals? .* damage|sacrifice .* creature|target creature gets -|return target .* to its owner's hand/)) roles.push('removal');
+  if (oracle.match(/destroy all|each creature|all creatures|each opponent sacrifices|each player sacrifices/)) roles.push('wipe');
+  if (oracle.match(/indestructible|hexproof|protection|prevent .* damage|phase out|ward|can't be sacrificed|regenerate/)) roles.push('protection');
+  if (oracle.match(/return .* from your graveyard|cast .* from your graveyard|from your graveyard to your hand|escape/)) roles.push('recursion');
+  if (oracle.match(/tutor|search your library|search your graveyard/)) roles.push('tutor');
+  if (oracle.match(/attacks|attacking|combat|double strike|first strike|haste|goad|myriad/)) roles.push('combat');
+  if (oracle.match(/create .* token|tokens? you control|token that's a copy/)) roles.push('token');
+  if (oracle.match(/can't attack you|can't block|tap target creature|creatures your opponents control.*can't block/)) roles.push('puzzle');
+  if (oracle.match(/\+1\/\+1|double strike|damage to each opponent|lose the game|extra combat/)) roles.push('finisher');
+  if (roles.includes('land') && oracle.match(/any color|one mana of any color|add \{[WUBRG]\}|add one mana/)) roles.push('fixing');
+  return uniqueTags(roles.length ? roles : ['utility']);
+}
+
+function scoreCandidate(candidate: Candidate, definition: VariantDefinition): number {
+  let score = candidate.owned ? 1.5 : 0.8;
+  if (candidate.name === COMMANDER_NAME) {
+    return -999;
+  }
+  if (candidate.roles.includes('land')) {
+    score += definition.roleWeights.land ?? 1;
+  }
+  for (const role of candidate.roles) {
+    score += definition.roleWeights[role] ?? 0;
+  }
+  if (candidate.manaValue <= 2 && !candidate.roles.includes('land')) score += 1.2;
+  if (candidate.manaValue >= 6 && !candidate.roles.includes('finisher')) score -= 0.7;
+  if (candidate.roles.includes('assassin') && candidate.roles.includes('evasion')) score += 1.5;
+  if (candidate.roles.includes('graveyard') && candidate.roles.includes('exile')) score += 1.1;
+  if (!candidate.owned && definition.includeRecommendations.some((name) => normalizedName(name) === candidate.keyName)) score += 5;
+  return score;
+}
+
+function recommendedLandPriority(candidate: Candidate, definition: VariantDefinition): number {
+  const exact = definition.includeRecommendations.some((name) => normalizedName(name) === candidate.keyName) ? 100 : 0;
+  const fixing = candidate.roles.includes('fixing') ? 20 : 0;
+  const utility = candidate.roles.some((role) => ['evasion', 'graveyard'].includes(role)) ? 12 : 0;
+  const basic = BASIC_LANDS.has(candidate.name) ? -5 : 0;
+  return exact + fixing + utility + basic + scoreCandidate(candidate, definition);
+}
+
+function ratingFor(candidate: Candidate, definition: VariantDefinition, kind: 'impact' | 'synergy' | 'quality'): number {
+  const score = scoreCandidate(candidate, definition);
+  if (kind === 'quality') {
+    if (!candidate.owned && candidate.tags.includes('premium')) return 5;
+    if (candidate.roles.includes('fixing') || candidate.roles.includes('protection') || candidate.roles.includes('removal')) return candidate.owned ? 3 : 4;
+    return Math.max(2, Math.min(4, Math.round(score / 4)));
+  }
+  if (kind === 'synergy') {
+    const synergyRoles = candidate.roles.filter((role) => ['assassin', 'evasion', 'graveyard', 'exile', 'equipment', 'combat', 'token', 'puzzle'].includes(role)).length;
+    return Math.max(1, Math.min(5, synergyRoles + (!candidate.owned ? 1 : 0)));
+  }
+  return Math.max(1, Math.min(5, Math.round(score / 3)));
+}
+
+function entryNotesFor(candidate: Candidate, definition: VariantDefinition): string {
+  const source = candidate.owned ? 'Owned batch-001 card' : 'Recommended ghost slot';
+  const roleText = candidate.roles.join(', ');
+  return `${source} for ${definition.name}. Roles: ${roleText}. ${candidate.entry.notes ?? ''}`.trim();
+}
+
+function noteForRoles(roles: string[]): string {
+  return `Signs of Assassins roles: ${roles.join(', ')}.`;
+}
+
+async function ensureSignsOfAssassinsSet(now: string, coverImageUrl?: string): Promise<void> {
+  await ensureLibraryEntry(now, coverImageUrl);
+  const setDir = join(REPO_ROOT, 'sets', SET_CODE);
+  await mkdir(setDir, { recursive: true });
+  await mkdir(join(setDir, 'art'), { recursive: true });
+  await writeFile(join(setDir, 'sets.csv'), `${writeCsvRecords([{
+    set_code: SET_CODE,
+    set_name: SET_NAME,
+    set_type: 'custom',
+    version: '0.1.0',
+    default_language: 'en',
+    default_asset_pack: 'basic-m15-local',
+    default_export_profile: 'cockatrice',
+    author: 'Jonathan Kyle Hobson',
+    status: 'draft',
+    tags: 'assassin;commander;mardu;deck-building',
+    notes: 'Empty authored shell for the Signs of Assassins deck-building project. Official imported cards stay in collections and decks, not in authored card records.'
+  }], SET_HEADERS)}\n`, 'utf8');
+  await ensureCsvFile(join(setDir, 'cards.csv'), CARD_HEADERS);
+  await ensureCsvFile(join(setDir, 'card_faces.csv'), FACE_HEADERS);
+  await ensureCsvFile(join(setDir, 'card_variants.csv'), VARIANT_HEADERS);
+  await ensureCsvFile(join(setDir, 'card_variant_faces.csv'), FACE_HEADERS);
+  await ensureCsvFile(join(setDir, 'art_manifest.csv'), ART_HEADERS);
+  await ensureCsvFile(join(setDir, 'export_profiles.csv'), EXPORT_HEADERS);
+}
+
+async function ensureLibraryEntry(now: string, coverImageUrl?: string): Promise<void> {
+  const path = join(REPO_ROOT, 'sets', 'library.json');
+  const library = JSON.parse(await readFile(path, 'utf8')) as {
+    universes?: Array<Record<string, unknown>>;
+    sets?: Array<Record<string, unknown>>;
+  };
+  const universes = Array.isArray(library.universes) ? library.universes : [];
+  const sets = Array.isArray(library.sets) ? library.sets : [];
+	  upsertByKey(universes, 'id', PROJECT_ID, {
+	    id: PROJECT_ID,
+	    name: PROJECT_NAME,
+	    description: "Deck-building project for Kyle's Altaïr Assassin Commander deck, owned ledger, recommendations, flags, and variants.",
+	    status: 'draft',
+	    tags: ['assassin', 'commander', 'mardu', 'deck-building'],
+    coverImageUrl,
+	    updatedAt: now
+	  });
+  const nextSort = Math.max(0, ...sets.map((set) => Number(set.sortOrder) || 0)) + 10;
+  upsertByKey(sets, 'setCode', SET_CODE, {
+    setCode: SET_CODE,
+    universeId: PROJECT_ID,
+    sortOrder: nextSort
+  });
+  await writeFile(path, `${JSON.stringify({ ...library, universes, sets }, null, 2)}\n`, 'utf8');
+}
+
+async function ensureCsvFile(path: string, headers: string[]): Promise<void> {
+  if (existsSync(path)) {
+    return;
+  }
+  await writeFile(path, `${headers.join(',')}\n`, 'utf8');
+}
+
+function upsertByKey(items: Array<Record<string, unknown>>, key: string, value: string, next: Record<string, unknown>): void {
+  const index = items.findIndex((item) => item[key] === value);
+  if (index >= 0) {
+    items[index] = { ...items[index], ...next };
+    return;
+  }
+  items.push(next);
+}
+
+async function fetchScryfallCardsById(ids: string[]): Promise<Map<string, ScryfallCard>> {
+  const uniqueIds = [...new Set(ids.map((id) => clean(id).toLowerCase()).filter(Boolean))];
+  const cards = new Map<string, ScryfallCard>();
+  for (let index = 0; index < uniqueIds.length; index += 75) {
+    const chunk = uniqueIds.slice(index, index + 75);
+    const response = await scryfallJson<{ data?: ScryfallCard[] }>('https://api.scryfall.com/cards/collection', {
+      method: 'POST',
+      body: JSON.stringify({ identifiers: chunk.map((id) => ({ id })) })
+    });
+    for (const card of response.data ?? []) {
+      cards.set(card.id.toLowerCase(), card);
+    }
+    await delay(80);
+  }
+  return cards;
+}
+
+async function fetchRecommendedCards(): Promise<Map<string, ScryfallCard>> {
+  const cards = new Map<string, ScryfallCard>();
+  const names = [...new Set(RECOMMENDATIONS.map((recommendation) => recommendation.name))];
+  for (let index = 0; index < names.length; index += 75) {
+    const chunk = names.slice(index, index + 75);
+    const response = await scryfallJson<{ data?: ScryfallCard[]; not_found?: Array<Record<string, unknown>> }>('https://api.scryfall.com/cards/collection', {
+      method: 'POST',
+      body: JSON.stringify({ identifiers: chunk.map((name) => ({ name })) })
+    });
+    for (const card of response.data ?? []) {
+      cards.set(normalizedName(card.name), card);
+    }
+    for (const missing of response.not_found ?? []) {
+      const name = clean(missing.name);
+      if (!name) {
+        console.warn(`Recommendation lookup missing: ${JSON.stringify(missing)}`);
+        continue;
+      }
+      try {
+        const card = await scryfallJson<ScryfallCard>(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name.replace(/\s*\/\/\s*/g, ' '))}`);
+        cards.set(normalizedName(card.name), card);
+      } catch (error) {
+        console.warn(`Recommendation lookup missing: ${JSON.stringify(missing)} (${error instanceof Error ? error.message : String(error)})`);
+      }
+    }
+    await delay(80);
+  }
+  return cards;
+}
+
+async function scryfallJson<T>(url: string, init: RequestInit = {}, retries = 2): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'HomebrewForgeCodexImport/1.0',
+      ...(init.headers ?? {})
+    }
+  });
+  if (response.status === 429 && retries > 0) {
+    const retryAfterSeconds = Number(response.headers.get('retry-after')) || 65;
+    console.warn(`Scryfall rate limit reached; waiting ${retryAfterSeconds}s before retrying.`);
+    await delay(retryAfterSeconds * 1000);
+    return scryfallJson<T>(url, init, retries - 1);
+  }
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`${response.status} ${response.statusText}${text ? `: ${text.slice(0, 180)}` : ''}`);
+  }
+  return (await response.json()) as T;
+}
+
+function parseScryfallSource(sourceRow: string | undefined): ScryfallCard | undefined {
+  if (!sourceRow) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(sourceRow) as Record<string, unknown>;
+    const candidate = (parsed.enrichment ?? parsed.scryfall ?? parsed) as ScryfallCard;
+    return candidate?.id ? candidate : undefined;
+  } catch {
+    try {
+      const parsed = JSON.parse(sourceRow.replace(/\r?\n/g, '\\n')) as Record<string, unknown>;
+      const candidate = (parsed.enrichment ?? parsed.scryfall ?? parsed) as ScryfallCard;
+      return candidate?.id ? candidate : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+function marketPriceForCard(card: ScryfallCard | undefined, finish: string | undefined): number | undefined {
+  const prices = card?.prices;
+  const raw = clean(finish).toLowerCase().includes('foil') ? prices?.usd_foil : prices?.usd;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function coverImageUrlForCard(card: ScryfallCard | undefined): string | undefined {
+  const images = card?.image_uris ?? card?.card_faces?.find((face) => face.image_uris)?.image_uris as Record<string, string> | undefined;
+  return clean(images?.art_crop) || clean(images?.normal) || clean(images?.large) || clean(images?.png) || undefined;
+}
+
+function colorIdentityForCard(card: ScryfallCard | undefined): string[] {
+  return Array.isArray(card?.color_identity) ? card.color_identity.map((color) => clean(color).toUpperCase()).filter(Boolean) : [];
+}
+
+function isCommanderLegal(colors: string[]): boolean {
+  return colors.every((color) => COMMANDER_COLORS.has(color));
+}
+
+function typeLineForCard(card: ScryfallCard | undefined): string {
+  return clean(card?.type_line) || clean(card?.card_faces?.[0]?.type_line);
+}
+
+function oracleTextForCard(card: ScryfallCard | undefined): string {
+  if (clean(card?.oracle_text)) {
+    return clean(card?.oracle_text);
+  }
+  const faces = card?.card_faces ?? [];
+  return faces.map((face) => clean(face.oracle_text)).filter(Boolean).join('\n\n');
+}
+
+function manaValueForCard(card: ScryfallCard | undefined): number {
+  const value = Number(card?.mana_value ?? card?.cmc ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function languageLabel(lang: string | undefined): string | undefined {
+  return clean(lang) || undefined;
+}
+
+function countBy<T>(values: T[], keyFor: (value: T) => string, countFor: (value: T) => number): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const value of values) {
+    const key = keyFor(value);
+    counts.set(key, (counts.get(key) ?? 0) + countFor(value));
+  }
+  return counts;
+}
+
+function verifyDeck(entries: DeckEntry[]): Record<string, { count: number; ghost: number; duplicateNonbasicNames: string[] }> {
+  const totals: Record<string, { count: number; ghost: number; duplicateNonbasicNames: string[] }> = {};
+  for (const variant of VARIANTS) {
+    const variantEntries = entries.filter((entry) => entry.deckVariantId === variant.id && entry.section === 'main');
+    const nameCounts = countBy(variantEntries, (entry) => normalizedName(entry.nameSnapshot ?? entry.cardId), (entry) => entry.count);
+    const duplicateNonbasicNames = [...nameCounts.entries()]
+      .filter(([name, count]) => count > 1 && ![...BASIC_LANDS].map(normalizedName).includes(name))
+      .map(([name]) => name);
+    totals[variant.id] = {
+      count: variantEntries.reduce((sum, entry) => sum + entry.count, 0),
+      ghost: variantEntries.filter((entry) => entry.entryTags?.includes('ghost-slot')).reduce((sum, entry) => sum + entry.count, 0),
+      duplicateNonbasicNames
+    };
+    if (totals[variant.id].count !== 99) {
+      throw new Error(`${variant.name} has ${totals[variant.id].count} main-deck cards, expected 99.`);
+    }
+    if (duplicateNonbasicNames.length) {
+      throw new Error(`${variant.name} has duplicate nonbasic names: ${duplicateNonbasicNames.join(', ')}`);
+    }
+  }
+  return totals;
+}
+
+function totalCount(picks: PickedCard[]): number {
+  return picks.reduce((sum, pick) => sum + pick.count, 0);
+}
+
+function uniqueTags(values: Array<string | undefined>): string[] {
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  for (const value of values) {
+    const tag = clean(value);
+    if (!tag) {
+      continue;
+    }
+    const key = tag.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    tags.push(tag);
+  }
+  return tags;
+}
+
+function uniqueSentences(values: Array<string | undefined>): string[] {
+  return uniqueTags(values.flatMap((value) => clean(value).split(/(?<=\.)\s+/)));
+}
+
+function normalizedName(value: string | undefined): string {
+  return clean(value).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function slugify(value: string): string {
+  return normalizedName(value)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 72) || 'card';
+}
+
+function clean(value: unknown): string {
+  return String(value ?? '').trim();
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

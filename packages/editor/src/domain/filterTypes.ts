@@ -15,7 +15,8 @@ export const CARD_STATUS_OPTIONS: FilterOption[] = [
   { value: 'review', label: 'Review' },
   { value: 'playtest', label: 'Playtest' },
   { value: 'final', label: 'Final' },
-  { value: 'cut', label: 'Cut' }
+  { value: 'cut', label: 'Cut' },
+  { value: 'archived', label: 'Archived' }
 ];
 
 export const DECK_STATUS_OPTIONS: FilterOption[] = [

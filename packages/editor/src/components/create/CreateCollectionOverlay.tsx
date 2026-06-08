@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
-import type { CollectionImportSummary, CollectionPurpose, CollectionSourcePreset, CreateCollectionRequest, LibraryState } from '../../domain/editorTypes.js';
+import { LIST_CATEGORY_OPTIONS, listCategoryDefaults, ownershipStatusLabel } from '../../domain/collectionLists.js';
+import type { CollectionImportSummary, CollectionKind, CollectionListCategory, CollectionOwnershipStatus, CollectionPurpose, CollectionSourcePreset, CreateCollectionRequest, LibraryState } from '../../domain/editorTypes.js';
 import type { CreateFlowStatus } from '../../domain/createFlowTypes.js';
+import { formatCount } from '../../domain/uiText.js';
 import { CollapsibleSection } from '../CollapsibleSection.js';
 import { Field } from '../Field.js';
 import { Icon } from '../Icon.js';
@@ -17,6 +19,8 @@ export interface CreateCollectionImportPayload {
 interface CreateCollectionOverlayProps {
   library: LibraryState | null;
   selectedUniverseId: string;
+  initialKind?: CollectionKind;
+  initialListCategory?: CollectionListCategory;
   onCreateCollection: (request: CreateCollectionRequest, importPayload?: CreateCollectionImportPayload) => Promise<void>;
   onDryRunImport: (request: CreateCollectionRequest, importPayload: CreateCollectionImportPayload) => Promise<CollectionImportSummary>;
   onStatus: (message: string) => void;
@@ -36,10 +40,11 @@ const sourceOptions: Array<{ value: CollectionSourcePreset; label: string }> = [
   { value: 'tcgplayer', label: 'TCGplayer' },
   { value: 'dragonshield', label: 'Dragon Shield' },
   { value: 'delver', label: 'Delver Lens' },
+  { value: 'scryfall', label: 'Scryfall' },
   { value: 'generic', label: 'Generic CSV' }
 ];
 
-export function CreateCollectionOverlay({ library, selectedUniverseId, onCreateCollection, onDryRunImport, onStatus, onClose }: CreateCollectionOverlayProps) {
+export function CreateCollectionOverlay({ library, selectedUniverseId, initialKind = 'binder', initialListCategory = 'general', onCreateCollection, onDryRunImport, onStatus, onClose }: CreateCollectionOverlayProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [collectionId, setCollectionId] = useState('');
   const [name, setName] = useState('');
@@ -47,12 +52,18 @@ export function CreateCollectionOverlay({ library, selectedUniverseId, onCreateC
   const [linkedUniverseId, setLinkedUniverseId] = useState(selectedUniverseId);
   const [gameId, setGameId] = useState('mtg');
   const [purpose, setPurpose] = useState<CollectionPurpose>('mixed');
+  const [kind, setKind] = useState<CollectionKind>(initialKind);
+  const [listCategory, setListCategory] = useState<CollectionListCategory>(initialListCategory);
+  const [defaultOwnershipStatus, setDefaultOwnershipStatus] = useState<CollectionOwnershipStatus>(() => listCategoryDefaults(initialListCategory).defaultOwnershipStatus);
+  const [defaultEntryTags, setDefaultEntryTags] = useState(() => listCategoryDefaults(initialListCategory).defaultTags.join('; '));
+  const [defaultStarred, setDefaultStarred] = useState(Boolean(listCategoryDefaults(initialListCategory).defaultStarred));
+  const [defaultFlagged, setDefaultFlagged] = useState(Boolean(listCategoryDefaults(initialListCategory).defaultFlagged));
   const [source, setSource] = useState<CollectionSourcePreset>('manabox');
   const [importPayload, setImportPayload] = useState<CreateCollectionImportPayload | undefined>();
   const [summary, setSummary] = useState<CollectionImportSummary | null>(null);
   const [flowState, setFlowState] = useState<CreateFlowStatus>('idle');
   const [error, setError] = useState('');
-  const dirty = Boolean(collectionId || name || description || linkedUniverseId !== selectedUniverseId || gameId !== 'mtg' || purpose !== 'mixed' || importPayload);
+  const dirty = Boolean(collectionId || name || description || linkedUniverseId !== selectedUniverseId || gameId !== 'mtg' || purpose !== 'mixed' || kind !== initialKind || listCategory !== initialListCategory || importPayload);
 
   function markDirty() {
     setFlowState('dirty');
@@ -90,7 +101,7 @@ export function CreateCollectionOverlay({ library, selectedUniverseId, onCreateC
       const result = await onDryRunImport(buildRequest(), { ...importPayload, source });
       setSummary(result);
       setFlowState('dirty');
-      onStatus(`Dry-run analyzed ${result.importedRows} rows. ${result.reviewRows} need review.`);
+      onStatus(`Dry-run analyzed ${formatCount(result.importedRows, 'row')}. ${formatCount(result.reviewRows, 'row')} ${result.reviewRows === 1 ? 'needs' : 'need'} review.`);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : String(caught);
       setError(message);
@@ -122,6 +133,12 @@ export function CreateCollectionOverlay({ library, selectedUniverseId, onCreateC
       linkedUniverseId,
       gameId,
       purpose,
+      kind,
+      listCategory: kind === 'list' ? listCategory : 'general',
+      defaultOwnershipStatus: kind === 'list' ? defaultOwnershipStatus : 'owned',
+      defaultEntryTags: kind === 'list' ? defaultEntryTags.split(';').map((tag) => tag.trim()).filter(Boolean) : [],
+      defaultStarred: kind === 'list' ? defaultStarred : false,
+      defaultFlagged: kind === 'list' ? defaultFlagged : false,
       source
     };
   }
@@ -134,19 +151,19 @@ export function CreateCollectionOverlay({ library, selectedUniverseId, onCreateC
         Import CSV
       </button>
       <button type="button" className="secondary-button" disabled={!importPayload || flowState === 'saving'} onClick={() => void dryRun()}>
-        Dry Run
+        Dry run
       </button>
       <button type="button" className="secondary-button" onClick={onClose}>
         Cancel
       </button>
       <button type="button" className="primary-button" disabled={flowState === 'saving' || !name.trim()} onClick={() => void submit()}>
-        {flowState === 'saving' ? 'Creating...' : importPayload ? 'Create And Import' : 'Create Collection'}
+        {flowState === 'saving' ? 'Creating...' : importPayload ? 'Create and import' : 'Create collection'}
       </button>
     </>
   );
 
   return (
-    <OverlayShell title="New Collection" eyebrow="Create" subtitle="Create an isolated card list without adding cards to Sets, Cards, or Decks." dirty={dirty && flowState !== 'saving'} footer={footer} onClose={onClose}>
+    <OverlayShell title={kind === 'list' ? 'New List' : 'New Binder'} eyebrow="Create" subtitle="Create a collection organizer without adding cards to Sets, Cards, or Decks." dirty={dirty && flowState !== 'saving'} footer={footer} onClose={onClose}>
       <CreateFlowStatusMessage state={flowState} error={error} />
       <div className="create-overlay-grid">
         <CollapsibleSection title="Collection Metadata" subtitle="Name, project, game, and purpose">
@@ -184,6 +201,73 @@ export function CreateCollectionOverlay({ library, selectedUniverseId, onCreateC
               </select>
             </Field>
           </div>
+          <div className="grid-2">
+            <Field label="Organizer type">
+              <select value={kind} onChange={(event) => { setKind(event.target.value as CollectionKind); markDirty(); }}>
+                <option value="binder">Binder</option>
+                <option value="list">List</option>
+              </select>
+            </Field>
+            {kind === 'list' ? (
+              <Field label="List category">
+                <select
+                  value={listCategory}
+                  onChange={(event) => {
+                    const next = event.target.value as CollectionListCategory;
+                    const defaults = listCategoryDefaults(next);
+                    setListCategory(next);
+                    setDefaultOwnershipStatus(defaults.defaultOwnershipStatus);
+                    setDefaultEntryTags(defaults.defaultTags.join('; '));
+                    setDefaultStarred(Boolean(defaults.defaultStarred));
+                    setDefaultFlagged(Boolean(defaults.defaultFlagged));
+                    markDirty();
+                  }}
+                >
+                  {LIST_CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : (
+              <Field label="Ownership default">
+                <input value="Owned physical or virtual collection" readOnly />
+              </Field>
+            )}
+          </div>
+          {kind === 'list' ? (
+            <div className="collection-official-panel">
+              <strong>List defaults</strong>
+              <p className="workspace-copy">{listCategoryDefaults(listCategory).description}</p>
+              <div className="grid-2">
+                <Field label="Default ownership">
+                  <select value={defaultOwnershipStatus} onChange={(event) => { setDefaultOwnershipStatus(event.target.value as CollectionOwnershipStatus); markDirty(); }}>
+                    <option value="wanted">Wanted</option>
+                    <option value="recommended">Recommended</option>
+                    <option value="reference">Reference only</option>
+                    <option value="proxy">Proxy</option>
+                    <option value="homebrew_unprinted">Homebrew unprinted</option>
+                    <option value="owned">Owned</option>
+                  </select>
+                </Field>
+                <Field label="Default tags">
+                  <input value={defaultEntryTags} placeholder="wishlist; combo; upgrade" onChange={(event) => { setDefaultEntryTags(event.target.value); markDirty(); }} />
+                </Field>
+              </div>
+              <div className="grid-2">
+                <label className="checkbox-row">
+                  <input type="checkbox" checked={defaultStarred} onChange={(event) => { setDefaultStarred(event.target.checked); markDirty(); }} />
+                  Star cards added to this list
+                </label>
+                <label className="checkbox-row">
+                  <input type="checkbox" checked={defaultFlagged} onChange={(event) => { setDefaultFlagged(event.target.checked); markDirty(); }} />
+                  Flag cards added to this list
+                </label>
+              </div>
+              <p className="workspace-copy">Rows added here default to {ownershipStatusLabel(defaultOwnershipStatus).toLowerCase()} and inherit these tags.</p>
+            </div>
+          ) : null}
           <Field label="Description">
             <textarea value={description} rows={4} placeholder="Owned cards, inspiration pile, print run, or research context." onChange={(event) => { setDescription(event.target.value); markDirty(); }} />
           </Field>
@@ -221,11 +305,11 @@ export function CreateCollectionOverlay({ library, selectedUniverseId, onCreateC
           </div>
           {summary ? (
             <div className="import-summary">
-              <strong>Dry Run Summary</strong>
+              <strong>Dry run summary</strong>
               <span>
                 {summary.matchedRows} matched / {summary.reviewRows} review
               </span>
-              <span>{summary.warnings.length} warnings</span>
+              <span>{formatCount(summary.warnings.length, 'warning')}</span>
             </div>
           ) : null}
         </CollapsibleSection>

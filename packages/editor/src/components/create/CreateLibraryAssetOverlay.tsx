@@ -100,23 +100,23 @@ export function CreateLibraryAssetOverlay({ project, onCreateAsset, onStatus, on
       <input ref={fileInputRef} type="file" accept="image/*,.svg" hidden onChange={(event) => void handleUpload(event.target.files?.[0])} />
       <button type="button" className="secondary-button icon-label-button" onClick={() => fileInputRef.current?.click()}>
         <Icon name="download" />
-        Upload File
+        Upload file
       </button>
       <button type="button" className="secondary-button" onClick={onClose}>
         Cancel
       </button>
       <button type="button" className="primary-button" disabled={flowState === 'saving' || !project || !canSubmit(sourceMode, dataUri, filePath, sourceUrl, artId)} onClick={() => void submit()}>
-        {flowState === 'saving' ? 'Saving...' : 'Create Draft'}
+        {flowState === 'saving' ? 'Saving...' : 'Create asset'}
       </button>
     </>
   );
 
   return (
-    <OverlayShell title="New Library Asset" eyebrow="Create" subtitle="Import an art, icon, symbol, or frame source into the current set library." dirty={dirty && flowState !== 'saving'} footer={footer} onClose={onClose}>
+    <OverlayShell title="New Gallery Asset" eyebrow="Create" subtitle="Import an art, icon, symbol, or frame source into the current set gallery." dirty={dirty && flowState !== 'saving'} footer={footer} onClose={onClose}>
       <CreateFlowStatusMessage state={flowState} error={error} />
       <div className="create-overlay-grid">
         <CollapsibleSection title="Source" subtitle="Upload, URL, or local path">
-          <div className="segmented-control create-mode-tabs" role="tablist" aria-label="Asset source">
+          <div className="segmented-control create-mode-tabs" role="group" aria-label="Asset source">
             {(['upload', 'url', 'local'] as const).map((mode) => (
               <button key={mode} type="button" className={sourceMode === mode ? 'active' : ''} onClick={() => { setSourceMode(mode); markDirty(); }}>
                 {mode === 'upload' ? 'Upload' : mode === 'url' ? 'URL' : 'Local Path'}
@@ -128,7 +128,7 @@ export function CreateLibraryAssetOverlay({ project, onCreateAsset, onStatus, on
               {dataUri ? <img src={dataUri} alt="" /> : <Icon name="assets" />}
               <span>
                 <strong>{filename || 'No file selected'}</strong>
-                <small>Use Upload File, then add metadata below.</small>
+                <small>Use Upload file, then add metadata below.</small>
               </span>
             </div>
           ) : sourceMode === 'url' ? (

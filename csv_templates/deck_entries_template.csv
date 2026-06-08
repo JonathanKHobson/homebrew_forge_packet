@@ -1,0 +1,5 @@
+section,count,set_code,card_id,variant_id,name_snapshot
+main,4,DEMO,DEMO-001,DEMO-001-V1,Example Vanguard
+main,2,DEMO,DEMO-002,DEMO-002-V2,Clockwork Relic
+side,2,DEMO,DEMO-003,,Hidden Orchard
+maybe,1,UNRESOLVED,unknown-card,,Unknown Card

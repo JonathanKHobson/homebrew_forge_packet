@@ -1,0 +1,3 @@
+variant_id,card_id,face_index,face_name,mana_cost,type_line,oracle_text,flavor_text,power,toughness,loyalty,defense,colors,frame_type,art_id,artist_display,watermark,rules_text_size_hint,rules_text_padding_top,rules_text_padding_right,rules_text_padding_bottom,rules_text_padding_left,rules_text_reminder_mode,layout_variant
+DEMO-001-V1,DEMO-001,0,Example Vanguard,{1}{W}{U},Legendary Creature - Human Advisor,"Vigilance
+When Example Vanguard enters, scry 1.",A placeholder for testing the pipeline.,2,3,,,WU,normal_creature,ART-001,Placeholder Artist,,auto,,,,,auto,normal
