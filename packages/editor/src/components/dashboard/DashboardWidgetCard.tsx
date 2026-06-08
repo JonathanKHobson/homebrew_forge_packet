@@ -139,7 +139,7 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDefinition[] = [
     id: 'collection',
     title: 'Collection value and review',
     eyebrow: 'Collector',
-    description: 'Value, purchase, review, and marked rows stay visible for collection scopes.',
+    description: 'Value, purchase, review, and marked rows stay visible for collection-backed scopes.',
     defaultVisualization: 'kpi',
     alternateVisualizations: ['bar', 'donut']
   },

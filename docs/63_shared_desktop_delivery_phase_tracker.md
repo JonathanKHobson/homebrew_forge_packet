@@ -17,6 +17,7 @@ Evidence root: `output/playwright/desktop-delivery/` for visual/browser evidence
 | 2 | Runtime-service package scaffold | Done | `packages/runtime-service` | runtime-service build/test, repo typecheck/build | local command output |
 | 2 | Health/version/port fallback skeleton | Done | `packages/runtime-service` | runtime smoke tests for health, version, busy port | local command output |
 | 2 | Runtime `/api/library` extraction | Done | `packages/runtime-service/src/routes/library.ts` | runtime-service typecheck/build/test | local command output |
+| 2 | Runtime read routes for decks and collections | Done | `packages/runtime-service/src/createRuntimeServer.ts` | runtime-service typecheck/build/test | local command output |
 | 3 | Web `/api/version` parity endpoint | Done | `packages/editor/src/server` | editor tests, typecheck, build, Vite `/api/version` smoke | local command output |
 | 2 | Host-neutral API route registration | Pending | runtime-service/editor adapter | API smoke | pending |
 | 3 | Vite adapter preservation | Pending | `packages/editor/src/server` | web dev and API parity | pending |

@@ -181,6 +181,11 @@ interface DashboardCardLike {
   rarity?: string;
   hasArt?: boolean;
   needsReview?: boolean;
+  collectionId?: string;
+  collectionKind?: CollectionKind;
+  collectionListCategory?: CollectionListCategory;
+  ownershipStatus?: CollectionOwnershipStatus;
+  ownerName?: string;
 }
 
 interface CollectionDeckValueSource {
@@ -337,6 +342,7 @@ export function buildDashboardFacts({
       if (!commander || !commanderCard) {
         continue;
       }
+      const commanderValueSource = collectionDeckValueForCard(deckValueSources, commander.cardId, commanderCard, commander.nameSnapshot);
       facts.push(cardSummaryToFact(commanderCard, {
         key: `deck:${deck.deckId}:${variant.variantId}:commander:${commander.setCode}:${commander.cardId}`,
         sourceKind: 'deck_entry',
@@ -358,7 +364,13 @@ export function buildDashboardFacts({
         status: 'active',
         deckRoles: ['commander'],
         roleSource: 'manual',
-        candidateStatus: 'active'
+        candidateStatus: 'active',
+        purchaseValue: commanderValueSource?.purchaseAmount,
+        purchaseCurrency: commanderValueSource?.purchaseCurrency,
+        marketValue: commanderValueSource?.marketAmount,
+        marketCurrency: commanderValueSource?.marketCurrency,
+        ownershipStatus: commanderCard.ownershipStatus ?? commanderValueSource?.ownershipStatus,
+        ownerName: commanderCard.ownerName ?? commanderValueSource?.ownerName
       }));
     }
     const deckEntries = deckState.entries.filter((entry) => !entry.markedForDeletion && entry.candidateStatus !== 'candidate' && entry.candidateStatus !== 'cut');
@@ -492,13 +504,22 @@ function collectionDeckValueForEntry(
   entry: DeckState['entries'][number],
   card: DashboardCardLike | undefined
 ): CollectionDeckValueSource | undefined {
-  for (const cardId of [entry.cardId, card?.cardId].map(normalizedId).filter(Boolean)) {
-    const exact = pickPreferredCollectionDeckValueSource(index.byCardId.get(cardId));
+  return collectionDeckValueForCard(index, entry.cardId, card, entry.nameSnapshot ?? entry.cardId);
+}
+
+function collectionDeckValueForCard(
+  index: { byCardId: Map<string, CollectionDeckValueSource[]>; byName: Map<string, CollectionDeckValueSource[]> },
+  cardId: string | undefined,
+  card: DashboardCardLike | undefined,
+  fallbackName?: string
+): CollectionDeckValueSource | undefined {
+  for (const candidateCardId of [cardId, card?.cardId].map(normalizedId).filter(Boolean)) {
+    const exact = pickPreferredCollectionDeckValueSource(index.byCardId.get(candidateCardId));
     if (exact) {
       return exact;
     }
   }
-  return pickPreferredCollectionDeckValueSource(index.byName.get(normalizedName(card?.name ?? entry.nameSnapshot ?? entry.cardId)));
+  return pickPreferredCollectionDeckValueSource(index.byName.get(normalizedName(card?.name ?? fallbackName)));
 }
 
 function addCollectionDeckValueSource(map: Map<string, CollectionDeckValueSource[]>, key: string, source: CollectionDeckValueSource) {
@@ -678,22 +699,22 @@ export function computeDashboardStats(facts: DashboardCardFact[], scope: Dashboa
       deckQuantity += quantity;
     } else {
       collectionQuantity += quantity;
-      if (fact.marketValue !== undefined) {
-        collectionEstimatedValue += fact.marketValue;
-        collectionValueRows += 1;
-        collectionValueCurrency = fact.marketCurrency ?? collectionValueCurrency;
-      }
-      if (fact.purchaseValue !== undefined) {
-        collectionPurchaseValue += fact.purchaseValue;
-        collectionPurchaseRows += 1;
-        collectionPurchaseCurrency = fact.purchaseCurrency ?? collectionPurchaseCurrency;
-      }
       if (fact.flagged) {
         collectionFlaggedRows += quantity;
       }
       if (fact.markedForDeletion) {
         collectionDeletionRows += quantity;
       }
+    }
+    if (fact.marketValue !== undefined) {
+      collectionEstimatedValue += fact.marketValue;
+      collectionValueRows += 1;
+      collectionValueCurrency = fact.marketCurrency ?? collectionValueCurrency;
+    }
+    if (fact.purchaseValue !== undefined) {
+      collectionPurchaseValue += fact.purchaseValue;
+      collectionPurchaseRows += 1;
+      collectionPurchaseCurrency = fact.purchaseCurrency ?? collectionPurchaseCurrency;
     }
     if (fact.hasArt === false) {
       missingArt += quantity;
@@ -910,11 +931,11 @@ function cardSummaryToFact(
     deckVariantId: meta.deckVariantId,
     deckVariantName: meta.deckVariantName,
     activeDeckVariant: meta.activeDeckVariant,
-    collectionId: meta.collectionId,
-    collectionKind: meta.collectionKind,
-    collectionListCategory: meta.collectionListCategory,
-    ownershipStatus: meta.ownershipStatus,
-    ownerName: meta.ownerName,
+    collectionId: meta.collectionId ?? card?.collectionId,
+    collectionKind: meta.collectionKind ?? card?.collectionKind,
+    collectionListCategory: meta.collectionListCategory ?? card?.collectionListCategory,
+    ownershipStatus: meta.ownershipStatus ?? card?.ownershipStatus,
+    ownerName: meta.ownerName ?? card?.ownerName,
     cardId: meta.cardId ?? card?.cardId,
     variantId: meta.variantId ?? card?.activeVariantId ?? card?.primaryVariantId,
     name,

@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { createCollection, createDeck } from '@homebrew-forge/forge';
 import { startRuntimeServer } from '../dist/createRuntimeServer.js';
 
 async function makeFixtureRepo() {
@@ -80,6 +81,45 @@ test('runtime service serves discovered library state', async () => {
         ['DEMO', 'Demo Set', 2, 'demo']
       ]
     );
+  } finally {
+    await runtime.close();
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test('runtime service serves deck and collection read routes', async () => {
+  const repoRoot = await makeFixtureRepo();
+  const deck = await createDeck(repoRoot, {
+    name: 'Runtime Deck',
+    linkedUniverseId: 'demo',
+    linkedSetCode: 'DEMO',
+    format: 'commander',
+    tags: ['runtime-smoke']
+  });
+  const collection = await createCollection(repoRoot, {
+    collectionId: 'runtime-binder',
+    name: 'Runtime Binder',
+    linkedUniverseId: 'demo',
+    kind: 'binder',
+    purpose: 'owned',
+    source: 'generic',
+    defaultOwnershipStatus: 'owned'
+  });
+  const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
+  try {
+    const decks = await (await fetch(`${runtime.origin}/api/decks`)).json();
+    assert.ok(decks.some((summary) => summary.deckId === deck.metadata.deckId && summary.name === 'Runtime Deck'));
+
+    const deckState = await (await fetch(`${runtime.origin}/api/deck?id=${encodeURIComponent(deck.metadata.deckId)}`)).json();
+    assert.equal(deckState.metadata.deckId, deck.metadata.deckId);
+    assert.equal(deckState.activeVariantId, deck.activeVariantId);
+
+    const collections = await (await fetch(`${runtime.origin}/api/collections`)).json();
+    assert.ok(collections.some((summary) => summary.collectionId === collection.metadata.collectionId && summary.name === 'Runtime Binder'));
+
+    const collectionState = await (await fetch(`${runtime.origin}/api/collection?id=${encodeURIComponent(collection.metadata.collectionId)}`)).json();
+    assert.equal(collectionState.metadata.collectionId, collection.metadata.collectionId);
+    assert.deepEqual(collectionState.entries, []);
   } finally {
     await runtime.close();
     await rm(repoRoot, { recursive: true, force: true });

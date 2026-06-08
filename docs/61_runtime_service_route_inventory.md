@@ -24,14 +24,14 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 | `/api/official-cards/add-to-deck` | POST | official card to deck entry service | Yes | High | temp deck | Adds entry, reloads deck, active variant intact |
 | `/api/official-cards/add-to-set` | POST | official card to authored set import | Yes | High | temp set | Adds authored row and reloads project |
 | `/api/import-collection-to-set` | POST | collection-to-set copy workflow | Yes | High | temp collection/set | Copies selected rows, preserves collection isolation |
-| `/api/decks` | GET | deck storage list | No | Low | demo decks | Lists demo-showcase, squirrel-away, signs-of-assassins |
-| `/api/deck` | GET | deck storage read | No | Medium | demo-showcase | Missing id is 400; valid id loads variants and entries |
+| `/api/decks` | GET | deck storage list | No | Low | demo decks | Extracted to runtime-service; lists fixture and demo deck summaries |
+| `/api/deck` | GET | deck storage read | No | Medium | demo-showcase | Extracted to runtime-service; missing id is 400; valid id loads variants and entries |
 | `/api/create-deck` | POST | deck create service | Yes | High | temp decks | Creates deck folder in fixture and relists decks |
 | `/api/save-deck` | POST | deck save service | Yes | High | temp deck | Save/read/diff round trip preserves variant entries |
 | `/api/export-deck` | POST | text/Cockatrice deck export | Yes | High | temp output | Writes expected export artifact |
 | `/api/import-deck` | POST | deck import service | Yes | High | temp decks | Imports fixture text/.cod without live data mutation |
-| `/api/collections` | GET | collection storage list | No | Low | demo collections | Lists binders/lists with metadata |
-| `/api/collection` | GET | collection storage read | No | Medium | demo-reference | Missing id is 400; valid id loads entries |
+| `/api/collections` | GET | collection storage list | No | Low | demo collections | Extracted to runtime-service; lists fixture and default collection summaries |
+| `/api/collection` | GET | collection storage read | No | Medium | demo-reference | Extracted to runtime-service; missing id is 400; valid id loads entries |
 | `/api/create-collection` | POST | collection create service | Yes | High | temp collections | Creates collection folder and relists |
 | `/api/save-collection` | POST | collection save service | Yes | High | temp collection | Save/read/diff round trip preserves row metadata |
 | `/api/import-collection` | POST | scanner/generic collection import | Yes | High | temp collections | Imports CSV fixture and reports summary |

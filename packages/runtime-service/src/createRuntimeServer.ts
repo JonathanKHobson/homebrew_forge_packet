@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, relative, resolve, sep } from 'node:path';
+import { listCollections, listDecks, readCollectionState, readDeckState } from '@homebrew-forge/forge';
 import {
   APP_LABEL,
   DEFAULT_PORT,
@@ -151,6 +152,52 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
   if (req.method === 'GET' && url.pathname === '/api/library') {
     try {
       sendJson(res, 200, await readRuntimeLibrary(state.repoRoot, url.searchParams.get('set') ?? state.defaultSetCode));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/decks') {
+    try {
+      sendJson(res, 200, await listDecks(state.repoRoot));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/deck') {
+    const deckId = url.searchParams.get('id') ?? '';
+    if (!deckId.trim()) {
+      sendJson(res, 400, { error: 'Missing deck id.' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await readDeckState(state.repoRoot, deckId));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/collections') {
+    try {
+      sendJson(res, 200, await listCollections(state.repoRoot));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/collection') {
+    const collectionId = url.searchParams.get('id') ?? '';
+    if (!collectionId.trim()) {
+      sendJson(res, 400, { error: 'Missing collection id.' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await readCollectionState(state.repoRoot, collectionId));
     } catch (error) {
       sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
     }
