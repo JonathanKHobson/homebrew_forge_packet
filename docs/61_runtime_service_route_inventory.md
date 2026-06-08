@@ -20,8 +20,8 @@ Rule: runtime extraction cannot begin until each route has an acceptance check. 
 | `/api/official-cards/search` | GET | local official-card cache query | No | Medium | official cache | Extracted to runtime-service; prints/oracle/unique searches return stable rows |
 | `/api/official-cards/variants` | GET | official-card print variant lookup | No | Medium | official cache | Extracted to runtime-service; variant query returns stable print variants |
 | `/api/official-cards/sync` | POST | official-card cache sync | Yes | High | temp official cache | Sync writes only fixture cache and reports status |
-| `/api/official-cards/add-to-collection` | POST | official card to collection row service | Yes | High | temp collection | Adds row, reloads collection, no schema drift |
-| `/api/official-cards/add-to-deck` | POST | official card to deck entry service | Yes | High | temp deck | Adds entry, reloads deck, active variant intact |
+| `/api/official-cards/add-to-collection` | POST | official card to collection row service | Yes | High | temp collection | Extracted to runtime-service; adds row, reloads collection, no schema drift |
+| `/api/official-cards/add-to-deck` | POST | official card to deck entry service | Yes | High | temp deck | Extracted to runtime-service; adds entry, reloads deck, active variant intact |
 | `/api/official-cards/add-to-set` | POST | official card to authored set import | Yes | High | temp set | Adds authored row and reloads project |
 | `/api/import-collection-to-set` | POST | collection-to-set copy workflow | Yes | High | temp collection/set | Copies selected rows, preserves collection isolation |
 | `/api/decks` | GET | deck storage list | No | Low | demo decks | Extracted to runtime-service; lists fixture and demo deck summaries |

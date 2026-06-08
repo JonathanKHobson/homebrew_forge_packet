@@ -1,7 +1,13 @@
 import {
+  addOfficialCardToCollection,
+  addOfficialCardToDeck,
   listOfficialCardPrintVariants,
+  listCollections,
+  listDecks,
   officialCardCatalogStatus,
   searchOfficialCards,
+  type AddOfficialCardToCollectionRequest,
+  type AddOfficialCardToDeckRequest,
   type OfficialCardSearchFilters
 } from '@homebrew-forge/forge';
 
@@ -48,6 +54,16 @@ export function listRuntimeOfficialCardPrintVariants(repoRoot: string, params: U
     limit: numberParam(params.get('limit')),
     offset: numberParam(params.get('offset'))
   });
+}
+
+export async function addRuntimeOfficialCardToCollection(repoRoot: string, request: AddOfficialCardToCollectionRequest) {
+  const collection = await addOfficialCardToCollection(repoRoot, request);
+  return { collections: await listCollections(repoRoot), collection };
+}
+
+export async function addRuntimeOfficialCardToDeck(repoRoot: string, request: AddOfficialCardToDeckRequest) {
+  const deck = await addOfficialCardToDeck(repoRoot, request);
+  return { decks: await listDecks(repoRoot), deck };
 }
 
 function numberParam(value: string | null): number | undefined {

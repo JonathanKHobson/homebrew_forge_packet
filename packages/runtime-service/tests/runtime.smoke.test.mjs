@@ -357,6 +357,47 @@ test('runtime service serves reference and official-card read routes', async () 
   }
 });
 
+test('runtime service adds official cards to collections and decks', async () => {
+  const repoRoot = await makeFixtureRepo();
+  await writeOfficialCardFixture(repoRoot);
+  const deck = await createDeck(repoRoot, {
+    name: 'Official Route Deck',
+    linkedUniverseId: 'demo',
+    linkedSetCode: 'DEMO'
+  });
+  const runtime = await startRuntimeServer({ repoRoot, preferredPort: 0, deliveryMode: 'runtime-dev' });
+  try {
+    const collectionResult = await (await postJson(runtime.origin, '/api/official-cards/add-to-collection', {
+      cardId: 'runtime-print-001',
+      collectionId: 'official-route-binder',
+      collectionName: 'Official Route Binder',
+      linkedUniverseId: 'demo',
+      quantity: 2,
+      condition: 'NM',
+      language: 'EN'
+    })).json();
+    assert.equal(collectionResult.collection.metadata.collectionId, 'official-route-binder');
+    assert.equal(collectionResult.collection.entries[0].quantity, 2);
+    assert.equal(collectionResult.collection.entries[0].cardName, 'Runtime Bolt');
+    assert.ok(collectionResult.collections.some((summary) => summary.collectionId === 'official-route-binder'));
+
+    const deckResult = await (await postJson(runtime.origin, '/api/official-cards/add-to-deck', {
+      cardId: 'runtime-print-001',
+      deckId: deck.metadata.deckId,
+      section: 'main',
+      quantity: 1,
+      linkedUniverseId: 'demo'
+    })).json();
+    assert.equal(deckResult.deck.metadata.deckId, deck.metadata.deckId);
+    assert.equal(deckResult.deck.entries.length, 1);
+    assert.equal(deckResult.deck.entries[0].cardId, 'runtime-print-001');
+    assert.ok(deckResult.decks.some((summary) => summary.deckId === deck.metadata.deckId));
+  } finally {
+    await runtime.close();
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
 test('runtime service serves local assets with path guards', async () => {
   const repoRoot = await makeFixtureRepo();
   await writeAssetFixture(repoRoot);

@@ -15,7 +15,13 @@ import { createRuntimeCollection, exportRuntimeCollection, importRuntimeCollecti
 import { createRuntimeDeck, exportRuntimeDeck, importRuntimeDeck, saveRuntimeDeck } from './routes/decks.js';
 import { RuntimeRouteError } from './routes/errors.js';
 import { readRuntimeLibrary } from './routes/library.js';
-import { listRuntimeOfficialCardPrintVariants, readRuntimeOfficialCardStatus, searchRuntimeOfficialCards } from './routes/officialCards.js';
+import {
+  addRuntimeOfficialCardToCollection,
+  addRuntimeOfficialCardToDeck,
+  listRuntimeOfficialCardPrintVariants,
+  readRuntimeOfficialCardStatus,
+  searchRuntimeOfficialCards
+} from './routes/officialCards.js';
 import { readRuntimeReferenceCatalog } from './routes/reference.js';
 
 export interface RuntimeServerOptions {
@@ -242,6 +248,32 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
       sendJson(res, 200, await listRuntimeOfficialCardPrintVariants(state.repoRoot, url.searchParams));
     } catch (error) {
       sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/official-cards/add-to-collection') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await addRuntimeOfficialCardToCollection(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/official-cards/add-to-deck') {
+    if (req.method !== 'POST') {
+      sendJson(res, 405, { error: 'Method not allowed' });
+      return;
+    }
+    try {
+      sendJson(res, 200, await addRuntimeOfficialCardToDeck(state.repoRoot, await readJsonBody(req)));
+    } catch (error) {
+      sendRouteErrorJson(res, error);
     }
     return;
   }
