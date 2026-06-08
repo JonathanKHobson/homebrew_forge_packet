@@ -5,6 +5,9 @@ export type DashboardWidgetId =
   | 'snapshot'
   | 'sources'
   | 'types'
+  | 'creatureTypes'
+  | 'subtypes'
+  | 'supertypes'
   | 'curve'
   | 'colors'
   | 'landMana'
@@ -49,6 +52,30 @@ export const DASHBOARD_WIDGETS: DashboardWidgetDefinition[] = [
     title: 'Card type mix',
     eyebrow: 'Composition',
     description: 'Resolved card types only; unresolved collection rows are excluded.',
+    defaultVisualization: 'bar',
+    alternateVisualizations: ['donut']
+  },
+  {
+    id: 'creatureTypes',
+    title: 'Creature types',
+    eyebrow: 'Typal',
+    description: 'Creature subtypes in the selected scope, useful for checking Assassin density.',
+    defaultVisualization: 'bar',
+    alternateVisualizations: ['donut']
+  },
+  {
+    id: 'subtypes',
+    title: 'Subtype mix',
+    eyebrow: 'Taxonomy',
+    description: 'All card subtypes across creatures, artifacts, enchantments, lands, and spells.',
+    defaultVisualization: 'bar',
+    alternateVisualizations: ['donut']
+  },
+  {
+    id: 'supertypes',
+    title: 'Supertype mix',
+    eyebrow: 'Taxonomy',
+    description: 'Basic, legendary, snow, and other supertypes in the selected scope.',
     defaultVisualization: 'bar',
     alternateVisualizations: ['donut']
   },
@@ -209,6 +236,15 @@ function WidgetContent({ id, visualization, stats }: { id: DashboardWidgetId; vi
   }
   if (id === 'types') {
     return visualization === 'donut' ? <Donut rows={stats.typeRows} /> : <BarList rows={stats.typeRows} />;
+  }
+  if (id === 'creatureTypes') {
+    return visualization === 'donut' ? <Donut rows={stats.creatureTypeRows} emptyLabel="No creature types in this scope." /> : <BarList rows={stats.creatureTypeRows} emptyLabel="No creature types in this scope." />;
+  }
+  if (id === 'subtypes') {
+    return visualization === 'donut' ? <Donut rows={stats.subtypeRows} emptyLabel="No subtypes in this scope." /> : <BarList rows={stats.subtypeRows} emptyLabel="No subtypes in this scope." />;
+  }
+  if (id === 'supertypes') {
+    return visualization === 'donut' ? <Donut rows={stats.supertypeRows} emptyLabel="No supertypes in this scope." /> : <BarList rows={stats.supertypeRows} emptyLabel="No supertypes in this scope." />;
   }
   if (id === 'curve') {
     return visualization === 'bar' ? <BarList rows={stats.manaRows} /> : <Histogram rows={stats.manaRows} />;

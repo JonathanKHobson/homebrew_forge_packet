@@ -393,6 +393,17 @@ export function DashboardView({ library, project, cardsForList, scopeRequest, on
         ? selectedDeckActiveVariant?.name ?? 'Active variant'
         : selectedDeckState.metadata.variants.find((variant) => variant.variantId === advancedFilters.deckVariantId)?.name ?? 'Selected variant'
     : '';
+
+  useEffect(() => {
+    if (!selectedDeckState) {
+      return;
+    }
+    const validVariantIds = new Set(['active', 'all', ...selectedDeckState.metadata.variants.map((variant) => variant.variantId)]);
+    if (!validVariantIds.has(advancedFilters.deckVariantId || 'active')) {
+      setAdvancedFilters((current) => ({ ...current, deckVariantId: 'active' }));
+    }
+  }, [advancedFilters.deckVariantId, selectedDeckState]);
+
   const ownerOptions = useMemo(
     () => collectionOwnerSuggestions(collections.flatMap((collection) => collection.ownerNames ?? []), allFacts.map((fact) => fact.ownerName)),
     [allFacts, collections]

@@ -1,6 +1,6 @@
 import type { CardSummary, CollectionKind, CollectionListCategory, CollectionOwnershipStatus, CollectionState, CollectionSummary, DeckState, DeckSummary, EditorProject, LibraryState } from './editorTypes.js';
 import { normalizeCollectionOwnerName } from './collectionOwnership.js';
-import { collectionValueEstimateFromEntry } from './officialCardMetadata.js';
+import { collectionValueEstimateFromEntry, metadataFromCollectionEntry } from './officialCardMetadata.js';
 
 export type DashboardScopeKind = 'all' | 'project' | 'set' | 'deck' | 'collection' | 'binder' | 'list' | 'custom';
 export type DashboardSourceKind = 'authored_card' | 'deck_entry' | 'collection_row';
@@ -134,6 +134,9 @@ export interface DashboardStats {
   nonCreatureNonLandCount: number;
   sourceRows: DashboardChartDatum[];
   typeRows: DashboardChartDatum[];
+  creatureTypeRows: DashboardChartDatum[];
+  subtypeRows: DashboardChartDatum[];
+  supertypeRows: DashboardChartDatum[];
   colorRows: DashboardChartDatum[];
   manaRows: DashboardChartDatum[];
   keywordRows: DashboardChartDatum[];
@@ -164,6 +167,7 @@ interface DashboardCardLike {
   name?: string;
   typeLine?: string;
   manaCost?: string;
+  manaValue?: number;
   colors?: string;
   colorIdentity?: string;
   oracleText?: string;
@@ -177,6 +181,15 @@ interface DashboardCardLike {
   rarity?: string;
   hasArt?: boolean;
   needsReview?: boolean;
+}
+
+interface CollectionDeckValueSource {
+  purchaseAmount?: number;
+  purchaseCurrency?: string;
+  marketAmount?: number;
+  marketCurrency?: string;
+  ownerName?: string;
+  ownershipStatus?: CollectionOwnershipStatus;
 }
 
 const CARD_TYPES = new Set(['artifact', 'battle', 'creature', 'enchantment', 'instant', 'kindred', 'land', 'planeswalker', 'sorcery', 'token']);
@@ -291,6 +304,7 @@ export function buildDashboardFacts({
   if (currentProject) {
     projects.set(currentProject.setCode, currentProject);
   }
+  const deckValueSources = buildCollectionDeckValueIndex(collections, collectionStates);
 
   for (const [setCode, project] of projects) {
     const setSummary = setsByCode.get(setCode);
@@ -355,6 +369,7 @@ export function buildDashboardFacts({
       const cardLike = card ?? fallbackCard;
       const entryVariantId = entry.deckVariantId || activeVariantId;
       const entryVariant = entryVariantId ? variantsById.get(entryVariantId) : undefined;
+      const deckValueSource = collectionDeckValueForEntry(deckValueSources, entry, cardLike);
       facts.push(cardSummaryToFact(cardLike, {
         key: `deck:${deck.deckId}:${entryVariantId ?? 'default'}:${entry.section}:${entry.setCode}:${entry.cardId}:${entry.variantId ?? ''}:${index}`,
         sourceKind: 'deck_entry',
@@ -380,6 +395,12 @@ export function buildDashboardFacts({
         impactRating: entry.impactRating,
         synergyRating: entry.synergyRating,
         qualityRating: entry.qualityRating,
+        purchaseValue: deckValueSource?.purchaseAmount === undefined ? undefined : deckValueSource.purchaseAmount * entry.count,
+        purchaseCurrency: deckValueSource?.purchaseCurrency,
+        marketValue: deckValueSource?.marketAmount === undefined ? undefined : deckValueSource.marketAmount * entry.count,
+        marketCurrency: deckValueSource?.marketCurrency,
+        ownershipStatus: card?.ownershipStatus ?? deckValueSource?.ownershipStatus,
+        ownerName: card?.ownerName ?? deckValueSource?.ownerName,
         flagged: Boolean(entry.starred || entry.flags?.length),
         markedForDeletion: entry.markedForDeletion,
         warning: entry.warning
@@ -396,9 +417,10 @@ export function buildDashboardFacts({
       const linkedSetCode = entry.linkedSetCode || entry.setCode;
       const linkedProject = linkedSetCode ? projects.get(linkedSetCode) : undefined;
       const linkedCard = linkedProject?.cards.find((candidate) => candidate.cardId === entry.linkedCardId);
+      const collectionCard = linkedCard ?? metadataFromCollectionEntry(entry);
       const valueEstimate = collectionValueEstimateFromEntry(entry);
       const ownerName = normalizeCollectionOwnerName(entry.ownerName);
-      facts.push(cardSummaryToFact(linkedCard, {
+      facts.push(cardSummaryToFact(collectionCard, {
         key: `collection:${collection.collectionId}:${entry.entryId}`,
         sourceKind: 'collection_row',
         sourceId: collection.collectionId,
@@ -414,7 +436,7 @@ export function buildDashboardFacts({
         cardId: entry.linkedCardId,
         variantId: entry.linkedVariantId,
         quantity: entry.quantity,
-        name: linkedCard?.name ?? entry.cardName,
+        name: collectionCard?.name ?? entry.cardName,
         reviewStatus: entry.reviewStatus,
         matchStrategy: entry.matchStrategy,
         status: entry.reviewStatus,
@@ -430,6 +452,80 @@ export function buildDashboardFacts({
   }
 
   return facts;
+}
+
+function buildCollectionDeckValueIndex(collections: CollectionSummary[], collectionStates: Record<string, CollectionState>): {
+  byCardId: Map<string, CollectionDeckValueSource[]>;
+  byName: Map<string, CollectionDeckValueSource[]>;
+} {
+  const byCardId = new Map<string, CollectionDeckValueSource[]>();
+  const byName = new Map<string, CollectionDeckValueSource[]>();
+  for (const collection of collections) {
+    const collectionState = collectionStates[collection.collectionId];
+    if (!collectionState) {
+      continue;
+    }
+    for (const entry of collectionState.entries) {
+      const valueEstimate = collectionValueEstimateFromEntry(entry);
+      const source: CollectionDeckValueSource = {
+        purchaseAmount: entry.purchasePrice,
+        purchaseCurrency: entry.purchaseCurrency,
+        marketAmount: valueEstimate?.amount,
+        marketCurrency: valueEstimate?.currency,
+        ownerName: normalizeCollectionOwnerName(entry.ownerName),
+        ownershipStatus: entry.ownershipStatus
+      };
+      if (source.purchaseAmount === undefined && source.marketAmount === undefined) {
+        continue;
+      }
+      addCollectionDeckValueSource(byName, normalizedName(entry.cardName), source);
+      for (const cardId of [entry.scryfallId, entry.linkedCardId].map(normalizedId).filter(Boolean)) {
+        addCollectionDeckValueSource(byCardId, cardId, source);
+      }
+    }
+  }
+  return { byCardId, byName };
+}
+
+function collectionDeckValueForEntry(
+  index: { byCardId: Map<string, CollectionDeckValueSource[]>; byName: Map<string, CollectionDeckValueSource[]> },
+  entry: DeckState['entries'][number],
+  card: DashboardCardLike | undefined
+): CollectionDeckValueSource | undefined {
+  for (const cardId of [entry.cardId, card?.cardId].map(normalizedId).filter(Boolean)) {
+    const exact = pickPreferredCollectionDeckValueSource(index.byCardId.get(cardId));
+    if (exact) {
+      return exact;
+    }
+  }
+  return pickPreferredCollectionDeckValueSource(index.byName.get(normalizedName(card?.name ?? entry.nameSnapshot ?? entry.cardId)));
+}
+
+function addCollectionDeckValueSource(map: Map<string, CollectionDeckValueSource[]>, key: string, source: CollectionDeckValueSource) {
+  if (!key) {
+    return;
+  }
+  map.set(key, [...(map.get(key) ?? []), source]);
+}
+
+function pickPreferredCollectionDeckValueSource(sources: CollectionDeckValueSource[] | undefined): CollectionDeckValueSource | undefined {
+  return sources
+    ?.slice()
+    .sort((left, right) => collectionDeckValueSourceScore(right) - collectionDeckValueSourceScore(left))[0];
+}
+
+function collectionDeckValueSourceScore(source: CollectionDeckValueSource): number {
+  let score = 0;
+  if (source.ownershipStatus === 'owned') {
+    score += 4;
+  }
+  if (source.marketAmount !== undefined) {
+    score += 2;
+  }
+  if (source.purchaseAmount !== undefined) {
+    score += 1;
+  }
+  return score;
 }
 
 export function filterDashboardFacts(facts: DashboardCardFact[], scope: DashboardScope, query: string): DashboardCardFact[] {
@@ -544,6 +640,9 @@ export function computeDashboardStats(facts: DashboardCardFact[], scope: Dashboa
   const uniqueNames = new Set(facts.map((fact) => fact.name.toLowerCase())).size;
   const source = new Map<string, number>();
   const types = new Map<string, number>();
+  const creatureTypes = new Map<string, number>();
+  const subtypes = new Map<string, number>();
+  const supertypes = new Map<string, number>();
   const colors = new Map<string, number>();
   const mana = new Map<string, number>();
   const keywords = new Map<string, number>();
@@ -620,6 +719,16 @@ export function computeDashboardStats(facts: DashboardCardFact[], scope: Dashboa
 
     const isLand = fact.cardTypes.includes('land');
     const isCreature = fact.cardTypes.includes('creature');
+    for (const supertype of fact.supertypes) {
+      add(supertypes, titleCase(supertype), quantity);
+    }
+    for (const subtype of fact.subtypes) {
+      const label = titleCase(subtype);
+      add(subtypes, label, quantity);
+      if (isCreature) {
+        add(creatureTypes, label, quantity);
+      }
+    }
     if (isLand) {
       landCount += quantity;
       for (const sourceColor of inferLandManaSources(fact)) {
@@ -688,6 +797,9 @@ export function computeDashboardStats(facts: DashboardCardFact[], scope: Dashboa
     nonCreatureNonLandCount,
     sourceRows: mapRows(source),
     typeRows: mapRows(types, 10),
+    creatureTypeRows: mapRows(creatureTypes, 16),
+    subtypeRows: mapRows(subtypes, 16),
+    supertypeRows: mapRows(supertypes, 12),
     colorRows: mapRows(colors, 8),
     manaRows: manaRowsFromMap(mana),
     keywordRows: mapRows(keywords, 12),
@@ -828,7 +940,7 @@ function cardSummaryToFact(
     matchStrategy: meta.matchStrategy,
     hasArt: card?.hasArt,
     needsReview: card?.needsReview,
-    manaValue: parseManaValue(manaCost),
+    manaValue: card?.manaValue ?? parseManaValue(manaCost),
     oracleText,
     purchaseValue: meta.purchaseValue,
     purchaseCurrency: meta.purchaseCurrency,
@@ -863,6 +975,19 @@ function normalizeColors(value: string): string[] {
     seen.add(color);
   }
   return Array.from(seen).filter((color) => color !== 'C');
+}
+
+function normalizedId(value: string | undefined): string {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function normalizedName(value: string | undefined): string {
+  return String(value ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[‘’`]/g, "'")
+    .trim()
+    .toLowerCase();
 }
 
 function parseManaValue(manaCost: string): number | undefined {

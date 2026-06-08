@@ -485,20 +485,45 @@ async function openMenu(page, menuName) {
 }
 
 async function waitForExpandedPreviewReady(page) {
-  await page.waitForFunction(() => Array.from(document.querySelectorAll('button[aria-label="Open larger preview"]')).some((button) => !button.disabled));
+  try {
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('button[aria-label="Open larger preview"]')).some((button) => !button.disabled), undefined, { timeout: 30000 });
+  } catch (error) {
+    const state = await page.evaluate(() => ({
+      previewButtons: Array.from(document.querySelectorAll('button[aria-label="Open larger preview"]')).map((button) => ({
+        disabled: button.disabled,
+        text: button.textContent?.trim() ?? '',
+        label: button.getAttribute('aria-label')
+      })),
+      previewText: (document.querySelector('.preview-panel, .card-preview-panel, .render-frame, .card-canvas')?.textContent ?? '').slice(0, 500),
+      statusBar: document.querySelector('.app-status-bar')?.textContent ?? '',
+      rootText: (document.getElementById('root')?.textContent ?? '').slice(0, 500)
+    }));
+    throw new Error(`Expanded preview never became ready: ${JSON.stringify(state)} (${error instanceof Error ? error.message : String(error)})`);
+  }
 }
 
 async function loadDemo(page, baseUrl) {
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => {
-    const statusBar = document.querySelector('.app-status-bar')?.textContent ?? '';
-    return (
-      document.querySelector('.card-tabs') &&
-      document.querySelector('.card-tab:not(.new-tab)') &&
-      document.querySelectorAll('.card-row, .entity-row, [data-card-id]').length > 0 &&
-      !/Loading DEMO|No project loaded/i.test(statusBar)
-    );
-  }, undefined, { timeout: 15000 });
+  try {
+    await page.waitForFunction(() => {
+      const statusBar = document.querySelector('.app-status-bar')?.textContent ?? '';
+      return (
+        document.querySelector('.card-tabs') &&
+        document.querySelector('.card-tab:not(.new-tab)') &&
+        document.querySelectorAll('.card-row, .entity-row, [data-card-id]').length > 0 &&
+        !/Loading DEMO|No project loaded/i.test(statusBar)
+      );
+    }, undefined, { timeout: 30000 });
+  } catch (error) {
+    const state = await page.evaluate(() => ({
+      statusBar: document.querySelector('.app-status-bar')?.textContent ?? '',
+      cardTabs: document.querySelectorAll('.card-tab:not(.new-tab)').length,
+      rows: document.querySelectorAll('.card-row, .entity-row, [data-card-id]').length,
+      onboarding: document.querySelector('.maker-onboarding-stage') !== null,
+      rootText: (document.getElementById('root')?.textContent ?? '').slice(0, 500)
+    }));
+    throw new Error(`Maker failed to reach DEMO ready state: ${JSON.stringify(state)} (${error instanceof Error ? error.message : String(error)})`);
+  }
 }
 
 async function readBootState(page) {
