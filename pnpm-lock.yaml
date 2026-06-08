@@ -103,6 +103,10 @@ importers:
         version: 4.22.4
 
   packages/runtime-service:
+    dependencies:
+      '@homebrew-forge/forge':
+        specifier: workspace:*
+        version: link:../forge
     devDependencies:
       '@types/node':
         specifier: 25.9.1

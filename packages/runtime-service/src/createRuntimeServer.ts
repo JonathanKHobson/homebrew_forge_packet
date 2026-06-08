@@ -9,6 +9,7 @@ import {
   createSourceFingerprint,
   type RuntimeDeliveryMode
 } from './runtimeHealth.js';
+import { readRuntimeLibrary } from './routes/library.js';
 
 export interface RuntimeServerOptions {
   repoRoot: string;
@@ -18,6 +19,7 @@ export interface RuntimeServerOptions {
   editorDistDir?: string;
   projectRoot?: string | null;
   appLabel?: string;
+  defaultSetCode?: string;
 }
 
 export interface StartedRuntimeServer {
@@ -40,6 +42,7 @@ interface RuntimeRequestState {
   editorDistDir: string | null;
   projectRoot: string | null;
   appLabel: string;
+  defaultSetCode: string;
   startedAt: string;
   startupFingerprint: string;
 }
@@ -57,6 +60,7 @@ export async function startRuntimeServer(options: RuntimeServerOptions): Promise
     editorDistDir: options.editorDistDir ? resolve(options.editorDistDir) : null,
     projectRoot: options.projectRoot ?? null,
     appLabel: options.appLabel ?? APP_LABEL,
+    defaultSetCode: options.defaultSetCode ?? 'DEMO',
     startedAt,
     startupFingerprint
   };
@@ -141,6 +145,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, state: R
         startedAt: state.startedAt
       })
     );
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/library') {
+    try {
+      sendJson(res, 200, await readRuntimeLibrary(state.repoRoot, url.searchParams.get('set') ?? state.defaultSetCode));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : String(error) });
+    }
     return;
   }
 

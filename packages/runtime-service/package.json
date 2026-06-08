@@ -28,7 +28,9 @@
     "lint": "tsc -p tsconfig.json --noEmit --pretty false",
     "test": "node --test tests/*.test.mjs"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@homebrew-forge/forge": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "25.9.1",
     "typescript": "6.0.3"
