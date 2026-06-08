@@ -76,6 +76,15 @@ blanket authorization to implement P2/P3 strategic bets.
 Delivery-mode planning lives in
 `docs/superpowers/plans/2026-06-08-shared-delivery-modes.md`; tooling prep and
 storage/path decisions live in `docs/60_desktop_delivery_tooling_prep.md`. The
+final active roadmap now lives in
+`docs/62_shared_desktop_delivery_final_roadmap.md`; route extraction is tracked
+in `docs/61_runtime_service_route_inventory.md`; phase status lives in
+`docs/63_shared_desktop_delivery_phase_tracker.md`; cleanup/archive rules live
+in `docs/64_repo_cleanup_archive_index.md`; runtime parity testing lives in
+`docs/65_runtime_parity_test_matrix.md`; and cutover approval lives in
+`docs/66_desktop_cutover_checklist.md`. The completed external research packet
+is preserved at
+`docs/superpowers/plans/homebrew_forge_desktop_delivery_research_packet/`. The
 current decision is one shared product UI with multiple delivery shells:
 `packages/editor` remains the shared source of truth for web, macOS desktop,
 and Windows desktop. Desktop code may own windowing, menus, local runtime
