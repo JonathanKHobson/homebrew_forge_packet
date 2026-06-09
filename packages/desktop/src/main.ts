@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessByStdio } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
@@ -27,10 +27,30 @@ let viteProcess: ChildProcessByStdio<null, Readable, Readable> | null = null;
 let runtimeServer: StartedRuntimeServer | null = null;
 let runtimeInfo: RuntimeInfo | null = null;
 
+function desktopLogPath(): string {
+  return join(app.getPath('logs'), 'desktop-main.log');
+}
+
+function logDesktop(message: string): void {
+  try {
+    mkdirSync(app.getPath('logs'), { recursive: true });
+    appendFileSync(desktopLogPath(), `[${new Date().toISOString()}] ${message}\n`);
+  } catch {
+    // Logging must never prevent the app from booting.
+  }
+}
+
 function repoRootFromEnvironment(): string {
   const configured = process.env.HOMEBREW_FORGE_REPO_ROOT;
   if (configured) {
     return resolve(configured);
+  }
+  const resourceRepoRoot = join(process.resourcesPath, 'homebrew-forge-repo-root.txt');
+  if (existsSync(resourceRepoRoot)) {
+    const configuredRepoRoot = readFileSync(resourceRepoRoot, 'utf8').trim();
+    if (configuredRepoRoot) {
+      return resolve(configuredRepoRoot);
+    }
   }
   return resolve(__dirname, '../../..');
 }
@@ -51,7 +71,14 @@ function nodeExecutable(): string {
   return candidates.find((candidate) => existsSync(candidate)) ?? process.execPath;
 }
 
+function pathWithNode(nodeBin: string): string {
+  const nodeDir = dirname(nodeBin);
+  const existingPath = process.env.PATH ?? '';
+  return [nodeDir, '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', existingPath].filter(Boolean).join(':');
+}
+
 async function startDesktopRuntime(repoRoot: string, backend: DesktopBackend): Promise<RuntimeInfo> {
+  logDesktop(`Starting desktop runtime backend=${backend} repoRoot=${repoRoot}`);
   if (backend === 'runtime') {
     const editorDistDir = resolve(repoRoot, 'packages/editor/dist');
     if (!existsSync(join(editorDistDir, 'index.html'))) {
@@ -80,21 +107,25 @@ async function startDesktopRuntime(repoRoot: string, backend: DesktopBackend): P
     throw new Error(`Repo pnpm wrapper is missing at ${pnpmScript}.`);
   }
 
-  const child = spawn(nodeExecutable(), [pnpmScript, '--filter', '@homebrew-forge/editor', 'exec', 'vite', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
+  const nodeBin = nodeExecutable();
+  logDesktop(`Spawning Vite runtime with node=${nodeBin} port=${port}`);
+  const child = spawn(nodeBin, [pnpmScript, '--filter', '@homebrew-forge/editor', 'exec', 'vite', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
     cwd: repoRoot,
-    env: { ...process.env, BROWSER: 'none' },
+    env: { ...process.env, BROWSER: 'none', HOMEBREW_FORGE_NODE_EXECUTABLE: nodeBin, PATH: pathWithNode(nodeBin) },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   viteProcess = child;
 
-  child.stdout.on('data', (chunk) => process.stdout.write(`[homebrew-forge-vite] ${chunk}`));
-  child.stderr.on('data', (chunk) => process.stderr.write(`[homebrew-forge-vite] ${chunk}`));
+  child.stdout.on('data', (chunk) => logDesktop(`[homebrew-forge-vite] ${String(chunk).trimEnd()}`));
+  child.stderr.on('data', (chunk) => logDesktop(`[homebrew-forge-vite] ${String(chunk).trimEnd()}`));
 
   const origin = `http://127.0.0.1:${port}`;
   const exitPromise = once(child, 'exit').then(([code]) => {
+    logDesktop(`Vite runtime exited before ready code=${String(code)}`);
     throw new Error(`Vite editor server exited before becoming ready. Exit code: ${String(code)}`);
   });
   await Promise.race([waitForHealth(`${origin}/api/health`, 30000), exitPromise]);
+  logDesktop(`Vite runtime ready at ${origin}`);
   return {
     backend,
     origin,
@@ -220,11 +251,13 @@ async function stopRuntime(): Promise<void> {
 async function boot(): Promise<void> {
   app.name = 'Homebrew Forge';
   app.setName('Homebrew Forge');
+  logDesktop('Boot start');
   createApplicationMenu();
 
   const repoRoot = repoRootFromEnvironment();
   const backend = desktopBackend();
   runtimeInfo = await startDesktopRuntime(repoRoot, backend);
+  logDesktop(`Runtime info ${JSON.stringify(runtimeInfo)}`);
   mainWindow = createMainWindow(runtimeInfo.origin);
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -251,6 +284,7 @@ app.once('before-quit', () => {
 
 void app.whenReady().then(boot).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
+  logDesktop(`Boot failed: ${message}`);
   dialog.showErrorBox('Homebrew Forge failed to start', message);
   app.quit();
 });

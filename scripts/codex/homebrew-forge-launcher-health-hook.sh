@@ -1,35 +1,20 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_PATH="${0:A}"
-SCRIPT_DIR="${SCRIPT_PATH:h}"
-REPO_ROOT="${SCRIPT_DIR:h:h}"
-APP_PATH="/Applications/Homebrew Forge.app"
-APP_SUPPORT="$HOME/Library/Application Support/Homebrew Forge"
-LOG_DIR="$HOME/Library/Logs/Homebrew Forge"
-LOG_FILE="$LOG_DIR/codex-stop-hook.log"
-SUPPORT_LAUNCHER="$APP_SUPPORT/launch-homebrew-forge-app.sh"
-REPO_LAUNCHER="$REPO_ROOT/scripts/launch-homebrew-forge-app.sh"
-INSTALLER="$REPO_ROOT/scripts/install-homebrew-forge-app-shortcut.sh"
-PORT="${HOMEBREW_FORGE_PORT:-5177}"
-URL="http://127.0.0.1:${PORT}/"
-HEALTH_URL="${URL}api/health"
-HEALTH_HELPER="$REPO_ROOT/packages/editor/src/server/runtimeHealth.mjs"
-CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-CHROME_PROFILE="$APP_SUPPORT/chrome-app-profile"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+repo_root="$(cd "$script_dir/../.." && pwd -P)"
+app_path="${HOMEBREW_FORGE_DESKTOP_APP_PATH:-/Applications/Homebrew Forge.app}"
+port="${HOMEBREW_FORGE_DESKTOP_PORT:-5187}"
+health_url="http://127.0.0.1:${port}/api/health"
+log_dir="$HOME/Library/Logs/Homebrew Forge"
+log_file="$log_dir/codex-stop-hook.log"
+installer="$repo_root/scripts/install-homebrew-forge-desktop-app.sh"
+launcher="$repo_root/scripts/launch-homebrew-forge-desktop-app.sh"
 
-mkdir -p "$LOG_DIR" "$APP_SUPPORT"
-touch "$LOG_FILE"
+mkdir -p "$log_dir"
 
 log() {
-  print -r -- "[$(/bin/date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"
-}
-
-needs_reinstall() {
-  [[ ! -d "$APP_PATH" ]] && return 0
-  [[ ! -x "$APP_PATH/Contents/MacOS/HomebrewForgeLauncher" ]] && return 0
-  [[ ! -x "$SUPPORT_LAUNCHER" ]] && return 0
-  ! /usr/bin/cmp -s "$REPO_LAUNCHER" "$SUPPORT_LAUNCHER"
+  printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$log_file"
 }
 
 find_node() {
@@ -42,52 +27,64 @@ find_node() {
     "/usr/bin/node"
   do
     if [[ -n "$candidate" && -x "$candidate" ]]; then
-      print -r -- "$candidate"
+      printf '%s\n' "$candidate"
       return 0
     fi
   done
   return 1
 }
 
-server_status() {
-  local node_bin="$1"
-  "$node_bin" "$HEALTH_HELPER" check-server "$HEALTH_URL" "$REPO_ROOT" "$PORT" 2>/dev/null || true
+health_field() {
+  local field="$1"
+  local node_bin="$2"
+  "$node_bin" -e '
+const [url, field] = process.argv.slice(1);
+fetch(url, { signal: AbortSignal.timeout(1500) })
+  .then((response) => response.ok ? response.json() : null)
+  .then((json) => {
+    const value = json?.[field];
+    if (value !== undefined && value !== null) console.log(String(value));
+  })
+  .catch(() => {});
+' "$health_url" "$field"
 }
 
-chrome_app_main_pids() {
-  if [[ ! -x "$CHROME_BIN" ]]; then
-    return 0
-  fi
-  /bin/ps -axo pid=,comm=,args= | /usr/bin/awk -v chrome="$CHROME_BIN" -v profile="--user-data-dir=$CHROME_PROFILE" -v app="--app=$URL" '
-    $2 == "awk" || $2 == "/usr/bin/awk" || $2 == "ps" || $2 == "/bin/ps" || $2 == "zsh" || $2 == "/bin/zsh" || $2 == "sh" || $2 == "/bin/sh" { next }
-    index($0, chrome) > 0 && index($0, profile) > 0 && index($0, app) > 0 { print $1 }
+app_pids() {
+  /bin/ps -axo pid=,args= | /usr/bin/awk -v app_electron="$app_path/Contents/MacOS/Electron" '
+    index($0, app_electron) > 0 { print $1 }
   '
 }
 
-chrome_app_main_count() {
-  chrome_app_main_pids | /usr/bin/wc -l | /usr/bin/tr -d ' '
+needs_reinstall() {
+  [[ ! -d "$app_path" ]] && return 0
+  [[ ! -x "$app_path/Contents/MacOS/Electron" ]] && return 0
+  [[ ! -x "$app_path/Contents/MacOS/HomebrewForgeLauncher" ]] && return 0
+  [[ ! -f "$app_path/Contents/Resources/app/main.mjs" ]] && return 0
+  [[ "$(cat "$app_path/Contents/Resources/homebrew-forge-repo-root.txt" 2>/dev/null || true)" != "$repo_root" ]] && return 0
+  return 1
 }
 
-log "Codex Stop hook invoked for Homebrew Forge"
+log "Codex Stop hook invoked for Homebrew Forge desktop app"
 
 if needs_reinstall; then
-  log "Shortcut/support launcher is missing or stale; reinstalling"
-  /bin/zsh "$INSTALLER" >> "$LOG_FILE" 2>&1
+  log "Default desktop app missing or stale; installing"
+  "$installer" >> "$log_file" 2>&1
 fi
 
-if node_bin="$(find_node)"; then
-  current_status="$(server_status "$node_bin")"
-  current_chrome_count="$(chrome_app_main_count)"
-  if [[ "$current_status" == "fresh" && "$current_chrome_count" == "1" ]]; then
-    log "Fast-path pass: server fresh and one Chrome app process is running"
-    log "Codex Stop hook completed"
+node_bin="$(find_node || true)"
+if [[ -n "$node_bin" ]]; then
+  repo="$(health_field repoRoot "$node_bin")"
+  stale="$(health_field stale "$node_bin")"
+  app_count="$(app_pids | /usr/bin/wc -l | /usr/bin/tr -d ' ')"
+  if [[ "$repo" == "$repo_root" && "$stale" == "false" && "$app_count" == "1" ]]; then
+    log "Fast-path pass: default app running, repo fresh, one app process"
     exit 0
   fi
-  log "Fast-path miss: health=${current_status:-unreachable}, chrome_main_processes=${current_chrome_count:-0}"
+  log "Fast-path miss: repo=${repo:-unreachable}, stale=${stale:-unknown}, app_processes=${app_count:-0}"
 else
   log "Fast-path skipped: Node.js not found"
 fi
 
-log "Running launcher health check/open path"
-HOMEBREW_FORGE_LAUNCH_CONTEXT="codex-stop-hook" /bin/zsh "$SUPPORT_LAUNCHER" >> "$LOG_FILE" 2>&1
+log "Running desktop launcher health/open path"
+"$launcher" >> "$log_file" 2>&1
 log "Codex Stop hook completed"

@@ -8,12 +8,12 @@ log_dir="$HOME/Library/Logs/Homebrew Forge"
 mkdir -p "$log_dir"
 
 if curl -fsS "http://127.0.0.1:5187/api/health" >/dev/null 2>&1; then
-  open -a "$app_path" >/dev/null 2>&1 || true
+  open "$app_path" >/dev/null 2>&1 || true
   exit 0
 fi
 
 "$repo_root/scripts/install-homebrew-forge-desktop-dev-app.sh" >/dev/null
-open -na "$app_path"
+open -n "$app_path"
 
 for _ in {1..120}; do
   if curl -fsS "http://127.0.0.1:5187/api/health" >/dev/null 2>&1; then

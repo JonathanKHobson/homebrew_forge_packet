@@ -166,24 +166,31 @@ assets/
 scripts/
   bootstrap-pnpm.sh       # Installs the repo-local pnpm wrapper for first-time setup
   launch-homebrew-forge-app.sh
-                          # Starts the local editor on a stable port; desktop delivery should avoid Chrome app mode
+                          # Legacy web fallback: starts the Vite editor on the old stable port and opens Chrome app mode
+  launch-homebrew-forge-desktop-app.sh
+                          # Opens or focuses the default /Applications/Homebrew Forge.app desktop shell from this repo on port 5187
   launch-homebrew-forge-desktop-dev.sh
                           # Opens /Applications/Homebrew Forge Desktop Dev.app, a Vite-backed Electron dev shell on port 5187
   install-homebrew-forge-app-shortcut.sh
-                          # Installs the /Applications Homebrew Forge launcher; planned desktop replacement should open the shared editor in a real app shell
+                          # Compatibility entrypoint; installs the default Electron desktop app
+  install-homebrew-forge-desktop-app.sh
+                          # Archives the old app bundle and installs /Applications/Homebrew Forge.app with a native launcher plus shared Electron desktop shell
   install-homebrew-forge-desktop-dev-app.sh
                           # Copies Electron.app to /Applications/Homebrew Forge Desktop Dev.app and symlinks its app payload to packages/desktop
   run-homebrew-forge-editor.mjs
                           # Runs the Vite editor as a launcher-owned service process
   codex/
     homebrew-forge-launcher-health-hook.sh
-                          # Codex Stop hook target: repairs stale shortcut/support launcher and opens the current app for review; planned desktop replacement should verify app process, not Chrome process
+                          # Codex Stop hook target: repairs stale default Electron app and opens one current app window for review
     desktop-delivery-toolchain-check.mjs
                           # Dependency-free desktop delivery readiness check for Node, pnpm, Apple tools, Xcode.app, and Electron package candidates
     import-signs-of-assassins.ts
                           # Deterministic Assassin import: owned ledger, batch-002 incoming orders, flags, recommendations, SOA shell, and six deck variants
     qa-signs-of-assassins.mjs
                           # Playwright visual QA for the Signs of Assassins project, deck variants, Maybeboard rows, binder/list rows, ghost styling, and dashboard filters
+  macos/
+    HomebrewForgeLauncher.swift
+                          # Tiny native launcher compiled into /Applications/Homebrew Forge.app; starts the shared Electron desktop package and waits for local health
 .codex/
   config.toml             # Project-scoped Codex Stop hook wiring for launcher health
 printables/

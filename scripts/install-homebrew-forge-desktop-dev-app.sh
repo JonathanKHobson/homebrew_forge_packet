@@ -7,7 +7,7 @@ app_path="/Applications/Homebrew Forge Desktop Dev.app"
 cd "$repo_root"
 node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/desktop build >/dev/null
 
-electron_binary="$(node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/desktop exec node -e "console.log(require('electron'))")"
+electron_binary="$(node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/desktop exec node -e "console.log(require('electron'))" | tail -n 1)"
 electron_app="$(dirname "$(dirname "$(dirname "$electron_binary")")")"
 
 if [[ ! -d "$electron_app" ]]; then
