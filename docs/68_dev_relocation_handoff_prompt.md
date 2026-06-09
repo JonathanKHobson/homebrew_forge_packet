@@ -18,5 +18,7 @@ The legacy web/Chrome launcher is fallback only. Preserve packages/editor as
 the single product UI source of truth for web, macOS, and future Windows
 delivery. Before finishing, run:
 scripts/codex/homebrew-forge-launcher-health-hook.sh
+That hook is passive by default. Use
+HOMEBREW_FORGE_STOP_HOOK_MODE=repair scripts/codex/homebrew-forge-launcher-health-hook.sh
+only if the installed app/launcher is stale, missing, or failing.
 ```
-

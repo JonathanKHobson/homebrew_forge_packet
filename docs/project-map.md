@@ -182,7 +182,7 @@ scripts/
                           # Runs the Vite editor as a launcher-owned service process
   codex/
     homebrew-forge-launcher-health-hook.sh
-                          # Codex Stop hook target: repairs stale default Electron app and opens one current app window for review
+                          # Codex Stop hook target: passive launcher/app health check by default; repair/open mode is opt-in via HOMEBREW_FORGE_STOP_HOOK_MODE=repair
     desktop-delivery-toolchain-check.mjs
                           # Dependency-free desktop delivery readiness check for Node, pnpm, Apple tools, Xcode.app, and Electron package candidates
     import-signs-of-assassins.ts

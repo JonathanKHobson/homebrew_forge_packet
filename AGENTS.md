@@ -27,10 +27,11 @@ Keep fixes modular, preserve Maker/Cards/Sets/Projects/Decks/Collections distinc
 
 Before finishing Homebrew Forge work, run
 `scripts/codex/homebrew-forge-launcher-health-hook.sh` unless Kyle explicitly
-asks not to open the app. The project-scoped Codex Stop hook mirrors this check:
-it repairs a stale `/Applications/Homebrew Forge.app` shortcut, refreshes the
-support launcher when repo code changed, and opens one current app window for
-human review.
+asks not to. The project-scoped Codex Stop hook is passive by default: it checks
+launcher/app health without reinstalling, opening, or focusing the app. Use
+`HOMEBREW_FORGE_STOP_HOOK_MODE=repair scripts/codex/homebrew-forge-launcher-health-hook.sh`
+only when the app bundle is stale, missing, or not launching from the current
+repo.
 
 ## Homebrew Forge UI / Design System Rules
 

@@ -49,7 +49,9 @@ not a current implementation target.
   Windows delivery.
 - Use `/Applications/Homebrew Forge.app` for human review.
 - Run `scripts/codex/homebrew-forge-launcher-health-hook.sh` before finishing
-  Homebrew Forge work unless Kyle explicitly asks not to open the app.
+  Homebrew Forge work unless Kyle explicitly asks not to. The hook is passive
+  by default; use `HOMEBREW_FORGE_STOP_HOOK_MODE=repair` only when the app
+  bundle or launcher needs repair.
 
 ## Fallbacks And Deferrals
 
