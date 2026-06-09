@@ -1,4 +1,13 @@
+---
+status: active
+lane: qa
+type: spec
+---
 # Forge UI Visual QA Checklist
+
+🟢 `[status: active]` `[lane: qa]` `[type: spec]`
+
+*When to use: before approving any visible UI change; run with `packages/editor/scripts/forge-ui-visual-qa.mjs`. Audience: QA and UI agents.*
 
 Use this checklist for every Forge UI visual slice.
 

@@ -1,4 +1,12 @@
+---
+status: completed
+lane: qa
+type: plan
+pin: hard-ref
+---
 # UX Audit Phase And Slice Roadmap
+
+✅ `[status: completed]` `[lane: qa]` `[type: plan]` `[pin: hard-ref]`
 
 This roadmap turns the 2026-06-05 UXHC audit into implementation slices. It is
 ordered to ship the highest-confidence product fixes first and avoid spreading

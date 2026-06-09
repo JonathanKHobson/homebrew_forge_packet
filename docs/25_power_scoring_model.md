@@ -1,4 +1,11 @@
+---
+status: active
+lane: runtime
+type: spec
+---
 # Power Scoring Model
+
+🟢 `[status: active]` `[lane: runtime]` `[type: spec]`
 
 Homebrew Forge power scoring is a design assistant, not a rules authority. It estimates card efficiency relative to mana value and rarity, then explains the estimate so a designer can adjust the card intentionally.
 

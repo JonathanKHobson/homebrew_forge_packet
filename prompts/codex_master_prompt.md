@@ -1,4 +1,11 @@
+---
+status: active
+lane: codex
+type: prompt
+---
 # Codex Master Prompt — Homebrew Forge
+
+🟢 `[status: active]` `[lane: codex]` `[type: prompt]`
 
 You are working in a new repository called `homebrew-forge`.
 

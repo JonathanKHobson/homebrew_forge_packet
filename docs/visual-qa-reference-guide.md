@@ -1,4 +1,11 @@
+---
+status: active
+lane: qa
+type: reference
+---
 # Visual QA Reference Guide
+
+🟢 `[status: active]` `[lane: qa]` `[type: reference]`
 
 Use references to verify frame geometry and text behavior. Do not store copied
 official or third-party card images in the repo unless license review allows it.

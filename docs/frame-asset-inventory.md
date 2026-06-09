@@ -1,4 +1,11 @@
+---
+status: active
+lane: data
+type: reference
+---
 # Frame Asset Inventory
+
+🟢 `[status: active]` `[lane: data]` `[type: reference]`
 
 This inventory records what can be rendered, what is present but unwired, and
 what is reference-only.

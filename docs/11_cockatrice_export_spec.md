@@ -1,4 +1,11 @@
+---
+status: active
+lane: data
+type: spec
+---
 # Cockatrice Export Spec
+
+🟢 `[status: active]` `[lane: data]` `[type: spec]`
 
 ## Output shape
 

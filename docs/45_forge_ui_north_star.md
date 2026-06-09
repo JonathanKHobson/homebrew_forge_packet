@@ -1,4 +1,14 @@
+---
+status: active
+lane: ui
+type: spec
+pin: hard-ref
+---
 # Forge UI North Star
+
+🟢 `[status: active]` `[lane: ui]` `[type: spec]` `[pin: hard-ref]`
+
+*When to use: before any visual, styling, or UI-primitive change in `packages/editor`. Audience: UI agents and humans doing design work.*
 
 Homebrew Forge should feel like an Arcane Workshop: a premium local-first creator tool for authoring, validating, previewing, collecting, deck-building, importing, exporting, and printing custom Magic-style cards.
 

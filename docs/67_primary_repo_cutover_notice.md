@@ -1,4 +1,14 @@
+---
+status: active
+lane: desktop
+type: reference
+pin: hard-ref
+---
 # Homebrew Forge Primary Repo Cutover Notice
+
+🟢 `[status: active]` `[lane: desktop]` `[type: reference]` `[pin: hard-ref]`
+
+*When to use: resuming any older conversation or verifying which repo/app is primary. Audience: all agents and humans.*
 
 Status: active as of 2026-06-08.
 

@@ -1,4 +1,12 @@
+---
+status: completed
+lane: qa
+type: matrix
+pin: hard-ref
+---
 # UX Audit Prioritization Matrix
+
+✅ `[status: completed]` `[lane: qa]` `[type: matrix]` `[pin: hard-ref]`
 
 Source: Claude UXHC audit, 2026-06-05. Overall grade was B- / 69.22%; the
 weakest area was H11 Accessibility at D / 43.75%.

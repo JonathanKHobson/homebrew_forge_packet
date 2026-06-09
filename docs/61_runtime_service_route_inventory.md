@@ -1,4 +1,11 @@
+---
+status: active
+lane: runtime
+type: spec
+---
 # Runtime Service Route Inventory
+
+🟢 `[status: active]` `[lane: runtime]` `[type: spec]`
 
 Status: Phase 1 seed inventory for extracting the editor API out of Vite middleware.
 

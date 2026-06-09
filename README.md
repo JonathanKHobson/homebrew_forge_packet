@@ -2,6 +2,17 @@
 
 Purpose: build a reusable, local, spreadsheet-first program for making and maintaining **any** Magic-style homebrew card set or deck, including older sets you already made, without making the workflow depend on MTG.design, Black Panther/Wakanda/Shuri, or any one theme.
 
+## Navigation (start here)
+
+- 🗺️ **Status-coded doc index**: `docs/README.md` — every doc, color-coded 🟢 active / ✅ completed / 🟡 partial / 🗄️ archived
+- 🧭 **Orientation + one-hop task map**: `docs/cowork/00_repo_orientation_packet.md` and `docs/cowork/03_working_index_and_navigation.md`
+- 🤖 **Agent entry point**: `AGENTS.md` · 📍 **Master lane map**: `docs/project-map.md`
+- 🗄️ **Archive ledger**: `docs/cowork/02_repo_archive_manifest.md`
+- 🆕 **New planning docs**: create in `docs/plans/`, retire to `docs/archive/` (lifecycle in `docs/64_repo_cleanup_archive_index.md`)
+- 🎨 **Finder colors**: 🟢 work here · 🟠 pinned · 🔵 app code · 🟣 your data · 🟡 action needed · ⚪ ignorable
+
+The "Packet contents" listing below is the historical original-packet layout (docs 00–19 era), kept for provenance; the repo has since grown to docs 00–72 plus named families.
+
 ## Recommended architecture
 
 Build a TypeScript/React + Node CLI app with a shared rendering core:
@@ -46,12 +57,12 @@ The asset module should support “scraping” only in the narrow engineering se
 README.md
 
 docs/
-  00_decision_summary.md
-  01_research_summary.md
+  00_decision_summary.md   (archived 2026-06-09 -> docs/archive/2026-06-implemented-plans/)
+  01_research_summary.md   (archived 2026-06-09 -> docs/archive/2026-06-implemented-plans/)
   02_architecture_overview.md
   03_data_model_and_csv_schema.md
   04_asset_pack_strategy.md
-  05_asset_source_matrix.md
+  05_asset_source_matrix.md   (archived 2026-06-09 -> docs/archive/2026-06-implemented-plans/)
   06_scraping_and_asset_ingestion_policy.md
   07_renderer_engine_spec.md
   08_local_editor_spec.md
@@ -63,16 +74,16 @@ docs/
   14_validation_and_rules_linting.md
   15_testing_quality_and_visual_regression.md
   16_security_legal_and_private_use.md
-  17_implementation_roadmap.md
-  18_repo_issue_backlog.md
+  17_implementation_roadmap.md   (archived 2026-06-09 -> docs/archive/2026-06-implemented-plans/)
+  18_repo_issue_backlog.md   (archived 2026-06-09 -> docs/archive/2026-06-implemented-plans/)
   19_glossary.md
 
 prompts/
   codex_master_prompt.md
-  codex_phase_prompts.md
-  codex_asset_pack_prompt.md
-  codex_importer_prompt.md
-  codex_first_task_prompt.md
+  codex_phase_prompts.md      (archived 2026-06-09 -> docs/archive/2026-06-packet-era/)
+  codex_asset_pack_prompt.md  (archived 2026-06-09 -> docs/archive/2026-06-packet-era/)
+  codex_importer_prompt.md    (archived 2026-06-09 -> docs/archive/2026-06-packet-era/)
+  codex_first_task_prompt.md  (archived 2026-06-09 -> docs/archive/2026-06-packet-era/)
 
 config_examples/
   AGENTS.md

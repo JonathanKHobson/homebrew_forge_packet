@@ -1,4 +1,11 @@
+---
+status: active
+lane: qa
+type: reference
+---
 # UX Learning System
+
+🟢 `[status: active]` `[lane: qa]` `[type: reference]`
 
 Purpose: keep the 2026-06-05 UXHC audit lessons active during future Homebrew Forge UI work without turning every task into a report-reading exercise.
 

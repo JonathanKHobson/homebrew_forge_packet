@@ -1,4 +1,11 @@
+---
+status: active
+lane: qa
+type: spec
+---
 # Testing, Quality, and Visual Regression
+
+🟢 `[status: active]` `[lane: qa]` `[type: spec]`
 
 ## Test types
 

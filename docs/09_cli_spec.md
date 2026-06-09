@@ -1,4 +1,11 @@
+---
+status: active
+lane: runtime
+type: spec
+---
 # CLI Spec
+
+🟢 `[status: active]` `[lane: runtime]` `[type: spec]`
 
 Use a Node CLI package, for example with `commander` or `clipanion`.
 

@@ -1,4 +1,11 @@
+---
+status: active
+lane: runtime
+type: spec
+---
 # Runtime Parity Test Matrix
+
+🟢 `[status: active]` `[lane: runtime]` `[type: spec]`
 
 Status: active test design for shared web, runtime-service, macOS desktop, and Windows desktop delivery.
 

@@ -1,4 +1,12 @@
+---
+status: active
+lane: qa
+type: reference
+pin: hard-ref
+---
 # Homebrew Forge UX Quality Gate
+
+🟢 `[status: active]` `[lane: qa]` `[type: reference]` `[pin: hard-ref]`
 
 Use this before changing Homebrew Forge UI, UX, accessibility, onboarding, dialogs, navigation, responsive layout, or visible copy.
 

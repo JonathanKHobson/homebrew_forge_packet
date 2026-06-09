@@ -1,4 +1,11 @@
+---
+status: active
+lane: ui
+type: reference
+---
 # Forge UI Global CSS Exceptions
+
+🟢 `[status: active]` `[lane: ui]` `[type: reference]`
 
 Date: 2026-06-07
 

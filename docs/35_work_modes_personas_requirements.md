@@ -1,4 +1,11 @@
+---
+status: active
+lane: ui
+type: spec
+---
 # Work Modes Personas and Requirements
+
+🟢 `[status: active]` `[lane: ui]` `[type: spec]`
 
 Date: 2026-06-05
 

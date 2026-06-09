@@ -1,4 +1,11 @@
+---
+status: active
+lane: docs
+type: spec
+---
 # Security, Legal, and Private-Use Guardrails
+
+🟢 `[status: active]` `[lane: docs]` `[type: spec]`
 
 This is not legal advice. It is a practical engineering policy for reducing risk.
 

@@ -1,4 +1,12 @@
+---
+status: active
+lane: codex
+type: skill
+pin: hard-ref
+---
 # Homebrew Forge Codex Skill
+
+🟢 `[status: active]` `[lane: codex]` `[type: skill]` `[pin: hard-ref]`
 
 Use this skill when working on the Homebrew Forge repository.
 

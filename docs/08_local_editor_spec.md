@@ -1,4 +1,11 @@
+---
+status: active
+lane: ui
+type: spec
+---
 # Local Editor Spec
+
+🟢 `[status: active]` `[lane: ui]` `[type: spec]`
 
 ## Goal
 

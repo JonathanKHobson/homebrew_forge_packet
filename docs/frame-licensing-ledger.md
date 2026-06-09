@@ -1,4 +1,11 @@
+---
+status: active
+lane: data
+type: reference
+---
 # Frame Licensing Ledger
+
+🟢 `[status: active]` `[lane: data]` `[type: reference]`
 
 Do not add third-party frame art to the repo unless this ledger has enough
 provenance to justify the use.

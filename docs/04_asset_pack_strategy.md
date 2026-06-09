@@ -1,4 +1,11 @@
+---
+status: active
+lane: data
+type: spec
+---
 # Asset Pack Strategy
+
+🟢 `[status: active]` `[lane: data]` `[type: spec]`
 
 ## Goal
 

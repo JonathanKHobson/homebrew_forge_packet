@@ -1,4 +1,12 @@
+---
+status: active
+lane: data
+type: spec
+pin: hard-ref
+---
 # Data Model and CSV Schema
+
+🟢 `[status: active]` `[lane: data]` `[type: spec]` `[pin: hard-ref]`
 
 ## Main design
 

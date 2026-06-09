@@ -1,4 +1,11 @@
+---
+status: completed
+lane: docs
+type: spec
+---
 # Architecture Overview
+
+✅ `[status: completed]` `[lane: docs]` `[type: spec]`
 
 ## Monorepo layout
 

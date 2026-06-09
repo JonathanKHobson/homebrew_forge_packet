@@ -1,4 +1,11 @@
+---
+status: active
+lane: docs
+type: reference
+---
 # Glossary
+
+🟢 `[status: active]` `[lane: docs]` `[type: reference]`
 
 ## Asset pack
 

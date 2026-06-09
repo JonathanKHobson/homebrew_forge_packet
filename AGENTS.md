@@ -23,6 +23,10 @@ Before changing UI, UX, accessibility, onboarding, dialogs, navigation, responsi
 
 Use `docs/project-map.md` for the current code-owner map and roadmap pointers. Update it when adding durable docs, tests, workflows, or major behavior.
 
+For repo orientation, file inventory, archive history, and one-hop task-to-doc navigation, use the co-work packet at `docs/cowork/00_repo_orientation_packet.md` through `docs/cowork/03_working_index_and_navigation.md`.
+
+New planning docs go in `docs/plans/` and move to `docs/archive/` when implemented — follow the Planning Doc Lifecycle in `docs/64_repo_cleanup_archive_index.md`. Every doc carries YAML frontmatter (`status`/`lane`/`type`/`pin`) for machine sorting; Finder color tags mark live (green), pinned (orange), user data (purple), and archive/generated (gray).
+
 Keep fixes modular, preserve Maker/Cards/Sets/Projects/Decks/Collections distinctions, and verify changed UI with typecheck/build plus browser or Playwright QA.
 
 Before finishing Homebrew Forge work, run

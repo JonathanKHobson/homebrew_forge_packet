@@ -1,4 +1,13 @@
+---
+status: active
+lane: docs
+type: prompt
+---
 # Dev Handoff Prompt: Homebrew Forge Repo Relocation
+
+🟢 `[status: active]` `[lane: docs]` `[type: prompt]`
+
+*When to use: paste into an older AI/dev conversation to redirect it to the primary repo. Audience: Kyle and session-managing agents.*
 
 Paste this into older AI/dev conversations before they resume Homebrew Forge
 work:

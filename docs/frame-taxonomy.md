@@ -1,4 +1,11 @@
+---
+status: active
+lane: runtime
+type: reference
+---
 # Frame Taxonomy
+
+🟢 `[status: active]` `[lane: runtime]` `[type: reference]`
 
 Homebrew Forge frame support separates rules identity from visual presentation.
 Do not collapse these concepts into one `frameType`.

@@ -1,4 +1,11 @@
+---
+status: active
+lane: runtime
+type: spec
+---
 # Renderer Engine Spec
+
+🟢 `[status: active]` `[lane: runtime]` `[type: spec]`
 
 ## Goal
 

@@ -1,4 +1,11 @@
+---
+status: active
+lane: ui
+type: reference
+---
 # Forge UI Component Inventory
+
+🟢 `[status: active]` `[lane: ui]` `[type: reference]`
 
 This maps current editor surfaces to the future Forge UI primitive system. Use it to choose the next safe slice without flattening Homebrew Forge's domain model.
 

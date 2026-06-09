@@ -1,4 +1,12 @@
+---
+status: completed
+lane: qa
+type: tracker
+pin: hard-ref
+---
 # UX Audit Implementation Tracker
+
+✅ `[status: completed]` `[lane: qa]` `[type: tracker]` `[pin: hard-ref]`
 
 Source audit: `reports/ux-audit/homebrew-forge-full-uxhc-2026-06-05/`
 

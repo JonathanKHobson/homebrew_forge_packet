@@ -1,4 +1,11 @@
+---
+status: active
+lane: data
+type: spec
+---
 # Scraping and Asset Ingestion Policy
+
+🟢 `[status: active]` `[lane: data]` `[type: spec]`
 
 ## Position
 
