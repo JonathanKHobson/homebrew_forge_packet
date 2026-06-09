@@ -2,6 +2,21 @@
 
 Homebrew Forge is a local TypeScript workspace for authoring Magic-style homebrew cards, sets, decks, collections, gallery assets, references, and print/export workflows.
 
+## Primary Repo Cutover
+
+As of 2026-06-08, the primary working repo is:
+
+`/Users/kyle/Documents/My Games/Magic The Gathering/homebrew_forge_packet`
+
+The temporary migration worktree is expired and should not receive new work:
+
+`/Users/kyle/Documents/My Games/Magic The Gathering/homebrew_forge_packet_desktop_migration`
+
+Read `docs/67_primary_repo_cutover_notice.md` before starting or resuming
+Homebrew Forge work from any older conversation. The default human-review app is
+now `/Applications/Homebrew Forge.app`, launched through the desktop shell on
+port `5187`. The legacy web/Chrome launcher remains only as a fallback.
+
 Before changing repo behavior, read `skills/homebrew-forge/SKILL.md`.
 
 Before changing UI, UX, accessibility, onboarding, dialogs, navigation, responsive layout, or visible copy, also read `skills/homebrew-forge/references/ux-quality-gate.md`.

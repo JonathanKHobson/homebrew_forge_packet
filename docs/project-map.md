@@ -161,6 +161,7 @@ compatibility facade instead of turning it into a single giant frame table.
 
 ```text
 assets/
+  app-icons/             # Repo-owned Homebrew Forge app icon source PNG, processed rounded PNG, and macOS .icns installed into /Applications/Homebrew Forge.app
   packs/                 # Asset-pack manifests and future user-supplied assets
   sources/               # Source/license metadata for downloaded, npm, and GitHub assets
 scripts/
@@ -191,6 +192,8 @@ scripts/
   macos/
     HomebrewForgeLauncher.swift
                           # Tiny native launcher compiled into /Applications/Homebrew Forge.app; starts the shared Electron desktop package and waits for local health
+    generate-homebrew-forge-icon.mjs
+                          # Processes the repo-owned app icon source into a rounded transparent PNG for Dock/app bundle use
 .codex/
   config.toml             # Project-scoped Codex Stop hook wiring for launcher health
 printables/

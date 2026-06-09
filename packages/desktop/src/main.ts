@@ -4,7 +4,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, shell } from 'electron';
 import { startRuntimeServer, type StartedRuntimeServer } from '@homebrew-forge/runtime-service/server';
 
 type DesktopBackend = 'vite' | 'runtime';
@@ -57,6 +57,47 @@ function repoRootFromEnvironment(): string {
 
 function desktopBackend(): DesktopBackend {
   return process.env.HOMEBREW_FORGE_DESKTOP_BACKEND === 'runtime' ? 'runtime' : 'vite';
+}
+
+function desktopIconPath(): string | null {
+  const candidates = [
+    join(process.resourcesPath, 'HomebrewForge.png'),
+    join(process.resourcesPath, 'HomebrewForge.icns'),
+    join(process.resourcesPath, 'electron.icns')
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function applyDockIcon(context: string): void {
+  const iconPath = desktopIconPath();
+  if (iconPath && process.platform === 'darwin') {
+    const icon = nativeImage.createFromPath(iconPath);
+    if (!icon.isEmpty()) {
+      app.dock?.setIcon(icon);
+      logDesktop(`Applied dock icon context=${context} path=${iconPath}`);
+      app.setAboutPanelOptions({
+        applicationName: 'Homebrew Forge',
+        applicationVersion: app.getVersion(),
+        iconPath,
+        credits: 'A local-first magical card authoring workbench.'
+      });
+      return;
+    }
+    logDesktop(`Dock icon image was empty context=${context} path=${iconPath}`);
+    return;
+  }
+  logDesktop(`Dock icon not applied context=${context} path=${iconPath ?? 'missing'} platform=${process.platform}`);
+}
+
+function configureAppIdentity(): void {
+  app.name = 'Homebrew Forge';
+  app.setName('Homebrew Forge');
+  applyDockIcon('configure-app-identity');
 }
 
 function nodeExecutable(): string {
@@ -192,6 +233,8 @@ function createApplicationMenu(): void {
 }
 
 function createMainWindow(origin: string): BrowserWindow {
+  const iconPath = desktopIconPath();
+  const windowIcon = iconPath ? nativeImage.createFromPath(iconPath) : null;
   const window = new BrowserWindow({
     width: 1440,
     height: 960,
@@ -200,6 +243,7 @@ function createMainWindow(origin: string): BrowserWindow {
     title: 'Homebrew Forge',
     backgroundColor: '#10151d',
     show: false,
+    ...(windowIcon && !windowIcon.isEmpty() ? { icon: windowIcon } : {}),
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -210,6 +254,7 @@ function createMainWindow(origin: string): BrowserWindow {
   });
 
   window.once('ready-to-show', () => {
+    applyDockIcon('ready-to-show');
     window.show();
   });
 
@@ -249,8 +294,7 @@ async function stopRuntime(): Promise<void> {
 }
 
 async function boot(): Promise<void> {
-  app.name = 'Homebrew Forge';
-  app.setName('Homebrew Forge');
+  configureAppIdentity();
   logDesktop('Boot start');
   createApplicationMenu();
 
