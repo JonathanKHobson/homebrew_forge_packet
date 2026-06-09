@@ -1,11 +1,79 @@
 import { createHash } from 'node:crypto';
 import { stat, readdir, readFile } from 'node:fs/promises';
 import { extname, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 export const APP_LABEL = 'Homebrew Forge Editor';
 export const DEFAULT_PORT = 5177;
 export const RUNTIME_API_CONTRACT_VERSION = 'runtime-api-v1';
+
+export type RuntimeDeliveryMode = 'web-dev' | 'runtime-dev' | 'desktop-dev' | 'mac-desktop' | 'win-desktop' | 'packaged';
+
+export interface RuntimeVersion {
+  app: 'Homebrew Forge';
+  deliveryMode: RuntimeDeliveryMode;
+  apiContractVersion: typeof RUNTIME_API_CONTRACT_VERSION;
+  editorBuild: string;
+  forgeBuild: string;
+  runtimeBuild: string;
+  desktopBuild: string | null;
+  repoRoot: string;
+  projectRoot: string | null;
+  selectedPort: number;
+  processId: number;
+  parentProcessId: number;
+  startedAt: string;
+}
+
+export interface RuntimeHealth {
+  appLabel: string;
+  deliveryMode: RuntimeDeliveryMode;
+  repoRoot: string;
+  projectRoot: string | null;
+  processId: number;
+  parentProcessId: number;
+  startedAt: string;
+  port: number;
+  selectedPort: number;
+  startupFingerprint: string;
+  currentFingerprint: string;
+  stale: boolean;
+  staleReasons: string[];
+  forgeDist: ForgeDistFreshness;
+}
+
+export interface ForgeDistFreshness {
+  stale: boolean;
+  reason: 'missing-source' | 'missing-dist' | 'source-newer-than-dist' | 'fresh';
+  sourceNewestMtimeMs: number;
+  distNewestMtimeMs: number;
+}
+
+export interface RuntimeHealthOptions {
+  repoRoot: string;
+  appLabel?: string;
+  deliveryMode?: RuntimeDeliveryMode;
+  projectRoot?: string | null;
+  processId?: number;
+  parentProcessId?: number;
+  startedAt?: string;
+  port?: number;
+  startupFingerprint?: string;
+  watchedPaths?: string[];
+}
+
+export interface RuntimeVersionOptions {
+  repoRoot: string;
+  deliveryMode?: RuntimeDeliveryMode;
+  projectRoot?: string | null;
+  selectedPort?: number;
+  processId?: number;
+  parentProcessId?: number;
+  startedAt?: string;
+  editorBuild?: string;
+  forgeBuild?: string;
+  runtimeBuild?: string;
+  desktopBuild?: string | null;
+}
 
 export const DEFAULT_WATCHED_PATHS = [
   'package.json',
@@ -16,6 +84,8 @@ export const DEFAULT_WATCHED_PATHS = [
   'packages/editor/src',
   'packages/forge/package.json',
   'packages/forge/src',
+  'packages/runtime-service/package.json',
+  'packages/runtime-service/src',
   'scripts/launch-homebrew-forge-app.sh',
   'scripts/run-homebrew-forge-editor.mjs'
 ];
@@ -25,7 +95,7 @@ const FORGE_SOURCE_EXTENSIONS = new Set(['.ts', '.tsx']);
 const FORGE_DIST_EXTENSIONS = new Set(['.d.ts', '.js', '.js.map']);
 const IGNORED_DIRECTORIES = new Set(['.git', '.turbo', '.vite', 'coverage', 'node_modules', 'output', 'output-live']);
 
-export async function createSourceFingerprint(repoRoot, options = {}) {
+export async function createSourceFingerprint(repoRoot: string, options: { watchedPaths?: string[] } = {}): Promise<string> {
   const root = resolve(repoRoot);
   const watchedPaths = options.watchedPaths ?? DEFAULT_WATCHED_PATHS;
   const files = await collectFiles(root, watchedPaths, WATCHED_FILE_EXTENSIONS);
@@ -41,7 +111,7 @@ export async function createSourceFingerprint(repoRoot, options = {}) {
   return hash.digest('hex');
 }
 
-export async function inspectForgeDistFreshness(repoRoot) {
+export async function inspectForgeDistFreshness(repoRoot: string): Promise<ForgeDistFreshness> {
   const root = resolve(repoRoot);
   const sourceFiles = await collectFiles(root, ['packages/forge/src'], FORGE_SOURCE_EXTENSIONS);
   const distFiles = await collectFiles(root, ['packages/forge/dist'], FORGE_DIST_EXTENSIONS);
@@ -75,14 +145,14 @@ export async function inspectForgeDistFreshness(repoRoot) {
   };
 }
 
-export async function buildRuntimeHealth(options) {
+export async function buildRuntimeHealth(options: RuntimeHealthOptions): Promise<RuntimeHealth> {
   const repoRoot = resolve(options.repoRoot);
   const currentFingerprint = await createSourceFingerprint(repoRoot, {
     watchedPaths: options.watchedPaths
   });
   const forgeDist = await inspectForgeDistFreshness(repoRoot);
   const startupFingerprint = options.startupFingerprint || currentFingerprint;
-  const staleReasons = [];
+  const staleReasons: string[] = [];
 
   if (startupFingerprint !== currentFingerprint) {
     staleReasons.push('source-changed-since-start');
@@ -91,16 +161,17 @@ export async function buildRuntimeHealth(options) {
     staleReasons.push(`forge-dist-${forgeDist.reason}`);
   }
 
+  const port = Number(options.port || DEFAULT_PORT);
   return {
     appLabel: options.appLabel ?? APP_LABEL,
     deliveryMode: options.deliveryMode ?? 'web-dev',
     repoRoot,
     projectRoot: options.projectRoot ?? null,
-    processId: options.processId,
+    processId: options.processId ?? process.pid,
     parentProcessId: options.parentProcessId ?? process.ppid,
-    startedAt: options.startedAt,
-    port: options.port,
-    selectedPort: options.port,
+    startedAt: options.startedAt ?? new Date().toISOString(),
+    port,
+    selectedPort: port,
     startupFingerprint,
     currentFingerprint,
     stale: staleReasons.length > 0,
@@ -109,7 +180,7 @@ export async function buildRuntimeHealth(options) {
   };
 }
 
-export function buildRuntimeVersion(options) {
+export function buildRuntimeVersion(options: RuntimeVersionOptions): RuntimeVersion {
   return {
     app: 'Homebrew Forge',
     deliveryMode: options.deliveryMode ?? 'web-dev',
@@ -127,8 +198,8 @@ export function buildRuntimeVersion(options) {
   };
 }
 
-export async function checkServerStatus(healthUrl, expected) {
-  let response;
+export async function checkServerStatus(healthUrl: string, expected: { repoRoot: string; port?: number; appLabel?: string; timeoutMs?: number }): Promise<{ status: 'fresh' | 'stale' | 'foreign' | 'unreachable'; health?: RuntimeHealth | unknown }> {
+  let response: Response;
   try {
     response = await fetch(healthUrl, { signal: AbortSignal.timeout(expected.timeoutMs ?? 2000) });
   } catch {
@@ -139,7 +210,7 @@ export async function checkServerStatus(healthUrl, expected) {
     return { status: 'foreign' };
   }
 
-  let health;
+  let health: unknown;
   try {
     health = await response.json();
   } catch {
@@ -156,8 +227,8 @@ export async function checkServerStatus(healthUrl, expected) {
   };
 }
 
-async function collectFiles(repoRoot, watchedPaths, extensions) {
-  const files = [];
+async function collectFiles(repoRoot: string, watchedPaths: string[], extensions: Set<string>): Promise<string[]> {
+  const files: string[] = [];
   for (const watchedPath of watchedPaths) {
     const absolutePath = resolve(repoRoot, watchedPath);
     await collectPath(absolutePath, files, extensions);
@@ -165,7 +236,7 @@ async function collectFiles(repoRoot, watchedPaths, extensions) {
   return files.sort((left, right) => normalizePath(left).localeCompare(normalizePath(right)));
 }
 
-async function collectPath(absolutePath, files, extensions) {
+async function collectPath(absolutePath: string, files: string[], extensions: Set<string>): Promise<void> {
   let info;
   try {
     info = await stat(absolutePath);
@@ -192,7 +263,7 @@ async function collectPath(absolutePath, files, extensions) {
   }
 }
 
-async function newestMtimeMs(files) {
+async function newestMtimeMs(files: string[]): Promise<number> {
   const mtimes = await Promise.all(
     files.map(async (file) => {
       const info = await stat(file);
@@ -202,7 +273,7 @@ async function newestMtimeMs(files) {
   return mtimes.length ? Math.max(...mtimes) : 0;
 }
 
-function isIncludedFile(path, extensions) {
+function isIncludedFile(path: string, extensions: Set<string>): boolean {
   const basename = path.split(sep).at(-1) ?? '';
   if (basename === 'package.json' || basename === 'pnpm-workspace.yaml') {
     return true;
@@ -217,89 +288,23 @@ function isIncludedFile(path, extensions) {
   return extensions.has(extension);
 }
 
-function isExpectedHealth(value, expected) {
+function isExpectedHealth(value: unknown, expected: { repoRoot: string; port?: number; appLabel?: string }): value is RuntimeHealth {
   if (!value || typeof value !== 'object') {
     return false;
   }
-  if (value.appLabel !== (expected.appLabel ?? APP_LABEL)) {
+  const health = value as Partial<RuntimeHealth>;
+  if (health.appLabel !== (expected.appLabel ?? APP_LABEL)) {
     return false;
   }
-  if (resolve(String(value.repoRoot ?? '')) !== resolve(expected.repoRoot)) {
+  if (resolve(String(health.repoRoot ?? '')) !== resolve(expected.repoRoot)) {
     return false;
   }
-  if (Number(value.port) !== Number(expected.port ?? DEFAULT_PORT)) {
+  if (Number(health.port) !== Number(expected.port ?? DEFAULT_PORT)) {
     return false;
   }
   return true;
 }
 
-function normalizePath(path) {
+function normalizePath(path: string): string {
   return path.split(sep).join('/');
-}
-
-async function runCli() {
-  const [, , command, ...args] = process.argv;
-  if (command === 'fingerprint') {
-    process.stdout.write(`${await createSourceFingerprint(args[0] ?? process.cwd())}\n`);
-    return;
-  }
-  if (command === 'dist-stale') {
-    const result = await inspectForgeDistFreshness(args[0] ?? process.cwd());
-    process.stdout.write(`${JSON.stringify(result)}\n`);
-    process.exitCode = result.stale ? 2 : 0;
-    return;
-  }
-  if (command === 'check-server') {
-    const [healthUrl, repoRoot, port] = args;
-    const result = await checkServerStatus(healthUrl, { repoRoot, port: Number(port || DEFAULT_PORT) });
-    process.stdout.write(`${result.status}\n`);
-    process.exitCode = result.status === 'fresh' ? 0 : result.status === 'stale' ? 2 : result.status === 'foreign' ? 3 : 4;
-    return;
-  }
-  if (command === 'server-pid') {
-    const [healthUrl, repoRoot, port] = args;
-    const result = await checkServerStatus(healthUrl, { repoRoot, port: Number(port || DEFAULT_PORT) });
-    if (result.health?.processId) {
-      process.stdout.write(`${result.health.processId}\n`);
-      return;
-    }
-    process.exitCode = 1;
-    return;
-  }
-  if (command === 'health') {
-    const repoRoot = args[0] ?? process.cwd();
-    const fingerprint = await createSourceFingerprint(repoRoot);
-    const health = await buildRuntimeHealth({
-      repoRoot,
-      processId: process.pid,
-      startedAt: new Date().toISOString(),
-      port: Number(args[1] || DEFAULT_PORT),
-      startupFingerprint: fingerprint
-    });
-    process.stdout.write(`${JSON.stringify(health, null, 2)}\n`);
-    return;
-  }
-  if (command === 'version') {
-    const repoRoot = args[0] ?? process.cwd();
-    const version = buildRuntimeVersion({
-      repoRoot,
-      selectedPort: Number(args[1] || DEFAULT_PORT),
-      processId: process.pid,
-      parentProcessId: process.ppid,
-      startedAt: new Date().toISOString()
-    });
-    process.stdout.write(`${JSON.stringify(version, null, 2)}\n`);
-    return;
-  }
-
-  process.stderr.write('Usage: runtimeHealth.mjs fingerprint|dist-stale|check-server|server-pid|health|version ...\n');
-  process.exitCode = 1;
-}
-
-const modulePath = fileURLToPath(import.meta.url);
-if (process.argv[1] && resolve(process.argv[1]) === modulePath) {
-  void runCli().catch((error) => {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-    process.exitCode = 1;
-  });
 }

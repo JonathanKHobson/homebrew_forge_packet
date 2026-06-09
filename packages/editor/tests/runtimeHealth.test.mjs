@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import {
   buildRuntimeHealth,
+  buildRuntimeVersion,
   createSourceFingerprint,
   inspectForgeDistFreshness
 } from '../src/server/runtimeHealth.mjs';
@@ -62,6 +63,31 @@ test('runtime health reports stale when source changes after startup', async () 
     });
     assert.equal(health.stale, true);
     assert.match(health.staleReasons.join(','), /source-changed-since-start/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('runtime version exposes delivery mode and contract metadata', async () => {
+  const root = await makeRepo();
+  try {
+    const version = buildRuntimeVersion({
+      repoRoot: root,
+      deliveryMode: 'web-dev',
+      selectedPort: 5177,
+      processId: 123,
+      parentProcessId: 456,
+      startedAt: '2026-06-08T00:00:00.000Z'
+    });
+
+    assert.equal(version.app, 'Homebrew Forge');
+    assert.equal(version.deliveryMode, 'web-dev');
+    assert.equal(version.apiContractVersion, 'runtime-api-v1');
+    assert.equal(version.selectedPort, 5177);
+    assert.equal(version.processId, 123);
+    assert.equal(version.parentProcessId, 456);
+    assert.equal(version.projectRoot, null);
+    assert.equal(version.desktopBuild, null);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

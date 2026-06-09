@@ -37,7 +37,7 @@ test('frame support registry covers the current catalog card types', async () =>
 });
 
 test('border registry exposes selectable and gated border colors', async () => {
-  const registry = await read('packages/editor/src/domain/borderColorRegistry.ts');
+  const registry = await read('packages/editor-core/src/borderColorRegistry.ts');
   for (const border of ['black', 'white', 'silver', 'gold', 'borderless', 'none']) {
     assert.match(registry, new RegExp(`'${border}'`));
   }
@@ -45,8 +45,8 @@ test('border registry exposes selectable and gated border colors', async () => {
 });
 
 test('vehicle has subtype inference and a frame option path', async () => {
-  const subtypeRegistry = await read('packages/editor/src/domain/subtypeInferenceRegistry.ts');
-  const frameRegistry = await read('packages/editor/src/domain/frameRegistry.ts');
+  const subtypeRegistry = await read('packages/editor-core/src/subtypeInferenceRegistry.ts');
+  const frameRegistry = await read('packages/editor-core/src/frameRegistry.ts');
 
   assert.match(subtypeRegistry, /subtype\('vehicle', 'Vehicle'/);
   assert.match(frameRegistry, /\['vehicle', 'Vehicle'/);

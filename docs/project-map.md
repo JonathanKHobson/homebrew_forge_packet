@@ -76,6 +76,15 @@ blanket authorization to implement P2/P3 strategic bets.
 Delivery-mode planning lives in
 `docs/superpowers/plans/2026-06-08-shared-delivery-modes.md`; tooling prep and
 storage/path decisions live in `docs/60_desktop_delivery_tooling_prep.md`. The
+final active roadmap now lives in
+`docs/62_shared_desktop_delivery_final_roadmap.md`; route extraction is tracked
+in `docs/61_runtime_service_route_inventory.md`; phase status lives in
+`docs/63_shared_desktop_delivery_phase_tracker.md`; cleanup/archive rules live
+in `docs/64_repo_cleanup_archive_index.md`; runtime parity testing lives in
+`docs/65_runtime_parity_test_matrix.md`; and cutover approval lives in
+`docs/66_desktop_cutover_checklist.md`. The completed external research packet
+is preserved at
+`docs/superpowers/plans/homebrew_forge_desktop_delivery_research_packet/`. The
 current decision is one shared product UI with multiple delivery shells:
 `packages/editor` remains the shared source of truth for web, macOS desktop,
 and Windows desktop. Desktop code may own windowing, menus, local runtime
@@ -158,8 +167,12 @@ scripts/
   bootstrap-pnpm.sh       # Installs the repo-local pnpm wrapper for first-time setup
   launch-homebrew-forge-app.sh
                           # Starts the local editor on a stable port; desktop delivery should avoid Chrome app mode
+  launch-homebrew-forge-desktop-dev.sh
+                          # Opens /Applications/Homebrew Forge Desktop Dev.app, a Vite-backed Electron dev shell on port 5187
   install-homebrew-forge-app-shortcut.sh
                           # Installs the /Applications Homebrew Forge launcher; planned desktop replacement should open the shared editor in a real app shell
+  install-homebrew-forge-desktop-dev-app.sh
+                          # Copies Electron.app to /Applications/Homebrew Forge Desktop Dev.app and symlinks its app payload to packages/desktop
   run-homebrew-forge-editor.mjs
                           # Runs the Vite editor as a launcher-owned service process
   codex/
@@ -211,6 +224,12 @@ packages/
       validation/        # Cross-record validation
       utils/             # Filename, filesystem, and small shared helpers
     tests/               # Vertical-slice tests
+  editor-core/           # Shared editor contract and adapter logic consumed by web and standalone runtime
+    src/
+      editorTypes.ts      # Editor-facing project, draft, runtime, deck, collection, print, and official-card types
+      cardDraft.ts        # CSV/domain record to editable card draft conversion
+      projectAdapter.ts   # ForgeProject to EditorProject conversion used by Vite and runtime-service
+      frameRegistry.ts    # Shared frame option registry consumed by editor project payloads
   editor/                # Vite/React local editor for selecting cards, editing fields, and previewing frames
     src/
       api/               # Browser client calls into the Vite dev API
@@ -218,9 +237,21 @@ packages/
         shell/            # App shell wrappers, workspace frame, sidebar nav, top command bar, and workspace health/status chrome
         forge-ui/         # Dependency-free Forge UI primitives used during the CSS/component-first migration
         print/            # File > Print overlay and print settings surface
-      domain/            # Editor draft model, local draft recovery, Magic terms, and frame registry
+      domain/            # Editor-only domain helpers plus compatibility facades for shared editor-core modules
       server/            # Vite middleware plus runtime health/fingerprint checks for project load, preview render, CSV save/import, and Cockatrice sync
     tests/               # Editor structural tests plus UX quality-gate Playwright smoke coverage
+  runtime-service/       # Embeddable local HTTP runtime for shared web/desktop delivery
+    src/
+      createRuntimeServer.ts
+                          # Starts a 127.0.0.1 runtime with selected-port fallback, health/version routes, and optional built-editor static serving
+      runtimeHealth.ts    # Runtime freshness, /api/health, /api/version, source fingerprint, and Forge dist freshness helpers
+      cli.ts              # Local runtime process entry for future desktop ownership
+    tests/                # Runtime smoke tests for health, version, and port fallback
+  desktop/              # Electron shell for local desktop delivery; no product UI lives here
+    src/
+      main.ts            # Secure BrowserWindow, native menu, Vite/runtime startup, navigation lock, and app lifecycle
+      preload.ts         # Narrow contextBridge surface for desktop runtime metadata
+    tests/               # Static shell/security checks for BrowserWindow defaults and shell-only boundaries
 output/                  # Generated renders and Cockatrice packages, ignored by Git
 reference/
   custom/                 # User-created and homebrew reference terms

@@ -9,8 +9,8 @@ export interface OfficialCardSyncSettings {
 
 const OFFICIAL_CARD_SYNC_SETTINGS_KEY = 'homebrew-forge.officialCards.syncSettings';
 const DEFAULT_OFFICIAL_CARD_SYNC_SETTINGS: OfficialCardSyncSettings = {
-  autoSync: true,
-  cadence: 'weekly'
+  autoSync: false,
+  cadence: 'off'
 };
 
 const CADENCE_MS: Record<Exclude<OfficialCardSyncCadence, 'off'>, number> = {

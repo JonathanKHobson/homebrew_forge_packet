@@ -7475,7 +7475,8 @@ function SettingsWorkspace({
   const [officialSettings, setOfficialSettings] = useState<OfficialCardSyncSettings>(() => readOfficialCardSyncSettings());
   const [officialStatus, setOfficialStatus] = useState<OfficialCardCatalogStatus | null>(null);
   const [officialSyncing, setOfficialSyncing] = useState(false);
-  const stale = shouldAutoSyncOfficialCards(officialStatus, officialSettings);
+  const catalogUnavailable = !officialStatus?.prints.available || !officialStatus?.oracle.available;
+  const stale = catalogUnavailable || shouldAutoSyncOfficialCards(officialStatus, officialSettings);
 
   useEffect(() => {
     let cancelled = false;
