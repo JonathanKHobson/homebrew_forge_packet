@@ -1,5 +1,9 @@
 # Homebrew Forge — General MTG Card Workflow Packet
 
+> Expired worktree warning: do not start new Homebrew Forge work in this folder.
+> Use `/Users/kyle/Documents/My Games/Magic The Gathering/homebrew_forge_packet`
+> instead. The default app is now `/Applications/Homebrew Forge.app`.
+
 Purpose: build a reusable, local, spreadsheet-first program for making and maintaining **any** Magic-style homebrew card set or deck, including older sets you already made, without making the workflow depend on MTG.design, Black Panther/Wakanda/Shuri, or any one theme.
 
 ## Recommended architecture

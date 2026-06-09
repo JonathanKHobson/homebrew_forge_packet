@@ -1,5 +1,21 @@
 # Homebrew Forge Agent Notes
 
+## Expired Worktree Warning
+
+Do not start new work in this folder.
+
+This path is expired:
+
+`/Users/kyle/Documents/My Games/Magic The Gathering/homebrew_forge_packet_desktop_migration`
+
+Use the current primary repo instead:
+
+`/Users/kyle/Documents/My Games/Magic The Gathering/homebrew_forge_packet`
+
+The useful desktop/runtime migration work from this folder has already been
+merged. If you are resuming an older conversation, stop and restart from the
+primary repo. The default human-review app is `/Applications/Homebrew Forge.app`.
+
 Homebrew Forge is a local TypeScript workspace for authoring Magic-style homebrew cards, sets, decks, collections, gallery assets, references, and print/export workflows.
 
 Before changing repo behavior, read `skills/homebrew-forge/SKILL.md`.
