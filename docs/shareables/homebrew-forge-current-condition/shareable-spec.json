@@ -1,0 +1,81 @@
+{
+  "schema_version": "homebrew_forge.shareable.v2",
+  "status": "draft-local-review",
+  "title": "Homebrew Forge: Design Legendary. Keep It Local.",
+  "tagline": "A local-first arcane workshop for custom fantasy card projects.",
+  "canonical_host": "GitHub Pages",
+  "canonical_repo": "https://github.com/JonathanKHobson/homebrew_forge_packet",
+  "publication_gate": "Review the local Shareable first. Public GitHub Pages and repo visibility changes happen only after review, dirty-tree classification, verification, and release cleanup.",
+  "audience": [
+    "custom card creators",
+    "tabletop and fantasy game designers",
+    "AI-assisted software builders",
+    "portfolio and recruiting viewers"
+  ],
+  "narrative_levels": [
+    "mythic product promise",
+    "plain-language value proposition",
+    "creator workflow",
+    "AI-assisted build process",
+    "technical package map",
+    "design system and UX philosophy",
+    "roadmap and GitHub source-alpha CTA"
+  ],
+  "sources": [
+    "AGENTS.md",
+    "README.md",
+    "docs/project-map.md",
+    "docs/45_forge_ui_north_star.md",
+    "docs/47_forge_ui_phase_tracker.md",
+    "docs/67_primary_repo_cutover_notice.md",
+    "docs/70_no_port_desktop_phase_tracker.md",
+    "docs/cowork/00_repo_orientation_packet.md",
+    "docs/shareables/homebrew-forge-current-condition/ai-asset-workflow-packet.md"
+  ],
+  "assets": {
+    "generated": [
+      "assets/generated/brand-crest.png",
+      "assets/generated/hero-forge-workbench.png",
+      "assets/generated/case-study-parchment.png",
+      "assets/generated/citadel-waning-light-art.png",
+      "assets/generated/final-cta-forge.png",
+      "assets/generated/i-local-first.png",
+      "assets/generated/i-private-design.png",
+      "assets/generated/i-built-creators.png",
+      "assets/generated/i-edit-quill.png",
+      "assets/generated/i-organize.png",
+      "assets/generated/i-playtest.png",
+      "assets/generated/i-export-scroll.png",
+      "assets/generated/i-iterate-astrolabe.png",
+      "assets/generated/i-prompt-head.png",
+      "assets/generated/i-local-brain.png",
+      "assets/generated/i-suggestion-scroll.png",
+      "assets/generated/i-code-forge.png"
+    ],
+    "source_screenshots": [
+      "assets/source-screenshots/hero-maker.png",
+      "assets/source-screenshots/feature-decks.png",
+      "assets/source-screenshots/feature-collections.png",
+      "assets/source-screenshots/custom-render.png"
+    ],
+    "favicon": [
+      "assets/favicon/favicon.ico",
+      "assets/favicon/favicon-32.png",
+      "assets/favicon/favicon-180.png",
+      "assets/favicon/apple-touch-icon.png"
+    ]
+  },
+  "public_boundary": {
+    "show_product_visuals_clearly": true,
+    "avoid_deliberate_publication_of_secrets": true,
+    "no_official_mtg_art_logos_frames_or_mana_symbols": true,
+    "repo_visibility_deferred": true
+  },
+  "qa_plan": [
+    "Serve locally and capture screenshots at 1440x1000, 1280x800, 900x1100, and 390x844.",
+    "Verify no horizontal overflow, clipped text, broken images, weak focus states, missing favicon, or unreadable contrast.",
+    "Run UXHC prepare, audit, validate, and report generation for the rendered surface.",
+    "Run static asset/reference scans, node --check, shareable JSON parse, and Homebrew Forge repo verification gates before public release.",
+    "Maintain the AI asset workflow packet so future Shareable and portfolio work can reuse the numbered-slot, chroma-key, and rendered-QA process."
+  ]
+}

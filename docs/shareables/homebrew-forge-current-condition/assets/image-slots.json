@@ -1,0 +1,159 @@
+{
+  "schema_version": "homebrew_forge.image_slots.v1",
+  "status": "final-assets-filled",
+  "slots": [
+    {
+      "id": "G1",
+      "use": "Brand crest and favicon",
+      "prompt": "A gold fantasy forge crest icon for Homebrew Forge, combining an anvil, crown or arcane spark, and quill motif, premium tabletop creator-tool brand, bright green chroma key background, readable at favicon size.",
+      "source": "assets/generated/crest-chroma-source.png",
+      "final": "assets/generated/brand-crest.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "G2",
+      "use": "Hero forge workbench background",
+      "prompt": "A cinematic dark fantasy workbench with parchment, brass tools, old books, candle and forge glow, ink sketches, and subtle magical atmosphere, no logos, no copyrighted symbols.",
+      "final": "assets/generated/hero-forge-workbench.png",
+      "status": "filled"
+    },
+    {
+      "id": "S1",
+      "use": "Hero product screenshot",
+      "prompt": "Fully visible Homebrew Forge app screenshot showing a readable custom card preview inside a dark desktop editor frame.",
+      "final": "assets/source-screenshots/hero-maker.png",
+      "status": "filled_product_evidence"
+    },
+    {
+      "id": "C1",
+      "use": "Featured fictional custom card art",
+      "prompt": "A fictional fantasy trading-card style illustration named Citadel of the Waning Light, original fantasy castle art, parchment and gold styling, no official card frame, no mana symbols, no official card art.",
+      "final": "assets/generated/citadel-waning-light-art.png",
+      "status": "filled"
+    },
+    {
+      "id": "I1",
+      "use": "Hero value icon: Local First",
+      "prompt": "Gold medallion fantasy icon of a shield and local workshop mark on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-local-first.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I2",
+      "use": "Hero value icon: Private by Design",
+      "prompt": "Gold medallion fantasy icon of a lock and sealed local vault on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-private-design.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I3",
+      "use": "Hero value icon: Built for Creators",
+      "prompt": "Gold medallion fantasy icon of a quill and creator spark on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-built-creators.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "G3",
+      "use": "Case-study parchment spread",
+      "prompt": "A parchment spread with ink sketches of UI wireframes, card thumbnails, forge tools, handwritten design notes, and fantasy worldbuilding marks.",
+      "final": "assets/generated/case-study-parchment.png",
+      "status": "filled"
+    },
+    {
+      "id": "S2",
+      "use": "Feature product screenshot",
+      "prompt": "Fully visible app image showing card grid, deck context, inspector, and playtest or log surface.",
+      "final": "assets/source-screenshots/feature-decks.png",
+      "status": "filled_product_evidence"
+    },
+    {
+      "id": "I4",
+      "use": "Workflow icon: Create",
+      "prompt": "Gold medallion fantasy icon of a quill creating a card or scroll on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-edit-quill.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I5",
+      "use": "Workflow icon: Organize",
+      "prompt": "Gold medallion fantasy icon of an archive chest or organized card case on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-organize.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I6",
+      "use": "Workflow icon: Playtest",
+      "prompt": "Gold medallion fantasy icon of crossed swords for playtesting on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-playtest.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I7",
+      "use": "Workflow icon: Export",
+      "prompt": "Gold medallion fantasy icon of a scroll, seal, or download-ready packet on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-export-scroll.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I8",
+      "use": "Workflow icon: Iterate",
+      "prompt": "Gold medallion fantasy icon of an astrolabe or compass for iteration on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-iterate-astrolabe.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "G4",
+      "use": "Roadmap board",
+      "prompt": "Dark embossed roadmap panel with brass trim, gold milestone lines, and tabletop workshop status badges.",
+      "final": "implemented_in_html_css",
+      "status": "filled_structural_visual"
+    },
+    {
+      "id": "I9",
+      "use": "AI workflow icon: Prompt",
+      "prompt": "Gold medallion fantasy icon of a statue head or thinker bust on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-prompt-head.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I10",
+      "use": "AI workflow icon: Local context",
+      "prompt": "Gold medallion fantasy icon of a brain or local knowledge orb on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-local-brain.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I11",
+      "use": "AI workflow icon: Suggestions",
+      "prompt": "Gold medallion fantasy icon of a suggestion scroll with sparks on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-suggestion-scroll.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "I12",
+      "use": "AI workflow icon: Apply or edit",
+      "prompt": "Gold medallion fantasy icon of a code forge, quill, and hammer on bright green chroma key background.",
+      "source": "assets/generated/icon-sheet-chroma-source.png",
+      "final": "assets/generated/i-code-forge.png",
+      "status": "filled_chroma_keyed"
+    },
+    {
+      "id": "G5",
+      "use": "Final CTA background",
+      "prompt": "A glowing forge, anvil, lantern, books, and parchment-edge scene with room for CTA text, no logos and no copyrighted symbols.",
+      "final": "assets/generated/final-cta-forge.png",
+      "status": "filled"
+    }
+  ]
+}

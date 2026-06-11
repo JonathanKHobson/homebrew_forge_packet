@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Homebrew Forge is a local-first arcane workshop for designing, organizing, playtesting, exporting, and printing custom fantasy card projects.">
+    <meta name="theme-color" content="#0f0d0a">
+    <title>Homebrew Forge | Design Legendary. Keep It Local.</title>
+    <link rel="icon" href="./assets/favicon/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon/favicon-32.png">
+    <link rel="apple-touch-icon" href="./assets/favicon/apple-touch-icon.png">
+    <script>document.documentElement.classList.add('js-enhanced');</script>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
+    <header class="site-header" aria-label="Homebrew Forge">
+      <a class="brand" href="#top" aria-label="Homebrew Forge home">
+        <img src="./assets/generated/brand-crest.png" alt="" width="44" height="44">
+        <span>Homebrew Forge</span>
+      </a>
+      <nav class="site-nav" aria-label="Page sections">
+        <a href="#overview">Overview</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#features">Features</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#about">About</a>
+      </nav>
+      <div class="header-actions">
+        <a class="header-github" href="https://github.com/JonathanKHobson/homebrew_forge_packet" aria-label="Star Homebrew Forge on GitHub">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M12 .7a12 12 0 0 0-3.8 23.4c.6.1.8-.2.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.3-1.2-1.7-1.2-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 .1.8 2.1 2.6 2.8.1-.8.4-1.4.7-1.7-2.6-.3-5.4-1.3-5.4-5.9 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.9.1 3.2.7.9 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.4 5.9.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6A12 12 0 0 0 12 .7Z"/>
+          </svg>
+          <span class="github-label">Star on GitHub</span>
+        </a>
+        <span class="version-badge">v0.3.0</span>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-bg" aria-hidden="true"></div>
+        <div class="hero-shell">
+          <div class="hero-copy">
+            <p class="eyebrow">Local-first creator tool</p>
+            <h1 id="hero-title">Design Legendary. Keep It Local.</h1>
+            <p class="hero-lede">Homebrew Forge turns custom fantasy card ideas into organized projects, playable decks, printable exports, and source files you control.</p>
+            <div class="hero-proofs" aria-label="Homebrew Forge value pillars">
+              <article>
+                <img src="./assets/generated/i-local-first.png" alt="" width="74" height="74">
+                <h2>Local First</h2>
+                <p>Everything stays on your machine.</p>
+              </article>
+              <article>
+                <img src="./assets/generated/i-private-design.png" alt="" width="74" height="74">
+                <h2>Private by Design</h2>
+                <p>Your projects. Your data.</p>
+              </article>
+              <article>
+                <img src="./assets/generated/i-built-creators.png" alt="" width="74" height="74">
+                <h2>Built for Creators</h2>
+                <p>Powerful tools, zero friction.</p>
+              </article>
+            </div>
+            <div class="hero-actions" aria-label="Primary actions">
+              <a class="btn btn-primary" href="./install-guide.md">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19">
+                  <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Download for Your OS
+              </a>
+              <a class="btn btn-dark" href="https://github.com/JonathanKHobson/homebrew_forge_packet">
+                <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19">
+                  <path fill="currentColor" d="M12 .7a12 12 0 0 0-3.8 23.4c.6.1.8-.2.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.3-1.2-1.7-1.2-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 .1.8 2.1 2.6 2.8.1-.8.4-1.4.7-1.7-2.6-.3-5.4-1.3-5.4-5.9 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.9.1 3.2.7.9 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.4 5.9.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6A12 12 0 0 0 12 .7Z"/>
+                </svg>
+                View on GitHub
+              </a>
+            </div>
+            <p class="platforms">Source alpha guide · macOS · Windows · Linux</p>
+          </div>
+          <figure class="app-showcase">
+            <button class="image-button" type="button" data-full="./assets/source-screenshots/hero-maker.png" aria-label="Open Homebrew Forge editor screenshot">
+              <img class="desktop-shot" src="./assets/source-screenshots/hero-maker.png" alt="Fully visible Homebrew Forge desktop editor with a project rail, custom cards, preview surface, and inspector.">
+            </button>
+            <div class="card-composite" aria-label="Featured custom card preview">
+              <article class="fantasy-card">
+                <div class="card-title-row">
+                  <span>Citadel of the Waning Light</span>
+                  <span>HF</span>
+                </div>
+                <img src="./assets/generated/citadel-waning-light-art.png" alt="Original fantasy castle artwork for the fictional custom card Citadel of the Waning Light.">
+                <div class="card-type">Legendary Location</div>
+                <p>At the beginning of your turn, you may look at the top card of your deck. If it is a creature card, you may reveal it and put it into your hand.</p>
+                <div class="card-flavor">Where last light lingers, hope is reforged.</div>
+              </article>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <section id="overview" class="case-study parchment-band reveal-section" aria-labelledby="case-title">
+        <img class="case-art" src="./assets/generated/case-study-parchment.png" alt="Parchment spread with ink sketches of card layouts, forge tools, UI wireframes, and fantasy worldbuilding notes.">
+        <div class="section-center">
+          <p class="eyebrow dark">Case Study</p>
+          <h2 id="case-title">Forged for Creators</h2>
+          <p>Homebrew Forge began from a simple belief: the best custom card ideas deserve better than scattered screenshots, fragile notes, and one-off exports. It is a modern, offline-first workshop for designing, iterating, and sharing card projects with confidence.</p>
+        </div>
+      </section>
+
+      <section id="features" class="tool-section parchment-band reveal-section" aria-labelledby="tools-title">
+        <div class="content-grid">
+          <div class="tool-copy">
+            <p class="eyebrow dark">Built for Creators</p>
+            <h2 id="tools-title">Powerful Tools. Thoughtful Details.</h2>
+            <div class="tool-list">
+              <article>
+                <img src="./assets/generated/i-edit-quill.png" alt="" width="62" height="62">
+                <div>
+                  <h3>Intuitive Card Editor</h3>
+                  <p>Craft cards with structured fields, variants, and real-time preview.</p>
+                </div>
+              </article>
+              <article>
+                <img src="./assets/generated/i-organize.png" alt="" width="62" height="62">
+                <div>
+                  <h3>Organized Projects</h3>
+                  <p>Keep cards, assets, sets, decks, and collections in clean lanes.</p>
+                </div>
+              </article>
+              <article>
+                <img src="./assets/generated/i-playtest.png" alt="" width="62" height="62">
+                <div>
+                  <h3>Built-in Playtest</h3>
+                  <p>Test interactions, compare variants, and keep iteration grounded.</p>
+                </div>
+              </article>
+              <article>
+                <img src="./assets/generated/i-export-scroll.png" alt="" width="62" height="62">
+                <div>
+                  <h3>Export Your Way</h3>
+                  <p>Prepare images, print assets, decks, packets, and handoff files.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+          <figure class="product-panel">
+            <button class="image-button" type="button" data-full="./assets/source-screenshots/feature-decks.png" aria-label="Open Homebrew Forge deck and playtest screenshot">
+              <img src="./assets/source-screenshots/feature-decks.png" alt="Fully visible Homebrew Forge decks workspace with card grid, deck context, stats, and playtest panels.">
+            </button>
+          </figure>
+        </div>
+      </section>
+
+      <section id="workflow" class="workflow-section parchment-band reveal-section" aria-labelledby="workflow-title">
+        <div class="section-center">
+          <p class="eyebrow dark">The Making Loop</p>
+          <h2 id="workflow-title">How Homebrew Forge Works</h2>
+        </div>
+        <ol class="workflow-steps" aria-label="Homebrew Forge workflow">
+          <li>
+            <img src="./assets/generated/i-edit-quill.png" alt="" width="86" height="86">
+            <span>1. Create</span>
+            <p>Design cards and assets with focused authoring tools.</p>
+          </li>
+          <li>
+            <img src="./assets/generated/i-organize.png" alt="" width="86" height="86">
+            <span>2. Organize</span>
+            <p>Build sets, decks, collections, and project libraries.</p>
+          </li>
+          <li>
+            <img src="./assets/generated/i-playtest.png" alt="" width="86" height="86">
+            <span>3. Playtest</span>
+            <p>Simulate choices, inspect variants, and refine balance.</p>
+          </li>
+          <li>
+            <img src="./assets/generated/i-export-scroll.png" alt="" width="86" height="86">
+            <span>4. Export</span>
+            <p>Prepare printable and shareable files from local source truth.</p>
+          </li>
+          <li>
+            <img src="./assets/generated/i-iterate-astrolabe.png" alt="" width="86" height="86">
+            <span>5. Iterate</span>
+            <p>Return to the forge with better data and better decisions.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="roadmap" class="roadmap-section dark-band reveal-section" aria-labelledby="roadmap-title">
+        <div class="roadmap-board">
+          <div class="roadmap-intro">
+            <p class="eyebrow">Source Alpha</p>
+            <h2 id="roadmap-title">Roadmap</h2>
+            <p>Homebrew Forge is actively developed with creators, for creators.</p>
+            <a class="btn btn-outline" href="https://github.com/JonathanKHobson/homebrew_forge_packet">Explore the Roadmap</a>
+          </div>
+          <ol class="milestones" aria-label="Homebrew Forge roadmap">
+            <li class="done">
+              <div class="milestone-top"><span>v0.3</span><b>Foundations</b></div>
+              <ul>
+                <li>Card editor and validation</li>
+                <li>Project and asset management</li>
+                <li>Export images and packets</li>
+                <li>Local playtest engine beta</li>
+              </ul>
+              <em>Completed</em>
+            </li>
+            <li class="active">
+              <div class="milestone-top"><span>v0.4</span><b>Expansion</b></div>
+              <ul>
+                <li>Advanced templating</li>
+                <li>Deck and collection support</li>
+                <li>Import from external data</li>
+                <li>Public docs cleanup</li>
+              </ul>
+              <em>In Progress</em>
+            </li>
+            <li>
+              <div class="milestone-top"><span>v0.5</span><b>Refinement</b></div>
+              <ul>
+                <li>Rules engine improvements</li>
+                <li>AI-assisted tools</li>
+                <li>Better export options</li>
+                <li>Accessibility polish</li>
+              </ul>
+              <em>Planned</em>
+            </li>
+            <li>
+              <div class="milestone-top"><span>v1.0</span><b>Mastery</b></div>
+              <ul>
+                <li>Plugin system</li>
+                <li>Packaging and signing</li>
+                <li>Cross-platform release</li>
+                <li>Creator-ready docs</li>
+              </ul>
+              <em>Planned</em>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="about" class="ai-section parchment-band reveal-section" aria-labelledby="ai-title">
+        <div class="ai-copy">
+          <p class="eyebrow dark">AI-Assisted Build</p>
+          <h2 id="ai-title">AI Assistance. On Your Terms.</h2>
+          <p>Homebrew Forge is also a working case study in AI-assisted software craft: intent becomes a plan, the plan becomes code, the code is tested visually, and the shipped result gets written down.</p>
+          <p class="lock-note">
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+              <path d="M7 10V8a5 5 0 0 1 10 0v2m-9 0h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Optional, local, and private.
+          </p>
+        </div>
+        <div class="ai-flow" aria-label="AI workflow">
+          <article>
+            <img src="./assets/generated/i-prompt-head.png" alt="" width="82" height="82">
+            <h3>Your Prompt</h3>
+            <p>You provide ideas, constraints, and taste.</p>
+          </article>
+          <article>
+            <img src="./assets/generated/i-local-brain.png" alt="" width="82" height="82">
+            <h3>Local Context</h3>
+            <p>The agent reads the repo before acting.</p>
+          </article>
+          <article>
+            <img src="./assets/generated/i-suggestion-scroll.png" alt="" width="82" height="82">
+            <h3>Suggestions</h3>
+            <p>Copy, mechanics, workflows, tests, and fixes.</p>
+          </article>
+          <article>
+            <img src="./assets/generated/i-code-forge.png" alt="" width="82" height="82">
+            <h3>Apply or Edit</h3>
+            <p>You review, refine, and keep control.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="deep-dive dark-band reveal-section" aria-labelledby="technical-title">
+        <div class="deep-grid">
+          <div>
+            <p class="eyebrow">Under the Hood</p>
+            <h2 id="technical-title">A Shared Product UI, Local Source Truth</h2>
+          </div>
+          <details open>
+            <summary>Technical layers</summary>
+            <p><code>packages/editor</code> owns the shared React product UI across web and desktop. <code>packages/forge</code> owns schemas, renderer, importers, exporters, and asset-pack logic. <code>packages/runtime-service</code> owns the route contract, while <code>packages/desktop</code> wraps the app in the no-port Electron shell.</p>
+          </details>
+          <details>
+            <summary>Design system</summary>
+            <p>The North Star is Arcane Workshop: parchment, brass, obsidian, dense creative-tool layout, accessible contrast, visible state, and enough fantasy atmosphere to feel purpose-built without becoming a game menu.</p>
+          </details>
+          <details>
+            <summary>Current alpha honesty</summary>
+            <p>The product is real and broad, but still source alpha. Public packaging, signing, repo cleanup, and contributor onboarding are the next gates before this becomes a general download.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="final-cta reveal-section" aria-labelledby="cta-title">
+        <div class="final-bg" aria-hidden="true"></div>
+        <div class="final-content">
+          <p class="eyebrow">Open the Forge</p>
+          <h2 id="cta-title">Ready to Forge Something Legendary?</h2>
+          <p>Follow the public source-alpha path, inspect the work, and let your own agent walk the repo with the right project boundaries.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/JonathanKHobson/homebrew_forge_packet">
+              <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19">
+                <path fill="currentColor" d="M12 .7a12 12 0 0 0-3.8 23.4c.6.1.8-.2.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.3-1.2-1.7-1.2-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 .1.8 2.1 2.6 2.8.1-.8.4-1.4.7-1.7-2.6-.3-5.4-1.3-5.4-5.9 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.9.1 3.2.7.9 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.4 5.9.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6A12 12 0 0 0 12 .7Z"/>
+              </svg>
+              Star Homebrew Forge
+            </a>
+            <a class="btn btn-dark" href="./install-guide.md">Read Install Guide</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <h2>Homebrew Forge</h2>
+        <p>A local-first tool for crafting custom fantasy card projects.</p>
+      </div>
+      <nav aria-label="Footer">
+        <a href="#overview">Case Study</a>
+        <a href="#features">Tools</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="./install-guide.md">Install Guide</a>
+        <a href="https://github.com/JonathanKHobson/homebrew_forge_packet">GitHub</a>
+      </nav>
+    </footer>
+
+    <dialog class="image-dialog" aria-label="Expanded image">
+      <button class="dialog-close" type="button" aria-label="Close image">Close</button>
+      <img src="./assets/source-screenshots/hero-maker.png" alt="">
+    </dialog>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
