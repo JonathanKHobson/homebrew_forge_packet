@@ -5,8 +5,9 @@ import { CollapsibleSection } from '../CollapsibleSection.js';
 import { Field } from '../Field.js';
 import { Icon } from '../Icon.js';
 import { OverlayShell } from '../overlays/OverlayShell.js';
+import { TagEditor } from '../TagEditor.js';
 import { CreateFlowStatusMessage } from './CreateFlowStatusMessage.js';
-import { PROJECT_STATUS_OPTIONS, splitTagInput } from '../../domain/filterTypes.js';
+import { PROJECT_STATUS_OPTIONS } from '../../domain/filterTypes.js';
 
 interface CreateProjectOverlayProps {
   library: LibraryState | null;
@@ -19,10 +20,10 @@ export function CreateProjectOverlay({ library, onCreateProject, onStatus, onClo
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('draft');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [flowState, setFlowState] = useState<CreateFlowStatus>('idle');
   const [error, setError] = useState('');
-  const dirty = Boolean(name || description || tags || status !== 'draft');
+  const dirty = Boolean(name || description || tags.length || status !== 'draft');
 
   function markDirty() {
     setFlowState('dirty');
@@ -32,7 +33,7 @@ export function CreateProjectOverlay({ library, onCreateProject, onStatus, onClo
     setFlowState('saving');
     setError('');
     try {
-      await onCreateProject({ name, description, status, tags: splitTagInput(tags) });
+      await onCreateProject({ name, description, status, tags });
       setFlowState('saved');
       onClose();
     } catch (caught) {
@@ -49,10 +50,10 @@ export function CreateProjectOverlay({ library, onCreateProject, onStatus, onClo
         Cancel
       </button>
       <button type="button" className="secondary-button" disabled>
-        Import Project
+        Import project
       </button>
       <button type="button" className="primary-button" disabled={flowState === 'saving' || !name.trim()} onClick={() => void submit()}>
-        {flowState === 'saving' ? 'Creating...' : 'Create Draft'}
+        {flowState === 'saving' ? 'Creating...' : 'Create project'}
       </button>
     </>
   );
@@ -76,7 +77,7 @@ export function CreateProjectOverlay({ library, onCreateProject, onStatus, onClo
               </select>
             </Field>
             <Field label="Tags">
-              <input value={tags} placeholder="stargate, priority" onChange={(event) => { setTags(event.target.value); markDirty(); }} />
+              <TagEditor value={tags} suggestions={library?.universes.flatMap((universe) => universe.tags ?? []) ?? []} placeholder="stargate, priority" ariaLabel="Project tags" onChange={(nextTags) => { setTags(nextTags); markDirty(); }} />
             </Field>
           </div>
           <Field label="Notes">

@@ -1,0 +1,64 @@
+name: Frame Support Squirrel Lab
+description: Squirrel-themed demo card seeds for frame-support implementation slices.
+default_tags:
+  - frame-support-squirrel-lab
+  - human-review-needed
+cards:
+  - id: FSL-001
+    name: Acorn Archivist
+    slice: core-normal
+    type_line: Creature - Squirrel Advisor
+    tags: [frame-support-slice-core-normal, short-text]
+    variants:
+      - name: Short
+        oracle_text: Vigilance.
+      - name: Medium
+        oracle_text: When Acorn Archivist enters, draw a card if you control an artifact or enchantment.
+      - name: Dense
+        oracle_text: Whenever you draw your second card each turn, create a Food token. Then if you control three or more Foods, Squirrels you control get +1/+1 until end of turn.
+  - id: FSL-002
+    name: Walnut Wheelbarrow
+    slice: vehicle-equipment-aura
+    type_line: Artifact - Vehicle
+    power: "3"
+    toughness: "4"
+    tags: [frame-support-slice-vehicle-equipment-aura, vehicle-test]
+    variants:
+      - name: Short
+        oracle_text: Crew 2.
+      - name: Medium
+        oracle_text: Whenever Walnut Wheelbarrow attacks, create a Food token. Crew 2.
+      - name: Dense
+        oracle_text: Whenever Walnut Wheelbarrow becomes crewed by one or more Squirrels, put a +1/+1 counter on target creature. Crew 2.
+  - id: FSL-003
+    name: The Great Nut Cache
+    slice: saga-class-case-room
+    type_line: Enchantment - Saga
+    tags: [frame-support-slice-saga-class-case-room, saga-test, dense-text]
+    variants:
+      - name: Three Chapter
+        oracle_text: "I - Create a 1/1 green Squirrel creature token.\nII - Create a Food token.\nIII - Squirrels you control get +2/+2 until end of turn."
+      - name: Dense Chapter
+        oracle_text: "I, II - Mill two cards, then return a Squirrel or Food card from your graveyard to your hand.\nIII, IV - Create two tapped Food tokens.\nV, VI - Squirrels you control gain trample until end of turn."
+  - id: FSL-004
+    name: Nutstore Apprentice
+    slice: prepare-adventure-omen
+    type_line: Creature - Squirrel Wizard
+    power: "2"
+    toughness: "2"
+    tags: [frame-support-slice-prepare-adventure-omen, prepare-test]
+    variants:
+      - name: Preparation Short
+        oracle_text: "When this creature enters, scry 1.\nPrepare - Cache the Moment {1}{G}: Create a Food token."
+      - name: Preparation Dense
+        oracle_text: "Whenever you prepare a spell, put a +1/+1 counter on Nutstore Apprentice.\nPrepare - Cache the Moment {1}{G}: Create a Food token. If you control three or more Foods, draw a card."
+  - id: FSL-005
+    name: Canopy Crossing
+    slice: multiface
+    type_line: Land
+    tags: [frame-support-slice-multiface, modal-dfc-test]
+    variants:
+      - name: Land Face
+        oracle_text: "{T}: Add {G}."
+      - name: Squirrel Face
+        oracle_text: "A hidden modal face should preserve its data until DFC rendering is wired."

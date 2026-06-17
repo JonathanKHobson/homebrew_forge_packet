@@ -5,6 +5,7 @@ import { chromium, type Browser } from 'playwright';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CardSvg } from './CardSvg.js';
 import type { AssetPack } from '../assets/assetPack.js';
+import { layoutSupportFor, RENDERABLE_LAYOUTS } from '../domain/frameSupport.js';
 import type { ArtManifestRecord, CardFaceRecord, CardRecord, ExportProfile } from '../domain/schemas.js';
 import type { ReferenceCatalog } from '../reference/catalog.js';
 import { ensureDir } from '../utils/fs.js';
@@ -34,6 +35,12 @@ export async function renderCardImage(request: RenderCardImageRequest): Promise<
   }
   const art = face.artId ? request.art[face.artId] : undefined;
   const warnings: string[] = [];
+  const layoutSupport = layoutSupportFor(request.card.layout);
+  if (!RENDERABLE_LAYOUTS.has(layoutSupport.id)) {
+    warnings.push(`Layout ${request.card.layout} is ${layoutSupport.supportState}; rendering ${layoutSupport.fallbackLayout} fallback while preserving layout metadata.`);
+  } else if (layoutSupport.id !== 'normal' && layoutSupport.id !== 'token') {
+    warnings.push(`Layout ${request.card.layout} uses ${layoutSupport.supportState} support; rendering with the best available ${layoutSupport.fallbackLayout} geometry.`);
+  }
   const hasArtFile = await fileExists(art?.absolutePath);
   const hasInlineArt = Boolean((art as ArtManifestRecord & { dataUri?: string } | undefined)?.dataUri);
   if (face.artId && !hasArtFile && !hasInlineArt) {
@@ -86,7 +93,7 @@ async function screenshotSvg(svg: string, outputPath: string, profile: ExportPro
 async function screenshotSvgOnce(svg: string, outputPath: string, profile: ExportProfile): Promise<void> {
   let browser: Browser | undefined;
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: true, args: ['--single-process'] });
     const page = await browser.newPage({
       viewport: { width: profile.widthPx, height: profile.heightPx },
       deviceScaleFactor: 1

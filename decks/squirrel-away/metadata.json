@@ -1,0 +1,34 @@
+{
+  "deckId": "squirrel-away",
+  "name": "Squirrel Away",
+  "description": "Partner's modified Squirrel Away deck with Squirrel Mania homebrew variants queued in the maybeboard.",
+  "linkedUniverseId": "squirrel-far-away",
+  "linkedSetCode": "SQM",
+  "format": "Commander",
+  "playStyleTags": [
+    "Squirrels",
+    "Food",
+    "Tokens"
+  ],
+  "colorIdentity": "BG",
+  "commander": {
+    "setCode": "MH2",
+    "cardId": "1785cf85-1ac0-4246-9b89-1a8221a8e1b2",
+    "nameSnapshot": "Chatterfang, Squirrel General"
+  },
+  "coverCard": {
+    "setCode": "MH2",
+    "cardId": "1785cf85-1ac0-4246-9b89-1a8221a8e1b2",
+    "nameSnapshot": "Chatterfang, Squirrel General"
+  },
+  "commanderBracket": "Precon upgrade",
+  "status": "playtest",
+  "tags": [
+    "partner-deck",
+    "squirrel",
+    "squirrel-away"
+  ],
+  "notes": "Mainboard entries come from the partner CSV and were enriched by Scryfall name lookup. Exact physical print identity may still need review because the CSV did not include set or collector numbers. The maybeboard includes both Whisperglide Dreywarden rule variants from SQM.",
+  "createdAt": "2026-06-05T17:51:06.000Z",
+  "updatedAt": "2026-06-05T18:02:05.000Z"
+}

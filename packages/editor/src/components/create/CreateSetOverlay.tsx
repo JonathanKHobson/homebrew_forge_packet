@@ -5,8 +5,9 @@ import { CollapsibleSection } from '../CollapsibleSection.js';
 import { Field } from '../Field.js';
 import { Icon } from '../Icon.js';
 import { OverlayShell } from '../overlays/OverlayShell.js';
+import { TagEditor } from '../TagEditor.js';
 import { CreateFlowStatusMessage } from './CreateFlowStatusMessage.js';
-import { SET_STATUS_OPTIONS, splitTagInput } from '../../domain/filterTypes.js';
+import { SET_STATUS_OPTIONS } from '../../domain/filterTypes.js';
 
 export interface CreateSetImportPayload {
   format: ImportCardsRequest['format'];
@@ -31,12 +32,12 @@ export function CreateSetOverlay({ library, project, selectedUniverseId, onCreat
   const [setName, setSetName] = useState('');
   const [author, setAuthor] = useState(project?.designer ?? 'Jonathan Kyle Hobson');
   const [status, setStatus] = useState('draft');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [importPayload, setImportPayload] = useState<CreateSetImportPayload | undefined>();
   const [flowState, setFlowState] = useState<CreateFlowStatus>('idle');
   const [error, setError] = useState('');
-  const dirty = Boolean(universeId !== selectedUniverseId || setCode || setName || notes || tags || importPayload || status !== 'draft');
+  const dirty = Boolean(universeId !== selectedUniverseId || setCode || setName || notes || tags.length || importPayload || status !== 'draft');
 
   function markDirty() {
     setFlowState('dirty');
@@ -70,7 +71,7 @@ export function CreateSetOverlay({ library, project, selectedUniverseId, onCreat
           setName,
           author,
           status,
-          tags: splitTagInput(tags),
+          tags,
           notes
         },
         importPayload
@@ -90,13 +91,13 @@ export function CreateSetOverlay({ library, project, selectedUniverseId, onCreat
       <input ref={fileInputRef} type="file" accept=".csv,.xml,.txt,text/csv,text/xml,application/xml,text/plain" hidden onChange={(event) => void handleFile(event.target.files?.[0])} />
       <button type="button" className="secondary-button icon-label-button" onClick={() => fileInputRef.current?.click()}>
         <Icon name="download" />
-        Import Set File
+        Import set file
       </button>
       <button type="button" className="secondary-button" onClick={onClose}>
         Cancel
       </button>
       <button type="button" className="primary-button" disabled={flowState === 'saving' || !setCode.trim() || !setName.trim() || !universeId} onClick={() => void submit()}>
-        {flowState === 'saving' ? 'Creating...' : 'Create Draft'}
+        {flowState === 'saving' ? 'Creating...' : 'Create set'}
       </button>
     </>
   );
@@ -139,7 +140,7 @@ export function CreateSetOverlay({ library, project, selectedUniverseId, onCreat
             </Field>
           </div>
           <Field label="Tags">
-            <input value={tags} placeholder="draft, cube, commander" onChange={(event) => { setTags(event.target.value); markDirty(); }} />
+            <TagEditor value={tags} suggestions={library?.sets.flatMap((set) => set.tags ?? []) ?? []} placeholder="draft, cube, commander" ariaLabel="Set tags" onChange={(nextTags) => { setTags(nextTags); markDirty(); }} />
           </Field>
           <Field label="Notes">
             <textarea value={notes} rows={4} placeholder="Optional set direction, import notes, or design constraints" onChange={(event) => { setNotes(event.target.value); markDirty(); }} />
@@ -151,7 +152,7 @@ export function CreateSetOverlay({ library, project, selectedUniverseId, onCreat
             <Icon name="sets" />
             <span>
               <strong>{importPayload ? importPayload.filename : 'No import file attached'}</strong>
-              <small>{importPayload ? `${importPayload.format.toUpperCase()} will import in append/update mode after creation.` : 'Use Import Set File when the cards are already in CSV, XML, or Planesculptors text.'}</small>
+              <small>{importPayload ? `${importPayload.format.toUpperCase()} will import in append/update mode after creation.` : 'Use Import set file when the cards are already in CSV, XML, or Planesculptors text.'}</small>
             </span>
             {importPayload ? (
               <button type="button" className="secondary-button" onClick={() => { setImportPayload(undefined); markDirty(); }}>

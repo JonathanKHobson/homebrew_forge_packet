@@ -1,0 +1,1659 @@
+/* ============================================================================
+   Lean modern craft pass — tokenized depth, focus, and shared states
+   Keep after Forge Bench v3 so late hard-coded light values cannot leak into
+   dark/parchment themes.
+   ============================================================================ */
+
+:root {
+  --fb-craft-highlight: rgba(255, 255, 255, 0.62);
+  --fb-craft-highlight-soft: rgba(255, 255, 255, 0.42);
+  --fb-craft-shadow-soft: rgba(20, 28, 40, 0.07);
+  --fb-craft-shadow-line: rgba(20, 28, 40, 0.06);
+  --fb-craft-shadow-pressed: rgba(20, 28, 40, 0.12);
+  --fb-craft-chrome-top: color-mix(in srgb, var(--fb-chrome) 78%, white);
+  --fb-craft-rail-top: color-mix(in srgb, var(--fb-chrome) 84%, white);
+  --fb-craft-status-bottom: color-mix(in srgb, var(--fb-chrome) 82%, black 6%);
+  --fb-craft-control-top: color-mix(in srgb, var(--fb-panel-2) 88%, white);
+  --fb-craft-hover-top: color-mix(in srgb, var(--fb-chrome-2) 82%, white);
+  --fb-craft-primary-top: color-mix(in srgb, var(--fb-accent) 88%, white);
+  --fb-focus-ring: 0 0 0 2px var(--fb-focus);
+  --fb-focus-ring-outer: 0 0 0 1px var(--fb-float), 0 0 0 3px var(--fb-focus);
+}
+
+:root:not([data-theme="dark"]):not([data-theme="parchment"]) {
+  --fb-text-muted: #566376;
+  --fb-label: #586578;
+}
+
+:root[data-theme="dark"] {
+  --fb-craft-highlight: rgba(255, 255, 255, 0.08);
+  --fb-craft-highlight-soft: rgba(255, 255, 255, 0.05);
+  --fb-craft-shadow-soft: rgba(0, 0, 0, 0.24);
+  --fb-craft-shadow-line: rgba(0, 0, 0, 0.28);
+  --fb-craft-shadow-pressed: rgba(0, 0, 0, 0.34);
+  --fb-craft-chrome-top: color-mix(in srgb, var(--fb-chrome) 92%, white 4%);
+  --fb-craft-rail-top: color-mix(in srgb, var(--fb-chrome) 94%, white 3%);
+  --fb-craft-status-bottom: color-mix(in srgb, var(--fb-chrome) 82%, black);
+  --fb-craft-control-top: color-mix(in srgb, var(--fb-panel-2) 94%, white 4%);
+  --fb-craft-hover-top: color-mix(in srgb, var(--fb-chrome-2) 94%, white 4%);
+  --fb-craft-primary-top: color-mix(in srgb, var(--fb-accent) 88%, white 9%);
+  --fb-focus-ring-outer: 0 0 0 1px var(--fb-canvas), 0 0 0 3px var(--fb-focus);
+}
+
+:root[data-theme="parchment"] {
+  --fb-craft-highlight: rgba(255, 250, 240, 0.66);
+  --fb-craft-highlight-soft: rgba(255, 250, 240, 0.48);
+  --fb-craft-shadow-soft: rgba(89, 67, 35, 0.08);
+  --fb-craft-shadow-line: rgba(89, 67, 35, 0.08);
+  --fb-craft-shadow-pressed: rgba(89, 67, 35, 0.15);
+  --fb-craft-chrome-top: color-mix(in srgb, var(--fb-chrome) 80%, white);
+  --fb-craft-rail-top: color-mix(in srgb, var(--fb-chrome) 84%, white);
+  --fb-craft-status-bottom: color-mix(in srgb, var(--fb-chrome) 86%, black 7%);
+  --fb-craft-control-top: color-mix(in srgb, var(--fb-panel-2) 88%, white);
+  --fb-craft-hover-top: color-mix(in srgb, var(--fb-chrome-2) 84%, white);
+  --fb-craft-primary-top: color-mix(in srgb, var(--fb-accent) 86%, white);
+}
+
+.app-chrome {
+  background: linear-gradient(180deg, var(--fb-craft-chrome-top) 0%, var(--fb-chrome) 100%);
+  background-color: var(--fb-chrome);
+  box-shadow:
+    inset 0 1px 0 var(--fb-craft-highlight),
+    0 1px 0 var(--fb-craft-shadow-line),
+    0 2px 7px var(--fb-craft-shadow-soft);
+}
+
+.side-rail {
+  background: linear-gradient(180deg, var(--fb-craft-rail-top) 0%, var(--fb-chrome) 72%);
+  background-color: var(--fb-chrome);
+  box-shadow: inset -1px 0 0 var(--fb-craft-highlight-soft);
+}
+
+.app-status-bar {
+  background: linear-gradient(180deg, var(--fb-chrome) 0%, var(--fb-craft-status-bottom) 100%);
+  background-color: var(--fb-chrome);
+  box-shadow: inset 0 1px 0 var(--fb-craft-highlight-soft);
+}
+
+.app-status-bar-with-health {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.workspace-health-strip {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-left: auto;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.workspace-health-strip .app-status-bar-meta {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-health-strip .app-status-bar-meta.ok {
+  border-color: color-mix(in srgb, var(--fb-success) 42%, var(--fb-line));
+  color: color-mix(in srgb, var(--fb-success) 72%, var(--fb-ink));
+}
+
+.workspace-health-strip .app-status-bar-meta.warning {
+  border-color: color-mix(in srgb, var(--fb-warning) 46%, var(--fb-line));
+  color: color-mix(in srgb, var(--fb-warning) 68%, var(--fb-ink));
+}
+
+.workspace-health-strip .app-status-bar-meta.pending {
+  border-color: color-mix(in srgb, var(--fb-muted) 38%, var(--fb-line));
+  color: var(--fb-muted);
+}
+
+@media (max-width: 720px) {
+  .workspace-health-strip {
+    gap: 4px;
+  }
+
+  .workspace-health-strip .app-status-bar-meta:nth-child(n + 4):not(.dirty):not(.warning) {
+    display: none;
+  }
+}
+
+.card-list,
+.context-panel,
+.inspector,
+.entity-list-panel,
+.card-browser-list-panel,
+.workspace-inspector-panel {
+  box-shadow: inset -1px 0 0 var(--fb-craft-highlight-soft);
+}
+
+.panel-heading,
+.preview-header,
+.inspector-tabs,
+.card-tabs,
+.dashboard-topbar,
+.workspace-context-summary,
+.card-browser-header {
+  box-shadow: inset 0 1px 0 var(--fb-craft-highlight-soft);
+}
+
+.primary-button {
+  background: linear-gradient(180deg, var(--fb-craft-primary-top) 0%, var(--fb-accent) 100%);
+  background-color: var(--fb-accent);
+  box-shadow:
+    inset 0 1px 0 var(--fb-craft-highlight-soft),
+    0 1px 1px var(--fb-craft-shadow-pressed);
+}
+
+.primary-button:hover {
+  background: linear-gradient(180deg, var(--fb-accent) 0%, var(--fb-accent-strong) 100%);
+  background-color: var(--fb-accent-strong);
+}
+
+.secondary-button,
+.chip,
+.icon-button,
+.dashboard-open-card,
+.dashboard-mini-button,
+.dashboard-overlay-open-card,
+.focused-workbench-control {
+  background: linear-gradient(180deg, var(--fb-craft-control-top) 0%, var(--fb-panel-2) 100%);
+  background-color: var(--fb-panel-2);
+  box-shadow:
+    inset 0 1px 0 var(--fb-craft-highlight-soft),
+    0 1px 1px var(--fb-craft-shadow-soft);
+}
+
+.tool-button:hover,
+.panel-control-button:hover,
+.secondary-button:hover,
+.chip:hover,
+.icon-button:hover,
+.dashboard-open-card:hover,
+.dashboard-mini-button:hover,
+.dashboard-overlay-open-card:hover,
+.focused-workbench-control:hover {
+  background: linear-gradient(180deg, var(--fb-craft-hover-top) 0%, var(--fb-select) 100%);
+  background-color: var(--fb-select);
+}
+
+button,
+[role="button"],
+summary,
+input,
+select,
+textarea,
+.card-row,
+.card-browser-row,
+.card-browser-compare-check,
+.entity-row,
+.reference-term-card,
+.overlay-select-row,
+.overlay-card-option,
+.collection-table-row,
+.deck-entry-row,
+.dashboard-fact-row,
+.dashboard-overlay-result-row,
+.set-cover-tile,
+.card-image-tile,
+.project-tile,
+.set-preview-card,
+.asset-tile,
+.rail-button,
+.card-tab,
+.new-tab {
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+:where(
+  button,
+  [role="button"],
+  a[href],
+  summary,
+  input,
+  select,
+  textarea,
+  .card-row,
+  .card-browser-row,
+  .card-browser-compare-check,
+  .entity-row,
+  .reference-term-card,
+  .overlay-select-row,
+  .overlay-card-option,
+  .collection-table-row,
+  .deck-entry-row.compact,
+  .dashboard-fact-row,
+  .dashboard-overlay-result-row,
+  .rail-button,
+  .card-tab > button,
+  .new-tab
+):focus-visible {
+  outline: 0;
+  box-shadow: var(--fb-focus-ring-outer);
+}
+
+.linked-textarea {
+  isolation: isolate;
+}
+
+.linked-textarea-highlight {
+  z-index: 1;
+  border-color: var(--fb-line);
+  background: var(--fb-inset);
+  color: var(--fb-text);
+  -webkit-text-fill-color: var(--fb-text);
+}
+
+.linked-textarea-input,
+.linked-textarea-input:hover,
+.linked-textarea-input:focus,
+.linked-textarea-input:focus-visible {
+  z-index: 2;
+  border-color: transparent !important;
+  background: transparent !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: var(--fb-text);
+  box-shadow: none !important;
+}
+
+.linked-textarea-input::selection {
+  background: color-mix(in srgb, var(--fb-accent) 30%, transparent);
+}
+
+.linked-textarea:focus-within .linked-textarea-highlight {
+  border-color: var(--fb-accent);
+  background: var(--fb-float);
+  box-shadow: var(--fb-focus-ring);
+}
+
+.card-row.selected,
+.card-browser-row.selected,
+.card-browser-row-shell.compare-selected .card-browser-row,
+.entity-row.selected,
+.reference-term-card.selected,
+.overlay-select-row.selected,
+.collection-table-row.selected,
+.deck-entry-row.compact.selected,
+.dashboard-fact-row.selected,
+.dashboard-overlay-result-row.selected,
+.set-cover-tile.selected,
+.card-image-tile.selected,
+.project-tile.selected,
+.set-preview-card.selected,
+.asset-tile.selected,
+.print-source-grid button.selected,
+.transfer-entity-nav button.selected {
+  box-shadow:
+    inset 3px 0 0 var(--fb-accent),
+    inset 0 1px 0 var(--fb-craft-highlight-soft);
+}
+
+.card-row.selected:focus-visible,
+.card-browser-row.selected:focus-visible,
+.card-browser-row-shell.compare-selected .card-browser-row:focus-visible,
+.entity-row.selected:focus-visible,
+.reference-term-card.selected:focus-visible,
+.overlay-select-row.selected:focus-visible,
+.collection-table-row.selected:focus-visible,
+.deck-entry-row.compact.selected:focus-visible,
+.dashboard-fact-row.selected:focus-visible,
+.dashboard-overlay-result-row.selected:focus-visible {
+  box-shadow:
+    inset 3px 0 0 var(--fb-accent),
+    inset 0 1px 0 var(--fb-craft-highlight-soft),
+    var(--fb-focus-ring);
+}
+
+.workspace-card,
+.dashboard-widget-card,
+.deck-meta-grid,
+.deck-section,
+.collection-stat,
+.collection-card-preview,
+.collection-official-panel,
+.power-estimate-card,
+.power-recommendation,
+.rules-lint,
+.linked-reference-panel,
+.reference-link-action-panel,
+.staged-flow-card,
+.help-concept-card,
+.support-template-card,
+.print-preview-pane,
+.print-preview-placeholder,
+.filter-panel,
+.browse-filter-results,
+.browse-filter-controls,
+.overlay-source-panel,
+.overlay-card-picker,
+.create-overlay-section {
+  border-radius: var(--fb-r-control);
+  box-shadow: none;
+}
+
+.menu-popover,
+.menu-submenu-popover,
+.project-switcher-menu,
+.work-mode-switcher-menu,
+.fill-choose-menu,
+.rules-suggest-menu,
+.tag-suggest-menu,
+.color-identity-menu,
+.new-set-popover,
+.transfer-dialog-panel,
+.create-overlay-panel,
+.overlay-shell,
+.workspace-lightbox-panel {
+  border-radius: var(--fb-r-float);
+}
+
+.forge-dialog-backdrop {
+  z-index: 120;
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--fb-accent) 12%, transparent) 0, transparent 42%),
+    color-mix(in srgb, var(--fb-backdrop, rgba(9, 14, 23, 0.5)) 88%, transparent);
+}
+
+.forge-dialog-panel {
+  border: 1px solid var(--fb-line-strong);
+  outline: none;
+}
+
+.forge-dialog-panel:focus-visible {
+  box-shadow: var(--fb-shadow-float), 0 0 0 3px var(--fb-focus-ring);
+}
+
+.forge-dialog-panel[data-dirty="true"] {
+  border-color: color-mix(in srgb, var(--fb-warning) 42%, var(--fb-line-strong));
+}
+
+.forge-dialog-header {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--fb-panel) 96%, white 3%) 0%, var(--fb-panel) 100%);
+  border-bottom: 1px solid var(--fb-line);
+}
+
+.forge-dialog-body {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--fb-panel-2) 96%, transparent) 0%, var(--fb-inset) 100%);
+}
+
+.forge-dialog-footer {
+  background: linear-gradient(180deg, var(--fb-panel-2) 0%, var(--fb-chrome) 100%);
+  border-top: 1px solid var(--fb-line);
+}
+
+.dirty-close-confirm {
+  border: 1px solid var(--fb-warning-line);
+  background: var(--fb-warning-soft);
+  color: var(--fb-warning);
+}
+
+.forge-flow-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+  font-size: 13px;
+}
+
+.forge-flow-status.error {
+  border-color: var(--fb-danger-line);
+  background: var(--fb-danger-soft);
+  color: var(--fb-danger);
+}
+
+.forge-flow-status.saving {
+  border-color: var(--fb-info-line);
+  background: var(--fb-info-soft);
+  color: var(--fb-info);
+}
+
+.forge-flow-status.saved {
+  border-color: var(--fb-success-line);
+  background: var(--fb-success-soft);
+  color: var(--fb-success);
+}
+
+.card-tab.active {
+  box-shadow:
+    inset 0 -2px 0 var(--fb-accent),
+    inset 0 1px 0 var(--fb-craft-highlight-soft);
+}
+
+.card-tab > button {
+  min-width: 0;
+  color: var(--fb-text-muted);
+}
+
+.card-tab.active > button,
+.card-tab > button[aria-current="page"] {
+  color: var(--fb-text);
+}
+
+.rail-button.active {
+  box-shadow:
+    inset 3px 0 0 var(--fb-accent),
+    inset 0 1px 0 var(--fb-craft-highlight-soft);
+}
+
+.toolbar-field,
+.check-tool,
+.toolbar-project-context span,
+.toolbar-project-context em,
+.toolbar-project-caret,
+.project-switcher-summary span,
+.project-switcher-meta,
+.work-mode-chip span,
+.work-mode-caret,
+.work-mode-option span,
+.library-selects span,
+.panel-heading-count,
+.field > label,
+.filter-field span,
+.dashboard-topbar-controls label,
+.dashboard-widget-header span,
+.dashboard-preset-picker span,
+.dialog-eyebrow,
+.create-section-heading,
+.overlay-entry-heading,
+.browse-filter-heading,
+.reference-detail-heading,
+.transfer-scope-label,
+.deck-section-heading span,
+.deck-commander-slots span,
+.collection-stat span,
+.collection-table-row.header,
+.app-status-bar-meta,
+.rail-status,
+.rail-button:not(.active) span {
+  color: var(--fb-label);
+}
+
+.card-row small,
+.collector,
+.panel-heading p,
+.preview-header p,
+.workspace-copy,
+.workspace-preview-hero p,
+.asset-preview-caption,
+.tile-copy small,
+.reference-term-card span,
+.reference-term-card small,
+.reference-detail > p,
+.reference-meta,
+.entity-row small,
+.dialog-header p,
+.field small,
+.section-toggle small,
+.overlay-card-option small,
+.import-attachment-card small,
+.overlay-select-row small,
+.overlay-entry-row small,
+.staged-flow-card small,
+.help-concept-card span,
+.support-template-card p,
+.deck-entry-name small,
+.collection-stat small,
+.collection-table-row small,
+.collection-state-cell small,
+.card-browser-row-main small,
+.card-browser-row-main span,
+.card-browser-row-meta,
+.card-browser-header p,
+.card-browser-preview-toggle span,
+.card-browser-compare-bar span,
+.card-browser-compare-card-heading span,
+.card-browser-compare-card-meta,
+.card-browser-preview-meta,
+.card-browser-detail-empty,
+.dashboard-title-block p,
+.dashboard-widget-header p,
+.dashboard-fact-row small,
+.dashboard-bar-label,
+.dashboard-histogram-column,
+.dashboard-donut-legend,
+.dashboard-radar-spoke span,
+.dashboard-probability-row span,
+.dashboard-recommendation span,
+.dashboard-recommendation p,
+.dashboard-overlay-result-row small,
+.dashboard-overlay-result-meta,
+.dashboard-overlay-overflow-note,
+.dashboard-memory-copy span,
+.save-as-preview-heading small,
+.readonly-line span,
+.inline-prompt p,
+.rules-syntax-guide p,
+.linked-reference-heading span,
+.linked-reference-empty,
+.reference-link-action-heading small,
+.reference-link-action-panel p,
+.reference-link-action-details dt,
+.reference-link-action-details dd,
+.power-estimate-score span,
+.power-estimate-metrics span,
+.power-breakdown-row,
+.chip-row small,
+.file-chip,
+.inline-file-picker span,
+.status-line {
+  color: var(--fb-text-muted);
+}
+
+.card-row.selected small,
+.card-row.selected .collector,
+.card-row.selected .card-row-identity {
+  color: var(--fb-text);
+}
+
+/* Forge UI primitives ------------------------------------------------------ */
+
+.forge-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--fb-h-control);
+}
+
+.forge-button-ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fb-text-muted);
+}
+
+.forge-button-ghost:hover {
+  border-color: var(--fb-select-line);
+  background: var(--fb-select);
+  color: var(--fb-accent-ink);
+}
+
+.forge-button-icon,
+.forge-status-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.forge-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forge-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  min-height: 22px;
+  padding: 2px 8px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-chrome-2);
+  color: var(--fb-label);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.card-row-badges,
+.dashboard-row-source-line,
+.entity-row-source-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px 8px;
+  flex-wrap: wrap;
+}
+
+.card-row-badges {
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.dashboard-row-source-line span:not(.forge-status-pill),
+.entity-row-source-line span:not(.forge-status-pill) {
+  min-width: 0;
+  flex: 1 1 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-source-pill,
+.workspace-source-pill,
+.card-browser-source.forge-status-pill {
+  min-height: 22px;
+  padding: 4px 8px;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.collection-status-pill.forge-status-pill {
+  min-height: 24px;
+}
+
+.forge-status-pill.tone-info,
+.forge-surface.tone-info {
+  border-color: var(--fb-info-line);
+  background: var(--fb-info-soft);
+  color: var(--fb-info);
+}
+
+.forge-status-pill.tone-success,
+.forge-status-pill.tone-synced,
+.forge-surface.tone-success {
+  border-color: var(--fb-success-line);
+  background: var(--fb-success-soft);
+  color: var(--fb-success);
+}
+
+.forge-status-pill.tone-warning,
+.forge-status-pill.tone-dirty,
+.forge-status-pill.tone-local,
+.forge-surface.tone-warning {
+  border-color: var(--fb-warning-line);
+  background: var(--fb-warning-soft);
+  color: var(--fb-warning);
+}
+
+.forge-status-pill.tone-danger,
+.forge-surface.tone-danger {
+  border-color: var(--fb-danger-line);
+  background: var(--fb-danger-soft);
+  color: var(--fb-danger);
+}
+
+.forge-surface,
+.forge-inspector-panel,
+.forge-validation-summary,
+.forge-data-table-shell {
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.forge-surface.tone-elevated {
+  background: var(--fb-panel);
+  box-shadow: var(--fb-shadow-float);
+}
+
+.forge-surface.tone-inset {
+  background: var(--fb-inset);
+}
+
+.forge-surface.compact {
+  padding: 8px;
+}
+
+.forge-empty-state {
+  display: grid;
+  gap: 8px;
+}
+
+.forge-action-toolbar,
+.forge-workspace-header-actions,
+.forge-inspector-panel-actions,
+.forge-data-table-shell-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.forge-action-toolbar.align-end {
+  justify-content: flex-end;
+}
+
+.forge-action-toolbar.align-between {
+  justify-content: space-between;
+}
+
+.forge-action-toolbar.compact {
+  gap: 6px;
+}
+
+.forge-workspace-header,
+.forge-data-table-shell-header,
+.forge-inspector-panel-header,
+.forge-validation-summary > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--fb-line);
+}
+
+.forge-workspace-header-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.forge-workspace-header h2,
+.forge-inspector-panel h3,
+.forge-validation-summary h3 {
+  margin: 0;
+  color: var(--fb-text);
+}
+
+.forge-workspace-header h2 {
+  font-size: 16px;
+}
+
+.forge-workspace-header p,
+.forge-inspector-panel p,
+.forge-validation-summary p {
+  margin: 0;
+  color: var(--fb-text-muted);
+}
+
+.forge-workspace-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.forge-inspector-panel-body,
+.forge-data-table-shell-body {
+  padding: 12px;
+}
+
+.forge-validation-summary ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  list-style: none;
+}
+
+.forge-validation-summary li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.forge-validation-summary li > span:last-child {
+  color: var(--fb-text-muted);
+}
+
+/* Collection-family and Deck workspace cleanup.
+   These surfaces are shared by Collections, Binders, Lists, and Decks, so keep
+   the treatment token-driven instead of patching each surface independently. */
+.collection-stat-grid,
+.deck-stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
+}
+
+.deck-stat-grid.compact {
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+}
+
+.collection-stat.workspace-metric {
+  min-height: 60px;
+  padding: 10px;
+  border-color: var(--fb-line);
+  background: linear-gradient(180deg, var(--fb-craft-control-top) 0%, var(--fb-panel-2) 100%);
+  color: var(--fb-text);
+  cursor: default;
+  box-shadow:
+    inset 0 1px 0 var(--fb-craft-highlight-soft),
+    0 1px 1px var(--fb-craft-shadow-soft);
+}
+
+.collection-stat.workspace-metric strong {
+  color: var(--fb-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.workspace-metric-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--fb-text-muted);
+}
+
+.workspace-metric-label .icon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+}
+
+.collection-table-toolbar {
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  gap: 8px;
+}
+
+.scope-chip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+  padding: 7px 8px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.scope-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-chrome-2);
+  color: var(--fb-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.collection-table-toolbar,
+.collection-selection-toolbar,
+.collection-grid-card,
+.collection-compact-row,
+.collection-single-card,
+.collection-single-metadata div,
+.collection-grid-art,
+.collection-single-art,
+.collection-entry-check,
+.deck-role-summary span,
+.deck-board-tab,
+.deck-board-tab strong,
+.deck-entry-card,
+.deck-compact-row,
+.deck-single-list button,
+.deck-single-card,
+.deck-role-column {
+  border-color: var(--fb-line);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.collection-table-toolbar .sort-menu-control,
+.collection-table-toolbar .list-controls-results,
+.collection-table-toolbar .list-toggle-pill {
+  color: var(--fb-text);
+}
+
+.segmented-icon-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  padding: 3px;
+  border-color: var(--fb-line);
+  background: var(--fb-panel);
+}
+
+.segmented-icon-control button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-width: 34px;
+  height: 30px;
+  padding: 0;
+  color: var(--fb-text-muted);
+}
+
+.segmented-icon-control .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.segmented-icon-control button:hover,
+.segmented-icon-control button.active {
+  border-color: var(--fb-select-line);
+  background: var(--fb-select);
+  color: var(--fb-accent-ink);
+}
+
+.collection-selection-toolbar {
+  gap: 6px;
+  min-height: 42px;
+  padding: 6px;
+  border-color: var(--fb-line);
+  background: color-mix(in srgb, var(--fb-panel) 76%, var(--fb-canvas));
+}
+
+.collection-selection-toolbar.is-idle {
+  background: transparent;
+}
+
+.collection-selection-toolbar .checkbox-row {
+  min-height: 28px;
+  padding-inline: 2px 6px;
+  color: var(--fb-text-muted);
+}
+
+.collection-selection-toolbar.has-selection .checkbox-row span {
+  color: var(--fb-text);
+}
+
+.collection-selection-toolbar .secondary-button.compact,
+.collection-selection-toolbar .primary-button.compact,
+.collection-selection-toolbar .danger-button.compact {
+  min-width: 0;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 9px;
+}
+
+.collection-selection-toolbar .danger-button.compact {
+  width: 32px;
+  padding: 0;
+}
+
+.collection-selection-toolbar .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.collection-table-row,
+.collection-grid-card,
+.collection-compact-row,
+.collection-single-card,
+.deck-entry-card,
+.deck-compact-row,
+.deck-single-list button,
+.deck-single-card {
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.collection-table-row.header {
+  border-color: var(--fb-line);
+  background: var(--fb-panel);
+  color: var(--fb-text-muted);
+}
+
+.collection-table-row:hover,
+.collection-grid-card.active,
+.collection-compact-row.active,
+.collection-table-row.selected,
+.deck-entry-card.selected,
+.deck-compact-row.selected,
+.deck-single-list button.selected {
+  border-color: var(--fb-select-line);
+  background: var(--fb-select);
+  color: var(--fb-accent-ink);
+}
+
+.collection-table-row small,
+.collection-state-cell small,
+.collection-grid-card span,
+.collection-grid-card small,
+.collection-compact-row span,
+.collection-single-heading p,
+.collection-single-metadata dt,
+.deck-entry-card small,
+.deck-compact-row small,
+.deck-single-list span {
+  color: var(--fb-text-muted);
+}
+
+.collection-compact-value,
+.collection-single-metadata dd {
+  color: var(--fb-text);
+}
+
+.collection-entry-check {
+  background: color-mix(in srgb, var(--fb-panel-2) 86%, transparent);
+  color: var(--fb-text);
+}
+
+.collection-grid-art,
+.collection-single-art {
+  background: var(--fb-inset);
+  color: var(--fb-accent-ink);
+}
+
+.collection-table-row.needs-review,
+.collection-status-pill.needs_review {
+  border-color: var(--fb-warning-line);
+  background: var(--fb-warning-soft);
+  color: var(--fb-warning);
+}
+
+.collection-table-row.marked-delete,
+.collection-grid-card.marked-delete,
+.collection-compact-row.marked-delete {
+  border-color: var(--fb-danger-line);
+  background: var(--fb-danger-soft);
+  color: var(--fb-danger);
+}
+
+.deck-role-summary {
+  gap: 6px;
+}
+
+.deck-role-summary span {
+  min-height: 28px;
+  padding: 4px 9px;
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.deck-role-summary strong {
+  color: var(--fb-accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-board-tabs {
+  gap: 7px;
+}
+
+.deck-board-tab {
+  flex: 1 1 130px;
+  min-height: 40px;
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.deck-board-tab.active {
+  border-color: var(--fb-select-line);
+  background: var(--fb-select);
+  color: var(--fb-accent-ink);
+}
+
+.deck-board-tab strong {
+  min-width: 28px;
+  min-height: 23px;
+  background: var(--fb-inset);
+  color: var(--fb-text);
+}
+
+.deck-board-tab span {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.deck-board-tab.active strong {
+  border-color: color-mix(in srgb, var(--fb-select-line) 80%, var(--fb-accent));
+  background: color-mix(in srgb, var(--fb-select) 68%, var(--fb-panel-2));
+  color: var(--fb-accent-ink);
+}
+
+.deck-live-stats-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.deck-live-stats-heading {
+  order: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.deck-live-stats-heading span,
+.deck-stat-chip-label {
+  color: var(--fb-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.deck-live-stats-heading strong {
+  color: var(--fb-text);
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.deck-live-stat-pills {
+  order: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.deck-live-stat-pills span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 2px 7px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-panel);
+  color: var(--fb-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.deck-live-stat-pills strong {
+  color: var(--fb-accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-live-stat-pills .warning {
+  border-color: var(--fb-warning-line);
+  background: var(--fb-warning-soft);
+  color: var(--fb-warning);
+}
+
+.deck-live-dashboard-button {
+  order: 2;
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.deck-live-breakdown[open] {
+  order: 4;
+  flex-basis: 100%;
+  margin-left: 0;
+}
+
+.deck-live-breakdown summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel);
+  color: var(--fb-text);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.deck-live-breakdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.deck-live-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.deck-stat-chip-group {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel);
+}
+
+.deck-stat-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.deck-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 2px 7px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-inset);
+  color: var(--fb-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.deck-stat-chip strong {
+  color: var(--fb-accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-stat-chip-empty {
+  color: var(--fb-text-muted);
+  font-size: 12px;
+}
+
+.deck-view-toolbar {
+  gap: 8px;
+}
+
+.deck-workspace .deck-view-toolbar {
+  display: block;
+  padding: 8px 10px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-control);
+  background: var(--fb-panel);
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-bar {
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  grid-template-areas:
+    "search results view"
+    "actions actions actions";
+  gap: 10px;
+  align-items: center;
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-search {
+  grid-area: search;
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-actions {
+  grid-area: actions;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  padding-right: 0;
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-results {
+  grid-area: results;
+  align-self: center;
+  justify-self: end;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--fb-line);
+  border-radius: var(--fb-r-chip);
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+}
+
+.deck-workspace .deck-view-toolbar .sort-menu-control {
+  gap: 5px;
+}
+
+.deck-workspace .deck-view-toolbar .sort-menu-control select {
+  min-width: 128px;
+}
+
+.deck-workspace .deck-view-toolbar .secondary-button.compact,
+.deck-workspace .deck-view-toolbar .list-toggle-pill {
+  min-height: 30px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 12px;
+}
+
+.deck-workspace .deck-view-toolbar .list-controls-view {
+  grid-area: view;
+  justify-self: end;
+}
+
+.deck-view-mode {
+  max-width: none;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.focused-layout-exit-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--fb-line);
+  border-radius: 8px;
+  background: var(--fb-float);
+  color: var(--fb-text);
+  box-shadow: var(--fb-shadow-float);
+}
+
+.card-browser-view {
+  position: relative;
+}
+
+.focused-card-selector {
+  grid-column: 1 / -1;
+  align-self: stretch;
+  justify-self: stretch;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 12px;
+  max-width: 760px;
+  width: min(760px, calc(100% - 32px));
+  margin: 20px auto;
+  padding: 18px;
+  border: 1px solid var(--fb-line);
+  border-radius: 10px;
+  background: var(--fb-panel);
+  box-shadow: var(--fb-shadow-float);
+}
+
+.focused-card-selector-header,
+.focused-card-selector-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.focused-card-selector-header h2 {
+  margin: 0;
+}
+
+.focused-card-selector-header p {
+  margin: 4px 0 0;
+  color: var(--fb-text-muted);
+}
+
+.focused-card-selector-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.list-controls-bar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+
+.list-controls-search {
+  min-width: 0;
+}
+
+.list-controls-actions,
+.list-controls-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.list-controls-results {
+  color: var(--fb-text-muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sort-menu-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  color: var(--fb-text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sort-menu-control select {
+  width: auto;
+  min-width: 150px;
+  min-height: 34px;
+  padding: 6px 32px 6px 10px;
+}
+
+.list-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--fb-line);
+  border-radius: 8px;
+  background: var(--fb-panel-2);
+  color: var(--fb-text);
+  font-size: 0.84rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.list-toggle-pill input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.list-control-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--fb-accent);
+  color: var(--fb-on-accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.card-list .list-controls-bar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.card-list .list-controls-actions,
+.card-list .list-controls-results {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.card-browser-controls .list-controls-bar {
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+}
+
+.card-browser-scope-controls {
+  margin-top: 8px;
+}
+
+.card-browser-compare-bar.compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.card-browser-compare-bar.compact > div:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.card-browser-compare-bar.compact span {
+  white-space: nowrap;
+}
+
+.collection-workspace .collection-table-toolbar,
+.deck-workspace .collection-table-toolbar,
+.collection-workspace .collection-table-toolbar .sort-menu-control,
+.deck-workspace .collection-table-toolbar .sort-menu-control,
+.collection-workspace .collection-table-toolbar .list-controls-results,
+.deck-workspace .collection-table-toolbar .list-controls-results,
+.collection-workspace .collection-table-toolbar .list-toggle-pill,
+.deck-workspace .collection-table-toolbar .list-toggle-pill {
+  color: var(--fb-text);
+}
+
+.collection-workspace .collection-table-toolbar :is(strong, span, button, input, select, textarea),
+.deck-workspace .collection-table-toolbar :is(strong, span, button, input, select, textarea) {
+  color: var(--fb-text);
+}
+
+.collection-workspace .collection-table-toolbar .list-control-badge,
+.deck-workspace .collection-table-toolbar .list-control-badge {
+  color: var(--fb-on-accent);
+}
+
+@media (max-width: 1180px) {
+  .collection-table-toolbar {
+    grid-template-columns: minmax(180px, 1fr) auto;
+  }
+
+  .deck-live-breakdown-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .deck-workspace .deck-view-toolbar .list-controls-bar {
+    grid-template-columns: minmax(220px, 1fr) auto;
+    grid-template-areas:
+      "search view"
+      "actions actions"
+      "results results";
+  }
+
+  .collection-table-toolbar .filter-count-note {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .collection-table-toolbar.deck-view-toolbar {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .collection-stat-grid,
+  .deck-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collection-table-toolbar,
+  .collection-table-toolbar.deck-view-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .collection-view-mode,
+  .deck-view-mode {
+    justify-self: start;
+  }
+
+  .deck-live-stats-panel {
+    align-items: stretch;
+  }
+
+  .deck-live-stats-heading,
+  .deck-live-stat-pills,
+  .deck-live-dashboard-button {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  .deck-workspace .deck-view-toolbar .list-controls-bar {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "search"
+      "actions"
+      "results"
+      "view";
+  }
+
+  .deck-workspace .deck-view-toolbar .list-controls-results,
+  .deck-workspace .deck-view-toolbar .list-controls-view {
+    justify-self: start;
+  }
+
+  .deck-workspace .deck-view-toolbar .list-controls-actions {
+    justify-content: flex-start;
+    padding-right: 0;
+  }
+
+  .deck-board-tab {
+    align-items: flex-start;
+    flex-basis: 100%;
+    gap: 8px;
+    min-height: 44px;
+  }
+
+  .list-controls-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .list-controls-actions,
+  .list-controls-view,
+  .list-controls-results {
+    justify-content: flex-start;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .sort-menu-control select {
+    min-width: 132px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  [role="button"],
+  summary,
+  input,
+  select,
+  textarea,
+  .card-row,
+  .card-browser-row,
+  .card-browser-compare-check,
+  .entity-row,
+  .reference-term-card,
+  .overlay-select-row,
+  .overlay-card-option,
+  .collection-table-row,
+  .deck-entry-row,
+  .dashboard-fact-row,
+  .dashboard-overlay-result-row,
+  .set-cover-tile,
+  .card-image-tile,
+  .project-tile,
+  .set-preview-card,
+  .asset-tile,
+  .rail-button,
+  .card-tab,
+  .new-tab {
+    transition: none;
+  }
+}

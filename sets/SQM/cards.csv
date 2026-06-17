@@ -1,0 +1,2 @@
+card_id,set_code,collector_number,name,layout,mode,source_card_name,source_set_code,rarity,color_identity,tags,status,print_count,export_name_override,notes
+SQM-001,SQM,001,Whisperglide Dreywarden,normal,custom,,,rare,BG,squirrel;flying;food;variant-test,playtest,1,,Parent card for rule-variant testing; see card_variants.csv.

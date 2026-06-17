@@ -278,7 +278,7 @@ export function buildReferenceCatalog(args: {
       { id: 'wizards-rules', label: 'Wizards Comprehensive Rules', url: 'https://magic.wizards.com/rules' },
       { id: 'mtgjson', label: 'MTGJSON data files', url: 'https://mtgjson.com' },
       { id: 'official-snapshot', label: 'Reviewed official Homebrew Forge snapshot' },
-      { id: 'homebrew-forge', label: 'Homebrew Forge bundled reference' },
+      { id: 'homebrew-forge', label: 'Homebrew Forge included reference' },
       { id: 'cockatrice-customset', label: 'Local Cockatrice custom sets' },
       { id: 'local-custom', label: 'Local custom references' }
     ]

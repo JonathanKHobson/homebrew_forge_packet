@@ -1,0 +1,28 @@
+{
+  "collectionId": "recommendations",
+  "name": "Recommendations",
+  "description": "Cards recommended for future deck or collection decisions.",
+  "linkedUniverseId": "assassin-deck-candidates",
+  "gameId": "mtg",
+  "purpose": "research",
+  "source": "generic",
+  "kind": "list",
+  "listCategory": "recommendation",
+  "tags": [
+    "recommendations",
+    "signs-of-assassins"
+  ],
+  "defaultEntryTags": [
+    "recommended"
+  ],
+  "defaultOwnershipStatus": "recommended",
+  "defaultStarred": false,
+  "defaultFlagged": false,
+  "defaultProxy": false,
+  "defaultHomebrew": false,
+  "linkedSetCodes": [
+    "SOA"
+  ],
+  "createdAt": "2026-06-08T01:38:55.120Z",
+  "updatedAt": "2026-06-08T20:49:36.107Z"
+}

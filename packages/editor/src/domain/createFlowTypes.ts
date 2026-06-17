@@ -8,5 +8,5 @@ export const createOverlayTitles: Record<CreateOverlayKind, string> = {
   collection: 'New Collection',
   set: 'New Set',
   project: 'New Project',
-  library: 'New Library Asset'
+  library: 'New Gallery Asset'
 };

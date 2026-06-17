@@ -9,6 +9,7 @@ output-*/
 .tmp/
 reference/official/history/
 reference/official/reports/
+reports/
 *.tsbuildinfo
 *.log
 .env

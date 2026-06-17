@@ -6,6 +6,7 @@ import type { ForgeProject } from '../domain/schemas.js';
 import { loadProjectReferenceCatalog } from '../reference/referenceStore.js';
 import { renderSetImages } from '../renderer/renderCard.js';
 import { ensureDir } from '../utils/fs.js';
+import { variantExportCards, type CardVariantExportMode } from '../variants/cardVariants.js';
 import { buildCockatriceXml } from './cockatriceXml.js';
 
 export interface ExportCockatricePackageRequest {
@@ -14,6 +15,7 @@ export interface ExportCockatricePackageRequest {
   setCode: string;
   outputRoot: string;
   zip?: boolean;
+  variantMode?: CardVariantExportMode;
 }
 
 export interface ExportCockatricePackageResult {
@@ -33,14 +35,20 @@ export async function exportCockatricePackage(request: ExportCockatricePackageRe
     packId: request.project.set.defaultAssetPack ?? 'debug'
   });
   const referenceCatalog = loadProjectReferenceCatalog(request.rootDir);
+  const variantCards = variantExportCards(request.project, request.variantMode ?? 'primary');
+  const exportProject = {
+    ...request.project,
+    cards: variantCards.map((entry) => entry.card),
+    faces: variantCards.map((entry) => entry.face)
+  };
   const cockatriceDir = join(request.outputRoot, request.setCode, 'cockatrice');
   const picsDir = join(cockatriceDir, 'pics', 'CUSTOM', request.setCode);
   await rm(picsDir, { recursive: true, force: true });
   await ensureDir(picsDir);
 
   const renderResults = await renderSetImages({
-    cards: request.project.cards,
-    faces: request.project.faces,
+    cards: exportProject.cards,
+    faces: exportProject.faces,
     art: request.project.art,
     assetPack,
     exportProfile: profile,
@@ -48,7 +56,7 @@ export async function exportCockatricePackage(request: ExportCockatricePackageRe
     referenceCatalog
   });
   const imagePathsByCardId = new Map(renderResults.map((result) => [result.cardId, result.outputPath]));
-  const xml = buildCockatriceXml(request.project, imagePathsByCardId);
+  const xml = buildCockatriceXml(exportProject, imagePathsByCardId);
   const xmlPath = join(cockatriceDir, `${request.setCode}.xml`);
   const readmePath = join(cockatriceDir, 'INSTALL_COCKATRICE.md');
   await ensureDir(cockatriceDir);

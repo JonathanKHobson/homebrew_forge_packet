@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import { buildTypeLine, inferColors } from '../../domain/frameRegistry.js';
+import { buildTypeLine, inferColors, inferFrame } from '../../domain/frameRegistry.js';
 import { CARD_TYPES, SUPERTYPES } from '../../domain/magicTerms.js';
+import { borderOptionsForFrame, borderSupportHint } from '../../domain/borderColorRegistry.js';
 import type { CardDraft, FrameOption } from '../../domain/editorTypes.js';
 import type { CreateFlowStatus } from '../../domain/createFlowTypes.js';
 import { CollapsibleSection } from '../CollapsibleSection.js';
@@ -23,6 +24,13 @@ export function CreateCardOverlay({ initialDraft, frames, onCreateDraft, onStatu
   const [flowState, setFlowState] = useState<CreateFlowStatus>('idle');
   const [error, setError] = useState('');
   const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify({ ...initialDraft, creationStatus: 'draft', creationNotes: '' }), [draft, initialDraft]);
+  const selectedFrame = inferFrame(draft, frames);
+  const borderOptions = borderOptionsForFrame(selectedFrame, draft.borderColor);
+  const borderHint = borderSupportHint(selectedFrame, draft.borderColor);
+  const isCreature = draft.cardTypes.includes('Creature');
+  const isPlaneswalker = draft.cardTypes.includes('Planeswalker');
+  const statsSubtitle = isPlaneswalker ? 'Loyalty and planeswalker abilities' : isCreature ? 'Power and toughness' : 'Add Creature or Planeswalker to the type line to edit combat stats.';
+  const nameError = draft.name.trim() ? '' : 'Name is required.';
 
   function update(next: Partial<CardDraft>) {
     setDraft((current) => normalizeDraft({ ...current, ...next }));
@@ -74,13 +82,13 @@ export function CreateCardOverlay({ initialDraft, frames, onCreateDraft, onStatu
       <input ref={fileInputRef} type="file" accept=".csv,.xml,text/csv,text/xml,application/xml" onChange={(event) => void handleImportFile(event.target.files?.[0])} hidden />
       <button type="button" className="secondary-button icon-label-button" onClick={() => fileInputRef.current?.click()}>
         <Icon name="download" />
-        Import Card
+        Import card
       </button>
       <button type="button" className="secondary-button" onClick={onClose}>
         Cancel
       </button>
       <button type="button" className="primary-button" disabled={flowState === 'saving' || !draft.name.trim()} onClick={() => void submit()}>
-        {flowState === 'saving' ? 'Creating...' : 'Create Draft'}
+        {flowState === 'saving' ? 'Creating...' : 'Create draft'}
       </button>
     </>
   );
@@ -119,7 +127,7 @@ export function CreateCardOverlay({ initialDraft, frames, onCreateDraft, onStatu
 
         <CollapsibleSection title="Card Text" subtitle="Name, mana, type, rules, and flavor">
           <div className="grid-2">
-            <Field label="Name">
+            <Field label="Name" error={nameError}>
               <input value={draft.name} onChange={(event) => update({ name: event.target.value })} />
             </Field>
             <Field label="Mana cost">
@@ -139,42 +147,51 @@ export function CreateCardOverlay({ initialDraft, frames, onCreateDraft, onStatu
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Stats" subtitle="Power, toughness, loyalty, and planeswalker text">
-          <div className="grid-4">
-            <Field label="Power">
-              <input value={draft.power} onChange={(event) => update({ power: event.target.value })} />
-            </Field>
-            <Field label="Toughness">
-              <input value={draft.toughness} onChange={(event) => update({ toughness: event.target.value })} />
-            </Field>
-            <Field label="Loyalty">
-              <input value={draft.loyalty} onChange={(event) => update({ loyalty: event.target.value })} />
-            </Field>
-            <Field label="Abilities">
-              <select value={draft.planeswalkerAbilityCount} onChange={(event) => update({ planeswalkerAbilityCount: event.target.value as CardDraft['planeswalkerAbilityCount'] })}>
-                <option value="3">3 abilities</option>
-                <option value="4">4 abilities</option>
-              </select>
-            </Field>
-          </div>
-          <div className="planeswalker-ability-row">
-            <input aria-label="Ability one cost" value={draft.planeswalkerAbility1Cost} onChange={(event) => update({ planeswalkerAbility1Cost: event.target.value })} />
-            <textarea aria-label="Ability one text" value={draft.planeswalkerAbility1Text} rows={2} onChange={(event) => update({ planeswalkerAbility1Text: event.target.value })} />
-          </div>
-          <div className="planeswalker-ability-row">
-            <input aria-label="Ability two cost" value={draft.planeswalkerAbility2Cost} onChange={(event) => update({ planeswalkerAbility2Cost: event.target.value })} />
-            <textarea aria-label="Ability two text" value={draft.planeswalkerAbility2Text} rows={2} onChange={(event) => update({ planeswalkerAbility2Text: event.target.value })} />
-          </div>
-          <div className="planeswalker-ability-row">
-            <input aria-label="Ability three cost" value={draft.planeswalkerAbility3Cost} onChange={(event) => update({ planeswalkerAbility3Cost: event.target.value })} />
-            <textarea aria-label="Ability three text" value={draft.planeswalkerAbility3Text} rows={2} onChange={(event) => update({ planeswalkerAbility3Text: event.target.value })} />
-          </div>
-          {draft.planeswalkerAbilityCount === '4' ? (
-            <div className="planeswalker-ability-row">
-              <input aria-label="Ability four cost" value={draft.planeswalkerAbility4Cost} onChange={(event) => update({ planeswalkerAbility4Cost: event.target.value })} />
-              <textarea aria-label="Ability four text" value={draft.planeswalkerAbility4Text} rows={2} onChange={(event) => update({ planeswalkerAbility4Text: event.target.value })} />
+        <CollapsibleSection title="Stats" subtitle={statsSubtitle}>
+          {isCreature ? (
+            <div className="grid-2">
+              <Field label="Power">
+                <input value={draft.power} onChange={(event) => update({ power: event.target.value })} />
+              </Field>
+              <Field label="Toughness">
+                <input value={draft.toughness} onChange={(event) => update({ toughness: event.target.value })} />
+              </Field>
             </div>
           ) : null}
+          {isPlaneswalker ? (
+            <>
+              <div className="grid-2">
+                <Field label="Loyalty">
+                  <input value={draft.loyalty} onChange={(event) => update({ loyalty: event.target.value })} />
+                </Field>
+                <Field label="Abilities">
+                  <select value={draft.planeswalkerAbilityCount} onChange={(event) => update({ planeswalkerAbilityCount: event.target.value as CardDraft['planeswalkerAbilityCount'] })}>
+                    <option value="3">3 abilities</option>
+                    <option value="4">4 abilities</option>
+                  </select>
+                </Field>
+              </div>
+              <div className="planeswalker-ability-row">
+                <input aria-label="Ability one cost" value={draft.planeswalkerAbility1Cost} onChange={(event) => update({ planeswalkerAbility1Cost: event.target.value })} />
+                <textarea aria-label="Ability one text" value={draft.planeswalkerAbility1Text} rows={2} onChange={(event) => update({ planeswalkerAbility1Text: event.target.value })} />
+              </div>
+              <div className="planeswalker-ability-row">
+                <input aria-label="Ability two cost" value={draft.planeswalkerAbility2Cost} onChange={(event) => update({ planeswalkerAbility2Cost: event.target.value })} />
+                <textarea aria-label="Ability two text" value={draft.planeswalkerAbility2Text} rows={2} onChange={(event) => update({ planeswalkerAbility2Text: event.target.value })} />
+              </div>
+              <div className="planeswalker-ability-row">
+                <input aria-label="Ability three cost" value={draft.planeswalkerAbility3Cost} onChange={(event) => update({ planeswalkerAbility3Cost: event.target.value })} />
+                <textarea aria-label="Ability three text" value={draft.planeswalkerAbility3Text} rows={2} onChange={(event) => update({ planeswalkerAbility3Text: event.target.value })} />
+              </div>
+              {draft.planeswalkerAbilityCount === '4' ? (
+                <div className="planeswalker-ability-row">
+                  <input aria-label="Ability four cost" value={draft.planeswalkerAbility4Cost} onChange={(event) => update({ planeswalkerAbility4Cost: event.target.value })} />
+                  <textarea aria-label="Ability four text" value={draft.planeswalkerAbility4Text} rows={2} onChange={(event) => update({ planeswalkerAbility4Text: event.target.value })} />
+                </div>
+              ) : null}
+            </>
+          ) : null}
+          {!isCreature && !isPlaneswalker ? <p className="sync-note">No creature or planeswalker stats for the current type line.</p> : null}
         </CollapsibleSection>
 
         <CollapsibleSection title="Frame And Art" subtitle="Broad frame, art source, and finish">
@@ -190,16 +207,11 @@ export function CreateCardOverlay({ initialDraft, frames, onCreateDraft, onStatu
             </Field>
             <Field label="Layout">
               <select value={draft.layout} onChange={(event) => update({ layout: event.target.value as CardDraft['layout'] })}>
-                <option value="normal">normal</option>
-                <option value="token">token</option>
-                <option value="saga">saga</option>
-                <option value="class">class</option>
-                <option value="case">case</option>
-                <option value="battle">battle</option>
-                <option value="modal_dfc">modal_dfc</option>
-                <option value="plane">plane</option>
-                <option value="scheme">scheme</option>
-                <option value="phenomenon">phenomenon</option>
+                {layoutOptions(frames).map((layout) => (
+                  <option key={layout} value={layout}>
+                    {layout}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label="Finish">
@@ -241,12 +253,13 @@ export function CreateCardOverlay({ initialDraft, frames, onCreateDraft, onStatu
                 <option value="cut">cut</option>
               </select>
             </Field>
-            <Field label="Border">
+            <Field label="Border" hint={borderHint}>
               <select value={draft.borderColor} onChange={(event) => update({ borderColor: event.target.value as CardDraft['borderColor'] })}>
-                <option value="black">black</option>
-                <option value="white">white</option>
-                <option value="silver">silver</option>
-                <option value="gold">gold</option>
+                {borderOptions.map((border) => (
+                  <option key={border.value} value={border.value} disabled={!border.selectable} title={border.reason}>
+                    {border.selectable ? border.label : `${border.label} - unavailable`}
+                  </option>
+                ))}
               </select>
             </Field>
           </div>
@@ -271,13 +284,16 @@ function updateFrame(frameId: string, frames: FrameOption[], update: (next: Part
   const frame = frames.find((candidate) => candidate.id === frameId);
   update({
     frameOverrideId: frameId,
-    frameType: frame?.frameType,
-    layout: frame?.layout
+    ...(frame ? { frameType: frame.frameType, layout: frame.layout } : {})
   });
 }
 
+function layoutOptions(frames: FrameOption[]): CardDraft['layout'][] {
+  return [...new Set(frames.map((frame) => frame.layout))];
+}
+
 function parseTypeLine(typeLine: string): Pick<CardDraft, 'supertypes' | 'cardTypes' | 'subtypes'> {
-  const [left = '', right = ''] = typeLine.split(/\s+-\s+/, 2);
+  const [left = '', right = ''] = typeLine.split(/\s+[—-]\s+/, 2);
   const knownSupertypes = new Set(SUPERTYPES);
   const knownTypes = new Set(CARD_TYPES);
   const words = left.split(/\s+/).filter(Boolean);

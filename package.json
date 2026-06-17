@@ -9,6 +9,7 @@
     "typecheck": "node .tools/pnpm/bin/pnpm.cjs -r typecheck",
     "lint": "node .tools/pnpm/bin/pnpm.cjs -r lint",
     "test": "node .tools/pnpm/bin/pnpm.cjs -r test",
+    "test:ux-gate": "node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/editor run test:ux-gate",
     "forge": "node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/forge run cli",
     "editor": "node .tools/pnpm/bin/pnpm.cjs --filter @homebrew-forge/editor dev"
   },

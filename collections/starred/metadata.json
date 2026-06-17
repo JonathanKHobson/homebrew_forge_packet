@@ -1,0 +1,24 @@
+{
+  "collectionId": "starred",
+  "name": "Starred",
+  "description": "Favorite cards and rows gathered across collection work.",
+  "gameId": "mtg",
+  "purpose": "mixed",
+  "source": "generic",
+  "kind": "list",
+  "listCategory": "starred",
+  "tags": [
+    "starred"
+  ],
+  "defaultEntryTags": [
+    "starred"
+  ],
+  "defaultOwnershipStatus": "reference",
+  "defaultStarred": true,
+  "defaultFlagged": false,
+  "defaultProxy": false,
+  "defaultHomebrew": false,
+  "linkedSetCodes": [],
+  "createdAt": "2026-06-08T01:38:55.120Z",
+  "updatedAt": "2026-06-08T01:38:55.120Z"
+}

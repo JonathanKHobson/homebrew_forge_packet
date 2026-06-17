@@ -1,0 +1,6 @@
+card_id,face_index,face_name,mana_cost,type_line,oracle_text,flavor_text,power,toughness,loyalty,defense,colors,frame_type,art_id,artist_display,watermark,rules_text_size_hint,rules_text_padding_top,rules_text_padding_right,rules_text_padding_bottom,rules_text_padding_left,rules_text_reminder_mode,layout_variant
+SQM-001,0,Whisperglide Dreywarden,{B}{G}{G},Creature - Flying Squirrel,"Flying
+
+At the beginning of combat on each turn, choose up to two target Squirrels you control. They gain flying until end of turn.
+
+Whenever one or more Squirrels you control with flying deal combat damage to a player, create a Food token. This ability triggers only once each turn.",The safest burrow is sometimes the one between branches.,2,3,,,BG,normal_creature,ART-SQM-WHISPERGLIDE,OpenAI image generation,,auto,,,,,auto,normal

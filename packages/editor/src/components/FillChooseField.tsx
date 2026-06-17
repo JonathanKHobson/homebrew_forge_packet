@@ -10,7 +10,7 @@ interface FillChooseFieldProps {
   onChange: (value: string) => void;
 }
 
-export function FillChooseField({ label, hint = 'fill or choose', value, options, placeholder, onChange }: FillChooseFieldProps) {
+export function FillChooseField({ label, hint, value, options, placeholder, onChange }: FillChooseFieldProps) {
   const inputId = useId();
   const [open, setOpen] = useState(false);
   const [filterEnabled, setFilterEnabled] = useState(false);

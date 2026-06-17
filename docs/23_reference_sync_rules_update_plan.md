@@ -54,7 +54,7 @@ Generated official data lives under `reference/official/`.
 ## CLI
 
 - `forge reference audit --source scryfall --json`
-  reports current bundled/project reference counts and available upstream
+  reports current included/project reference counts and available upstream
   source counts without writing.
 - `forge reference sync --source scryfall --dry-run --report <path>`
   fetches source data, builds a proposed official catalog snapshot, and writes a

@@ -8,10 +8,14 @@
     "build": "tsc -p tsconfig.json && vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit --pretty false",
-    "test": "echo \"editor: no tests yet\""
+    "test": "node --test tests/*.test.mjs",
+    "test:ux-gate": "node --test --test-force-exit tests/uxQualityGate.smoke.mjs",
+    "visual:forge-ui": "node scripts/forge-ui-visual-qa.mjs"
   },
   "dependencies": {
+    "@homebrew-forge/editor-core": "workspace:*",
     "@homebrew-forge/forge": "workspace:*",
+    "lucide-react": "^1.17.0",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },

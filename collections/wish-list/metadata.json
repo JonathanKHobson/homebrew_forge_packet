@@ -1,0 +1,24 @@
+{
+  "collectionId": "wish-list",
+  "name": "Wish List",
+  "description": "Cards wanted but not currently owned.",
+  "gameId": "mtg",
+  "purpose": "research",
+  "source": "generic",
+  "kind": "list",
+  "listCategory": "wishlist",
+  "tags": [
+    "wishlist"
+  ],
+  "defaultEntryTags": [
+    "wishlist"
+  ],
+  "defaultOwnershipStatus": "wanted",
+  "defaultStarred": false,
+  "defaultFlagged": false,
+  "defaultProxy": false,
+  "defaultHomebrew": false,
+  "linkedSetCodes": [],
+  "createdAt": "2026-06-08T01:38:55.120Z",
+  "updatedAt": "2026-06-08T01:38:55.120Z"
+}

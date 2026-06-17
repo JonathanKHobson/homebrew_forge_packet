@@ -1,0 +1,215 @@
+{
+  "deckId": "signs-of-assassins",
+  "name": "Signs of Assassins",
+  "description": "Altaïr Mardu Commander deck built around evasive Assassin attacks, graveyard setup, and temporary exile-memory value instead of generic reanimation.",
+  "linkedUniverseId": "assassin-deck-candidates",
+  "linkedSetCode": "SOA",
+  "format": "Commander",
+  "playStyleTags": [
+    "evasive-combat",
+    "unblockable",
+    "cannot-block",
+    "combat-puzzle",
+    "graveyard-setup",
+    "exile-value",
+    "assassin-typal",
+    "freerunning",
+    "attack-triggers",
+    "mardu",
+    "toolbox"
+  ],
+  "colorIdentity": "WBR",
+  "commander": {
+    "setCode": "ACR",
+    "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
+    "variantId": "official-print",
+    "nameSnapshot": "Altaïr Ibn-La'Ahad"
+  },
+  "partnerCommanders": [],
+  "coverCard": {
+    "setCode": "ACR",
+    "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
+    "variantId": "official-print",
+    "nameSnapshot": "Altaïr Ibn-La'Ahad"
+  },
+  "commanderBracket": "Bracket 3 - Upgraded",
+  "status": "draft",
+  "activeVariantId": "hidden-blade-core",
+  "variants": [
+    {
+      "deckId": "signs-of-assassins",
+      "variantId": "hidden-blade-core",
+      "name": "Hidden Blade Core",
+      "description": "Owned-only reality check for the Altaïr plan: Assassin density, evasive bodies, graveyard setup, and the cards Kyle can actually sleeve today.",
+      "status": "testing",
+      "colorIdentity": "WBR",
+      "commander": {
+        "setCode": "ACR",
+        "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
+        "variantId": "official-print",
+        "nameSnapshot": "Altaïr Ibn-La'Ahad"
+      },
+      "partnerCommanders": [],
+      "tags": [
+        "assassin",
+        "mardu",
+        "owned-only",
+        "baseline",
+        "graveyard-setup",
+        "evasive-combat"
+      ],
+      "notes": "Use this as the honest starting point. It shows whether the owned pool already has enough mana, evasive attackers, discard/mill, and interaction for Altaïr before any upgrades are added.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
+    },
+    {
+      "deckId": "signs-of-assassins",
+      "variantId": "rooftop-evasion",
+      "name": "Rooftop Evasion",
+      "description": "Owned-only pressure build for the \"you cannot block me\" fantasy: flying, menace, tap-downs, cannot-block effects, and awkward combat math.",
+      "status": "testing",
+      "colorIdentity": "WBR",
+      "commander": {
+        "setCode": "ACR",
+        "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
+        "variantId": "official-print",
+        "nameSnapshot": "Altaïr Ibn-La'Ahad"
+      },
+      "partnerCommanders": [],
+      "tags": [
+        "assassin",
+        "mardu",
+        "owned-only",
+        "evasion",
+        "unblockable",
+        "cannot-block",
+        "combat-puzzle"
+      ],
+      "notes": "This is the owned-only combat puzzle build. It favors cards that make blocks impossible, bad, or irrelevant, then checks whether the deck can keep pressure up without leaning on unowned staples.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
+    },
+    {
+      "deckId": "signs-of-assassins",
+      "variantId": "memory-corridor",
+      "name": "Memory Corridor",
+      "description": "Graveyard/exile engine build: stock the graveyard with Assassins, let Altaïr turn those memories into combat pressure, and avoid becoming generic reanimator.",
+      "status": "draft",
+      "colorIdentity": "WBR",
+      "commander": {
+        "setCode": "ACR",
+        "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
+        "variantId": "official-print",
+        "nameSnapshot": "Altaïr Ibn-La'Ahad"
+      },
+      "partnerCommanders": [],
+      "tags": [
+        "assassin",
+        "mardu",
+        "recommendation-enhanced",
+        "graveyard",
+        "exile",
+        "altaïr-engine",
+        "discard-outlets"
+      ],
+      "notes": "This variant is built around filling the graveyard on purpose, then using Altaïr and exile-adjacent pieces to borrow value temporarily. Cards that only return creatures permanently are treated as tension unless they also advance the exile/memory theme.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
+    },
+    {
+      "deckId": "signs-of-assassins",
+      "variantId": "brotherhood-arsenal",
+      "name": "Brotherhood Arsenal",
+      "description": "Artifact and Equipment toolbelt build: protect Altaïr, suit up evasive Assassins, and turn relics into card flow or closing pressure.",
+      "status": "draft",
+      "colorIdentity": "WBR",
+      "commander": {
+        "setCode": "ACR",
+        "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
+        "variantId": "official-print",
+        "nameSnapshot": "Altaïr Ibn-La'Ahad"
+      },
+      "partnerCommanders": [],
+      "tags": [
+        "assassin",
+        "mardu",
+        "recommendation-enhanced",
+        "equipment",
+        "artifact",
+        "protection",
+        "toolbox",
+        "relics"
+      ],
+      "notes": "This variant asks whether the deck wants to be a relic toolbox. It prioritizes protection, Equipment, tribal artifacts, and the Kassandra plus Spear package over pure graveyard velocity.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
+    },
+    {
+      "deckId": "signs-of-assassins",
+      "variantId": "nothing-is-true",
+      "name": "Nothing Is True",
+      "description": "Most practical upgraded build: better mana, cleaner setup, stronger protection, and removal that keeps the Altaïr plan alive.",
+      "status": "draft",
+      "colorIdentity": "WBR",
+      "commander": {
+        "setCode": "ACR",
+        "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
+        "variantId": "official-print",
+        "nameSnapshot": "Altaïr Ibn-La'Ahad"
+      },
+      "partnerCommanders": [],
+      "tags": [
+        "assassin",
+        "mardu",
+        "recommendation-enhanced",
+        "stronger-build",
+        "balanced",
+        "fixing",
+        "protection"
+      ],
+      "notes": "This is the version to test when you want the deck to function first and express theme second. It spends recommendation slots on fixing, protection, graveyard setup, and flexible answers before adding cuter puzzle pieces.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
+    },
+    {
+      "deckId": "signs-of-assassins",
+      "variantId": "everything-is-permitted",
+      "name": "Everything Is Permitted",
+      "description": "Experimental puzzle-combat build: unblockable lines, attack-trigger multiplication, type manipulation, and temporary-token weirdness.",
+      "status": "draft",
+      "colorIdentity": "WBR",
+      "commander": {
+        "setCode": "ACR",
+        "cardId": "358026de-ab7c-4a17-8cac-cfbee391b127",
+        "variantId": "official-print",
+        "nameSnapshot": "Altaïr Ibn-La'Ahad"
+      },
+      "partnerCommanders": [],
+      "tags": [
+        "assassin",
+        "mardu",
+        "recommendation-enhanced",
+        "experimental",
+        "puzzle",
+        "evasion",
+        "unblockable",
+        "attack-triggers",
+        "token-copy"
+      ],
+      "notes": "This is the sandbox version. It keeps cards that create strange attack states, unblockable shortcuts, copied attack triggers, and creature-type hacks, even when those lines are less efficient than the practical build.",
+      "createdAt": "2026-06-08T20:49:23.084Z",
+      "updatedAt": "2026-06-08T20:49:36.253Z"
+    }
+  ],
+  "tags": [
+    "assassin",
+    "commander",
+    "mardu",
+    "signs-of-assassins",
+    "batch-001",
+    "deck-variants"
+  ],
+  "notes": "Core thesis: make blocking awkward or impossible, put useful Assassins into the graveyard, then let Altaïr turn those cards into temporary combat value. Owned-only variants show the real pool; recommendation-enhanced variants show the upgrades, lands, and gap fillers to test next.",
+  "createdAt": "2026-06-08T20:49:23.084Z",
+  "updatedAt": "2026-06-08T20:49:36.253Z"
+}

@@ -1,10 +1,10 @@
 import React from 'react';
 import type { AssetPack } from '../assets/assetPack.js';
+import { layoutSupportFor, rendererLayoutFor } from '../domain/frameSupport.js';
 import type { ArtManifestRecord, CardFaceRecord, CardRecord, ExportProfile } from '../domain/schemas.js';
 import { parseManaCostTokens } from '../domain/mana.js';
 import type { ReferenceCatalog } from '../reference/catalog.js';
 import { wrapText } from './text.js';
-import { addReferenceReminderText } from './rulesReminderText.js';
 
 type RenderableArt = ArtManifestRecord & { dataUri?: string };
 type RenderZone = { x: number; y: number; w: number; h: number };
@@ -20,7 +20,8 @@ interface CardSvgProps {
 
 export function CardSvg({ card, face, art, assetPack, exportProfile, referenceCatalog }: CardSvgProps): React.ReactElement {
   const isPlaneswalker = face.frameType.includes('planeswalker') || face.typeLine.includes('Planeswalker');
-  const layoutName = card.layout === 'token' && face.frameType === 'token_full_art' ? 'token_full_art' : card.layout === 'token' ? 'token' : isPlaneswalker ? 'planeswalker' : 'normal';
+  const layoutSupport = layoutSupportFor(card.layout);
+  const layoutName = rendererLayoutFor(card, face);
   const layout = assetPack.getLayoutMap(layoutName);
   if (!layout) {
     throw new Error(`Asset pack ${assetPack.manifest.packId} has no ${layoutName} layout map.`);
@@ -36,11 +37,9 @@ export function CardSvg({ card, face, art, assetPack, exportProfile, referenceCa
   const footer = zones.footer;
   const typography = typographyForCanvas(width);
   const rulesLayoutOptions = rulesTextLayoutOptionsFromFace(face, typography);
-  const rulesReferenceCatalog = face.rulesTextReminderMode === 'off' ? undefined : referenceCatalog;
-  const rulesLayout = layoutRulesTextWithReferenceReminders(
+  const rulesLayout = layoutRulesText(
     displayRulesText(face.oracleText, card.name),
     displayRulesText(face.flavorText, card.name),
-    rulesReferenceCatalog,
     typography,
     rules.h,
     rules.w,
@@ -52,9 +51,19 @@ export function CardSvg({ card, face, art, assetPack, exportProfile, referenceCa
   const palette = colorToPalette(color);
   const frameRole =
     resolveRoleWithFallback(assetPack, { role: 'frame.full_card', layout: face.frameType, color, fallbackColor }) ??
+    resolveRoleWithFallback(assetPack, { role: 'frame.full_card', layout: card.layout, color, fallbackColor }) ??
+    resolveRoleWithFallback(assetPack, { role: 'frame.full_card', layout: layoutSupport.fallbackFrameType, color, fallbackColor }) ??
     resolveRoleWithFallback(assetPack, { role: 'frame.full_card', layout: layoutName, color, fallbackColor });
+  const borderColor = borderColorFromLayoutVariant(face.layoutVariant);
+  const borderMaskRole =
+    resolveRoleWithFallback(assetPack, { role: 'mask.border', layout: face.frameType, color, fallbackColor }) ??
+    resolveRoleWithFallback(assetPack, { role: 'mask.border', layout: card.layout, color, fallbackColor }) ??
+    resolveRoleWithFallback(assetPack, { role: 'mask.border', layout: layoutSupport.fallbackFrameType, color, fallbackColor }) ??
+    resolveRoleWithFallback(assetPack, { role: 'mask.border', layout: layoutName, color, fallbackColor });
   const artMaskRole =
     resolveRoleWithFallback(assetPack, { role: 'mask.art', layout: face.frameType, color, fallbackColor }) ??
+    resolveRoleWithFallback(assetPack, { role: 'mask.art', layout: card.layout, color, fallbackColor }) ??
+    resolveRoleWithFallback(assetPack, { role: 'mask.art', layout: layoutSupport.fallbackFrameType, color, fallbackColor }) ??
     resolveRoleWithFallback(assetPack, { role: 'mask.art', layout: layoutName, color, fallbackColor });
   const setCode = card.setCode.toLowerCase();
   const setSymbolRole =
@@ -97,6 +106,8 @@ export function CardSvg({ card, face, art, assetPack, exportProfile, referenceCa
         typography={typography}
         palette={palette}
         frameRole={frameRole}
+        borderMaskRole={borderMaskRole}
+        borderColor={borderColor}
         setSymbolRole={setSymbolRole}
         manaTokens={manaTokens}
         titleText={titleText}
@@ -131,6 +142,8 @@ export function CardSvg({ card, face, art, assetPack, exportProfile, referenceCa
         typography={typography}
         palette={palette}
         frameRole={frameRole}
+        borderMaskRole={borderMaskRole}
+        borderColor={borderColor}
         setSymbolRole={setSymbolRole}
         titleText={titleText}
         typeText={typeText}
@@ -174,9 +187,9 @@ export function CardSvg({ card, face, art, assetPack, exportProfile, referenceCa
 
       {frameRole?.dataUri ? (
         <>
-          <rect width={width} height={height} rx="28" fill="#111111" />
+          <rect width={width} height={height} rx="28" fill={frameCanvasFill(borderColor, Boolean(borderMaskRole?.dataUri))} />
           {!shouldOverlayArtOverFrame ? <PlaceholderArt artZone={artZone} palette={palette} artDataUri={art?.dataUri} transform={art?.transform} crop={art?.crop} framed={Boolean(frameRole.dataUri)} masked={Boolean(artMaskRole?.dataUri)} /> : null}
-          <image href={frameRole.dataUri} x="0" y="0" width={width} height={height} preserveAspectRatio="none" />
+          <FrameImage role={frameRole} borderMaskRole={borderMaskRole} borderColor={borderColor} width={width} height={height} />
           {shouldOverlayArtOverFrame ? <PlaceholderArt artZone={artZone} palette={palette} artDataUri={art?.dataUri} transform={art?.transform} crop={art?.crop} framed={Boolean(frameRole.dataUri)} masked={Boolean(artMaskRole?.dataUri)} /> : null}
           {shouldCoverPlaceholderText ? (
             <PlaceholderFieldCovers
@@ -194,7 +207,7 @@ export function CardSvg({ card, face, art, assetPack, exportProfile, referenceCa
       ) : (
         <FallbackFrame width={width} height={height} title={title} mana={mana} palette={palette} />
       )}
-      <text x={title.x + typography.titleX} y={title.y + typography.titleY} fontFamily={titleFont} fontSize={titleFontSize} fontWeight="700" fill={titleInk}>
+      <text x={title.x + typography.titleX} y={fieldTextBaselineY(title, titleFontSize)} fontFamily={titleFont} fontSize={titleFontSize} fontWeight="700" fill={titleInk}>
         {titleText}
       </text>
       {manaTokens.length > 0 ? (
@@ -218,7 +231,7 @@ export function CardSvg({ card, face, art, assetPack, exportProfile, referenceCa
           <rect x={type.x + 2} y={type.y + 2} width="14" height={type.h - 4} rx="7" fill={palette.accent} opacity="0.86" />
         </>
       ) : null}
-      <text x={type.x + typography.typeX} y={type.y + typography.typeY} fontFamily={titleFont} fontSize={typeFontSize} fontWeight="700" fill="#15171b">
+      <text x={type.x + typography.typeX} y={fieldTextBaselineY(type, typeFontSize)} fontFamily={titleFont} fontSize={typeFontSize} fontWeight="700" fill="#15171b">
         {typeText}
       </text>
       {setSymbolRole?.dataUri && !useMagicFooter ? (
@@ -324,6 +337,8 @@ function FullArtTokenCardSvg({
   typography,
   palette,
   frameRole,
+  borderMaskRole,
+  borderColor,
   setSymbolRole,
   titleText,
   typeText,
@@ -350,6 +365,8 @@ function FullArtTokenCardSvg({
   typography: Typography;
   palette: FramePalette;
   frameRole: ReturnType<AssetPack['resolveRole']>;
+  borderMaskRole: ReturnType<AssetPack['resolveRole']>;
+  borderColor: RenderBorderColor;
   setSymbolRole: ReturnType<AssetPack['resolveRole']>;
   titleText: string;
   typeText: string;
@@ -367,10 +384,9 @@ function FullArtTokenCardSvg({
     ...baseRulesLayoutOptions,
     paddingTop: Math.max(0, baseRulesLayoutOptions.paddingTop)
   };
-  const rulesLayout = layoutRulesTextWithReferenceReminders(
+  const rulesLayout = layoutRulesText(
     displayRulesText(face.oracleText, card.name),
     displayRulesText(face.flavorText, card.name),
-    face.rulesTextReminderMode === 'off' ? undefined : referenceCatalog,
     typography,
     rules.h,
     rules.w,
@@ -392,14 +408,14 @@ function FullArtTokenCardSvg({
         </clipPath>
       </defs>
 
-      <rect width={width} height={height} rx="18" fill="#111111" />
+      <rect width={width} height={height} rx="18" fill={frameCanvasFill(borderColor, Boolean(borderMaskRole?.dataUri))} />
       <PlaceholderArt artZone={artZone} palette={palette} artDataUri={art?.dataUri} transform={art?.transform} crop={art?.crop} framed />
-      {frameRole?.dataUri ? <image href={frameRole.dataUri} x="0" y="0" width={width} height={height} preserveAspectRatio="none" /> : null}
+      <FrameImage role={frameRole} borderMaskRole={borderMaskRole} borderColor={borderColor} width={width} height={height} />
 
-      <text x={title.x + title.w / 2} y={title.y + 20} textAnchor="middle" fontFamily={titleFont} fontSize={tokenTitleFontSize} fontWeight="700" fill="#111318">
+      <text x={title.x + title.w / 2} y={fieldTextBaselineY(title, tokenTitleFontSize)} textAnchor="middle" fontFamily={titleFont} fontSize={tokenTitleFontSize} fontWeight="700" fill="#111318">
         {titleText}
       </text>
-      <text x={type.x + 6} y={type.y + 15} fontFamily={titleFont} fontSize={tokenTypeFontSize} fontWeight="700" fill="#15171b">
+      <text x={type.x + 6} y={fieldTextBaselineY(type, tokenTypeFontSize)} fontFamily={titleFont} fontSize={tokenTypeFontSize} fontWeight="700" fill="#15171b">
         {typeText}
       </text>
       {setSymbolRole?.dataUri ? (
@@ -481,6 +497,8 @@ function PlaneswalkerCardSvg({
   typography,
   palette,
   frameRole,
+  borderMaskRole,
+  borderColor,
   setSymbolRole,
   manaTokens,
   titleText,
@@ -510,6 +528,8 @@ function PlaneswalkerCardSvg({
   typography: Typography;
   palette: FramePalette;
   frameRole: ReturnType<AssetPack['resolveRole']>;
+  borderMaskRole: ReturnType<AssetPack['resolveRole']>;
+  borderColor: RenderBorderColor;
   setSymbolRole: ReturnType<AssetPack['resolveRole']>;
   manaTokens: string[];
   titleText: string;
@@ -551,10 +571,10 @@ function PlaneswalkerCardSvg({
         </clipPath>
       </defs>
 
-      <rect width={width} height={height} rx="28" fill="#111111" />
+      <rect width={width} height={height} rx="28" fill={frameCanvasFill(borderColor, Boolean(borderMaskRole?.dataUri))} />
       {walkerFrameRole?.dataUri ? (
         <>
-          <image href={walkerFrameRole.dataUri} x="0" y="0" width={width} height={height} preserveAspectRatio="none" />
+          <FrameImage role={walkerFrameRole} borderMaskRole={borderMaskRole} borderColor={borderColor} width={width} height={height} />
           <PlaceholderArt artZone={topArtZone} palette={palette} artDataUri={art?.dataUri} transform={art?.transform} crop={art?.crop} framed />
         </>
       ) : (
@@ -564,7 +584,7 @@ function PlaneswalkerCardSvg({
         </>
       )}
 
-      <text x={title.x + 7} y={title.y + 18} fontFamily={titleFont} fontSize={titleFontSize} fontWeight="700" fill="#111318">
+      <text x={title.x + 7} y={fieldTextBaselineY(title, titleFontSize)} fontFamily={titleFont} fontSize={titleFontSize} fontWeight="700" fill="#111318">
         {titleText}
       </text>
       {manaTokens.length > 0 ? (
@@ -576,7 +596,7 @@ function PlaneswalkerCardSvg({
         </g>
       ) : null}
 
-      <text x={typeZone.x + 2} y={typeZone.y + 16} fontFamily={titleFont} fontSize={typeFontSize} fontWeight="700" fill="#15171b">
+      <text x={typeZone.x + 6} y={fieldTextBaselineY(typeZone, typeFontSize)} fontFamily={titleFont} fontSize={typeFontSize} fontWeight="700" fill="#15171b">
         {typeText}
       </text>
       {setSymbolRole?.dataUri ? (
@@ -728,6 +748,112 @@ function AssetImage({
   return <image href={role.dataUri} x={x} y={y} width={width} height={height} preserveAspectRatio="none" />;
 }
 
+type RenderBorderColor = 'black' | 'white' | 'white-mse' | 'silver' | 'gold' | 'borderless' | 'none';
+
+function FrameImage({
+  role,
+  borderMaskRole,
+  borderColor,
+  width,
+  height
+}: {
+  role: ReturnType<AssetPack['resolveRole']>;
+  borderMaskRole: ReturnType<AssetPack['resolveRole']>;
+  borderColor: RenderBorderColor;
+  width: number;
+  height: number;
+}): React.ReactElement | null {
+  if (!role?.dataUri) {
+    return null;
+  }
+  if (borderColor === 'black') {
+    return <image href={role.dataUri} x="0" y="0" width={width} height={height} preserveAspectRatio="none" data-frame-border-color="black" data-frame-border-mode="source" />;
+  }
+
+  if (usesMseBorderMask(borderColor) && borderMaskRole?.dataUri) {
+    const paint = borderPaint(borderColor);
+    return <MaskedFrameImage role={role} borderMaskRole={borderMaskRole} borderColor={borderColor} paint={paint} width={width} height={height} />;
+  }
+
+  return <image href={role.dataUri} x="0" y="0" width={width} height={height} preserveAspectRatio="none" data-frame-border-color={borderColor} data-frame-border-mode="unsupported-source" />;
+}
+
+function MaskedFrameImage({
+  role,
+  borderMaskRole,
+  borderColor,
+  paint,
+  width,
+  height
+}: {
+  role: NonNullable<ReturnType<AssetPack['resolveRole']>>;
+  borderMaskRole: NonNullable<ReturnType<AssetPack['resolveRole']>>;
+  borderColor: RenderBorderColor;
+  paint: { stroke: string; highlight?: string };
+  width: number;
+  height: number;
+}): React.ReactElement {
+  return (
+    <g data-frame-border-color={borderColor} data-frame-border-mode="mse-border-mask">
+      <defs>
+        <filter id="frameBorderMaskInvert" colorInterpolationFilters="sRGB">
+          <feComponentTransfer>
+            <feFuncR type="table" tableValues="1 0" />
+            <feFuncG type="table" tableValues="1 0" />
+            <feFuncB type="table" tableValues="1 0" />
+          </feComponentTransfer>
+        </filter>
+        <mask id="frameBorderMask" maskUnits="userSpaceOnUse" x="0" y="0" width={width} height={height}>
+          <image href={borderMaskRole.dataUri} x="0" y="0" width={width} height={height} preserveAspectRatio="none" />
+        </mask>
+        <mask id="frameBorderInteriorMask" maskUnits="userSpaceOnUse" x="0" y="0" width={width} height={height}>
+          <image href={borderMaskRole.dataUri} x="0" y="0" width={width} height={height} preserveAspectRatio="none" filter="url(#frameBorderMaskInvert)" />
+        </mask>
+      </defs>
+      <rect width={width} height={height} fill={paint.stroke} mask="url(#frameBorderMask)" />
+      {paint.highlight ? <rect width={width} height={height} fill={paint.highlight} opacity="0.18" mask="url(#frameBorderMask)" /> : null}
+      <image href={role.dataUri} x="0" y="0" width={width} height={height} preserveAspectRatio="none" mask="url(#frameBorderInteriorMask)" />
+    </g>
+  );
+}
+
+function borderColorFromLayoutVariant(layoutVariant: string | undefined): RenderBorderColor {
+  const match = String(layoutVariant ?? '').match(/(?:^|;)border=([^;]+)/);
+  const value = match?.[1]?.trim();
+  if (value === 'white' || value === 'white-mse' || value === 'silver' || value === 'gold' || value === 'borderless' || value === 'none') {
+    return value;
+  }
+  return 'black';
+}
+
+function borderPaint(borderColor: RenderBorderColor): { stroke: string; highlight?: string } {
+  switch (borderColor) {
+    case 'white':
+    case 'white-mse':
+      return { stroke: '#f7f4e8', highlight: '#ffffff' };
+    case 'silver':
+      return { stroke: '#b7c0ca', highlight: '#f3f6f8' };
+    case 'gold':
+      return { stroke: '#c99a2e', highlight: '#ffe8a3' };
+    default:
+      return { stroke: '#08090b' };
+  }
+}
+
+function usesMseBorderMask(borderColor: RenderBorderColor): boolean {
+  return borderColor === 'white-mse' || borderColor === 'silver' || borderColor === 'gold';
+}
+
+function frameCanvasFill(borderColor: RenderBorderColor, hasBorderMask: boolean): string {
+  if (borderColor === 'borderless' || borderColor === 'none') {
+    return 'transparent';
+  }
+  if (borderColor !== 'black' && !(usesMseBorderMask(borderColor) && hasBorderMask)) {
+    return borderPaint('black').stroke;
+  }
+  return borderPaint(borderColor).stroke;
+}
+
 interface Typography {
   compact: boolean;
   titleMin: number;
@@ -743,7 +869,6 @@ interface Typography {
   typeMax: number;
   typeMaxChars: number;
   typeX: number;
-  typeY: number;
   setSymbol: number;
   setSymbolX: number;
   setSymbolY: number;
@@ -779,15 +904,14 @@ function typographyForCanvas(width: number): Typography {
       typeMax: 17,
       typeMaxChars: 48,
       typeX: 6,
-      typeY: 15,
       setSymbol: 16,
       setSymbolX: 20,
       setSymbolY: 4,
-      rules: 12,
+      rules: 14.8,
       rulesX: 0,
       rulesY: 20,
-      rulesLineHeight: 14,
-      rulesSymbol: 12,
+      rulesLineHeight: 17,
+      rulesSymbol: 15,
       ruleWrap: 45,
       maxRuleLines: 9,
       pt: 15,
@@ -814,7 +938,6 @@ function typographyForCanvas(width: number): Typography {
     typeMax: 34,
     typeMaxChars: 56,
     typeX: 29,
-    typeY: 28,
     setSymbol: 30,
     setSymbolX: 42,
     setSymbolY: 6,
@@ -845,6 +968,11 @@ function fontFaceCss(assetPack: AssetPack): string {
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+function fieldTextBaselineY(zone: RenderZone, fontSize: number): number {
+  const opticalBaseline = zone.y + zone.h / 2 + fontSize * 0.34;
+  return clamp(opticalBaseline, zone.y + fontSize * 0.76, zone.y + zone.h - fontSize * 0.12);
 }
 
 function MagicFooter({
@@ -989,7 +1117,7 @@ function RulesText({
   fontStyle,
   assetPack
 }: {
-  lines: string[];
+  lines: RulesDisplayLine[];
   x: number;
   y: number;
   lineHeight: number;
@@ -1000,12 +1128,19 @@ function RulesText({
   assetPack: AssetPack;
 }): React.ReactElement {
   let parentheticalDepth = 0;
+  let cursorY = y;
   const parsedLines = lines.map((line, lineIndex) => {
-    const parsed = parseRuleLineParts(line, fontStyle, parentheticalDepth);
+    const displayLine = normalizeRulesDisplayLine(line);
+    cursorY += displayLine.gapBefore;
+    const parsed = parseRuleLineParts(displayLine.text, fontStyle, parentheticalDepth);
     parentheticalDepth = parsed.parentheticalDepth;
+    const lineY = cursorY;
+    cursorY += lineHeight;
     return {
-      key: `${line}-${lineIndex}`,
-      parts: parsed.parts
+      key: `${displayLine.text}-${lineIndex}`,
+      parts: parsed.parts,
+      text: displayLine.text,
+      y: lineY
     };
   });
   return (
@@ -1014,12 +1149,12 @@ function RulesText({
         <RuleLine
           key={line.key}
           parts={line.parts}
+          lineText={line.text}
           x={x}
-          y={y + lineIndex * lineHeight}
+          y={line.y}
           fontSize={fontSize}
           symbolSize={symbolSize}
           fontFamily={fontFamily}
-          fontStyle={fontStyle}
           assetPack={assetPack}
         />
       ))}
@@ -1029,47 +1164,93 @@ function RulesText({
 
 function RuleLine({
   parts,
+  lineText,
   x,
   y,
   fontSize,
   symbolSize,
   fontFamily,
-  fontStyle,
   assetPack
 }: {
   parts: RuleLinePart[];
+  lineText: string;
   x: number;
   y: number;
   fontSize: number;
   symbolSize: number;
   fontFamily: string;
-  fontStyle: 'normal' | 'italic';
   assetPack: AssetPack;
 }): React.ReactElement {
+  const standaloneKeyword = isStandaloneKeywordLine(stripRuleMarkup(lineText));
+  if (parts.every((part) => part.kind === 'text')) {
+    return (
+      <text x={x} y={y} fontFamily={fontFamily} fontSize={fontSize} fill="#14161a" xmlSpace="preserve">
+        {parts.map((part, index) => {
+          if (part.kind !== 'text') {
+            return null;
+          }
+          return (
+            <tspan
+              key={`${part.text}-${index}`}
+              fontStyle={part.fontStyle}
+              fontWeight={standaloneKeyword || part.emphasis ? 700 : undefined}
+              opacity={part.opacity}
+            >
+              {part.text}
+            </tspan>
+          );
+        })}
+      </text>
+    );
+  }
+
   let cursor = x;
   return (
     <g>
       {parts.map((part, index) => {
         if (part.kind === 'mana') {
-          const image = <ManaSymbol key={`${part.token}-${index}`} token={part.token} x={cursor} y={y - symbolSize + 3} size={symbolSize} assetPack={assetPack} />;
-          cursor += symbolSize + 2;
+          const gapBefore = cursor === x ? 0 : Math.max(2.4, fontSize * 0.16);
+          const symbolX = cursor + gapBefore;
+          const image = <ManaSymbol key={`${part.token}-${index}`} token={part.token} x={symbolX} y={y - symbolSize + 3} size={symbolSize} assetPack={assetPack} />;
+          cursor = symbolX + symbolSize + Math.max(2, fontSize * 0.12);
           return image;
         }
         const text = (
-          <text key={`${part.text}-${index}`} x={cursor} y={y} fontFamily={fontFamily} fontSize={fontSize} fontStyle={part.fontStyle} fill="#14161a" opacity={part.opacity}>
+          <text
+            key={`${part.text}-${index}`}
+            x={cursor}
+            y={y}
+            fontFamily={fontFamily}
+            fontSize={fontSize}
+            fontStyle={part.fontStyle}
+            fontWeight={standaloneKeyword || part.emphasis ? 700 : undefined}
+            fill="#14161a"
+            opacity={part.opacity}
+            xmlSpace="preserve"
+          >
             {part.text}
           </text>
         );
-        cursor += estimateTextWidth(part.text, fontSize);
+        cursor += estimateRuleTextWidth(part.text, fontSize, part.fontStyle);
         return text;
       })}
     </g>
   );
 }
 
+type RulesDisplayLine = string | { text: string; gapBefore?: number };
+type WrappedRulesLine = { text: string; gapBefore: number };
+
 type RuleLinePart =
   | { kind: 'mana'; token: string }
-  | { kind: 'text'; text: string; fontStyle: 'normal' | 'italic'; opacity?: number };
+  | { kind: 'text'; text: string; fontStyle: 'normal' | 'italic'; opacity?: number; emphasis?: boolean };
+
+function normalizeRulesDisplayLine(line: RulesDisplayLine): WrappedRulesLine {
+  if (typeof line === 'string') {
+    return { text: line, gapBefore: 0 };
+  }
+  return { text: line.text, gapBefore: line.gapBefore ?? 0 };
+}
 
 function parseRuleLineParts(line: string, defaultFontStyle: 'normal' | 'italic', initialParentheticalDepth = 0): { parts: RuleLinePart[]; parentheticalDepth: number } {
   const parts: RuleLinePart[] = [];
@@ -1111,7 +1292,7 @@ function parseRuleLineParts(line: string, defaultFontStyle: 'normal' | 'italic',
     if (line.slice(index, index + 3).toLowerCase() === '<i>') {
       const end = line.toLowerCase().indexOf('</i>', index + 3);
       if (end !== -1) {
-        pushRuleTextPart(parts, line.slice(index + 3, end), 'italic');
+        pushRuleTextPart(parts, line.slice(index + 3, end), 'italic', undefined, true);
         index = end + 4;
         continue;
       }
@@ -1160,11 +1341,11 @@ function nextParentheticalSyntaxIndex(line: string, start: number): number {
   return next ?? line.length;
 }
 
-function pushRuleTextPart(parts: RuleLinePart[], text: string, fontStyle: 'normal' | 'italic', opacity?: number): void {
+function pushRuleTextPart(parts: RuleLinePart[], text: string, fontStyle: 'normal' | 'italic', opacity?: number, emphasis?: boolean): void {
   if (!text) {
     return;
   }
-  parts.push({ kind: 'text', text, fontStyle, opacity });
+  parts.push({ kind: 'text', text, fontStyle, opacity, emphasis });
 }
 
 function displayRulesText(value: string | undefined, cardName: string): string {
@@ -1173,39 +1354,66 @@ function displayRulesText(value: string | undefined, cardName: string): string {
     .replace(/(^|[^A-Za-z0-9_])~(?=$|[^A-Za-z0-9_])/g, (_match, prefix: string) => `${prefix}${cardName}`);
 }
 
-function layoutRulesTextWithReferenceReminders(
-  oracleText: string | undefined,
-  flavorText: string | undefined,
-  referenceCatalog: ReferenceCatalog | undefined,
-  typography: Typography,
-  rulesHeight: number,
-  rulesWidth: number,
-  options: RulesTextLayoutOptions
-): RulesLayout {
-  const baseLayout = layoutRulesText(oracleText, flavorText, typography, rulesHeight, rulesWidth, options);
-  const reminderText = addReferenceReminderText(oracleText, referenceCatalog);
-  if (!reminderText.insertions.length || reminderText.text === String(oracleText ?? '')) {
-    return baseLayout;
-  }
-
-  const reminderLayout = layoutRulesText(reminderText.text, flavorText, typography, rulesHeight, rulesWidth, options);
-  if (!reminderLayout.fits || reminderLayout.fontSize < minimumReminderFontSize(typography)) {
-    return baseLayout;
-  }
-
-  return {
-    ...reminderLayout,
-    referenceReminderCount: reminderText.insertions.length
-  };
-}
-
-function minimumReminderFontSize(typography: Typography): number {
-  return typography.compact ? 10.8 : 16.5;
-}
-
 function estimateTextWidth(value: string, fontSize: number): number {
   return value.length * fontSize * 0.51;
 }
+
+function estimateRuleTextWidth(value: string, fontSize: number, fontStyle: 'normal' | 'italic' = 'normal'): number {
+  const text = stripRuleMarkup(value);
+  let width = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === '{') {
+      const end = text.indexOf('}', index + 1);
+      if (end !== -1) {
+        width += fontSize * 1.18;
+        index = end;
+        continue;
+      }
+    }
+    if (/\s/.test(char)) {
+      width += fontSize * 0.24;
+    } else if (/[ilI.,;:'`!|]/.test(char)) {
+      width += fontSize * 0.24;
+    } else if (/[mwMW@#%&]/.test(char)) {
+      width += fontSize * 0.64;
+    } else if (/[A-Z]/.test(char)) {
+      width += fontSize * 0.51;
+    } else {
+      width += fontSize * 0.45;
+    }
+  }
+  return width * (fontStyle === 'italic' ? 0.95 : 1.08);
+}
+
+function stripRuleMarkup(value: string): string {
+  return value.replace(/<\/?i>/gi, '');
+}
+
+function isStandaloneKeywordLine(value: string): boolean {
+  const normalized = value.trim().replace(/\s+/g, ' ').toLowerCase();
+  return RULE_KEYWORDS.has(normalized);
+}
+
+const RULE_KEYWORDS = new Set([
+  'deathtouch',
+  'defender',
+  'double strike',
+  'first strike',
+  'flash',
+  'flying',
+  'haste',
+  'hexproof',
+  'indestructible',
+  'lifelink',
+  'menace',
+  'protection',
+  'prowess',
+  'reach',
+  'trample',
+  'vigilance',
+  'ward'
+]);
 
 function FallbackFrame({
   width,
@@ -1442,8 +1650,8 @@ function fieldCoverFill(color: string): { header: string; text: string; footer: 
 }
 
 interface RulesLayout {
-  oracleLines: string[];
-  flavorLines: string[];
+  oracleLines: WrappedRulesLine[];
+  flavorLines: WrappedRulesLine[];
   fontSize: number;
   lineHeight: number;
   symbolSize: number;
@@ -1453,7 +1661,6 @@ interface RulesLayout {
   paddingLeft: number;
   paddingRight: number;
   fits: boolean;
-  referenceReminderCount?: number;
 }
 
 interface RulesTextLayoutOptions {
@@ -1474,14 +1681,14 @@ function layoutRulesText(
 ): RulesLayout {
   const oracle = oracleText?.trim() ?? '';
   const flavor = flavorText?.trim() ?? '';
-  const maxFont = typography.compact ? 31 : 60;
-  const minFont = typography.compact ? 9.8 : 14.5;
+  const maxFont = typography.rules;
+  const minFont = typography.compact ? 9.5 : 11.5;
   const topY = typography.rulesY + options.paddingTop;
-  let selected = buildRulesTextAtFont(oracle, flavor, typography, rulesHeight, rulesWidth, maxFont, topY, options);
+  let selected = buildRulesTextAtFont(oracle, flavor, typography, rulesHeight, rulesWidth, minFont, topY, options);
   if (options.fontSize !== undefined) {
     selected = buildRulesTextAtFont(oracle, flavor, typography, rulesHeight, rulesWidth, options.fontSize, topY, options);
   } else {
-    for (let fontSize = maxFont; fontSize >= minFont; fontSize -= 0.45) {
+    for (let fontSize = maxFont; fontSize >= minFont; fontSize -= 0.25) {
       const candidate = buildRulesTextAtFont(oracle, flavor, typography, rulesHeight, rulesWidth, fontSize, topY, options);
       if (!candidate.fits) {
         continue;
@@ -1490,23 +1697,28 @@ function layoutRulesText(
       break;
     }
   }
-  const { fontSize, lineHeight, symbolSize, maxLines, oracleRaw, flavorRaw } = selected;
+  const { fontSize, lineHeight, symbolSize, oracleRaw, flavorRaw } = selected;
+  const maxTextHeight = Math.max(lineHeight, rulesHeight - topY - options.paddingBottom - rulesTextBottomReserve(typography));
 
   if (oracleRaw.length > 0 && flavorRaw.length > 0) {
-    const available = Math.max(2, maxLines - 1);
-    const desiredFlavor = Math.min(flavorRaw.length, Math.max(1, Math.ceil(available * 0.42)));
-    let oracleCount = Math.min(oracleRaw.length, Math.max(1, available - desiredFlavor));
-    let flavorCount = Math.min(flavorRaw.length, available - oracleCount);
-    if (flavorCount < 1 && oracleCount > 1) {
-      oracleCount -= 1;
-      flavorCount = 1;
+    let oracleLines = oracleRaw;
+    let flavorLines = flavorRaw;
+    if (!selected.fits) {
+      const separatorReserve = Math.round(lineHeight * 1.08);
+      const available = Math.max(lineHeight * 2, maxTextHeight - separatorReserve);
+      const flavorBudget = Math.min(rulesLineBlockHeight(flavorRaw, lineHeight), Math.max(lineHeight, available * 0.22));
+      flavorLines = takeRulesLinesForHeight(flavorRaw, lineHeight, flavorBudget);
+      const oracleBudget = Math.max(lineHeight, available - rulesLineBlockHeight(flavorLines, lineHeight));
+      oracleLines = takeRulesLinesForHeight(oracleRaw, lineHeight, oracleBudget);
     }
-    const usedHeight = (oracleCount + flavorCount + 1) * lineHeight;
-    const slack = Math.max(0, rulesHeight - topY - options.paddingBottom - usedHeight);
-    const separatorY = topY + oracleCount * lineHeight + Math.round(Math.max(lineHeight * 0.32, slack * 0.28));
+    const oracleHeight = rulesLineBlockHeight(oracleLines, lineHeight);
+    const flavorHeight = rulesLineBlockHeight(flavorLines, lineHeight);
+    const usedHeight = oracleHeight + flavorHeight + lineHeight * 1.02;
+    const slack = Math.max(0, maxTextHeight - usedHeight);
+    const separatorY = topY + oracleHeight + Math.round(Math.max(lineHeight * 0.32, slack * 0.28));
     return {
-      oracleLines: oracleRaw.slice(0, oracleCount),
-      flavorLines: flavorRaw.slice(0, flavorCount),
+      oracleLines,
+      flavorLines,
       fontSize,
       lineHeight,
       symbolSize,
@@ -1519,10 +1731,11 @@ function layoutRulesText(
     };
   }
 
-  const soloLines = oracleRaw.length > 0 ? oracleRaw.slice(0, maxLines) : [];
-  const soloFlavor = oracleRaw.length === 0 ? flavorRaw.slice(0, maxLines) : [];
+  const soloLines = oracleRaw.length > 0 ? takeRulesLinesForHeight(oracleRaw, lineHeight, maxTextHeight) : [];
+  const soloFlavor = oracleRaw.length === 0 ? takeRulesLinesForHeight(flavorRaw, lineHeight, maxTextHeight) : [];
+  const soloHeight = Math.max(rulesLineBlockHeight(soloLines, lineHeight), rulesLineBlockHeight(soloFlavor, lineHeight));
   const soloCount = Math.max(soloLines.length, soloFlavor.length);
-  const soloY = soloCount <= 2 ? topY + Math.max(0, Math.round((rulesHeight - topY - options.paddingBottom - soloCount * lineHeight) * 0.46)) : topY;
+  const soloY = soloCount <= 2 ? topY + Math.max(0, Math.round((rulesHeight - topY - options.paddingBottom - soloHeight) * 0.46)) : topY;
   return {
     oracleLines: soloLines,
     flavorLines: soloFlavor,
@@ -1551,20 +1764,22 @@ function buildRulesTextAtFont(
   lineHeight: number;
   symbolSize: number;
   maxLines: number;
-  oracleRaw: string[];
-  flavorRaw: string[];
+  oracleRaw: WrappedRulesLine[];
+  flavorRaw: WrappedRulesLine[];
   fits: boolean;
 } {
-  const lineHeight = Math.round(fontSize * (typography.compact ? 1.18 : 1.24));
+  const lineHeight = Math.round(fontSize * (typography.compact ? 1.12 : 1.24));
   const symbolSize = Math.round(fontSize * 1.02);
   const defaultWidth = Math.max(1, rulesWidth - typography.rulesX * 2);
   const availableWidth = Math.max(1, defaultWidth - options.paddingLeft - options.paddingRight);
-  const widthFactor = clamp(availableWidth / defaultWidth, 0.45, 1.25);
-  const maxChars = Math.max(14, Math.round(typography.ruleWrap * widthFactor * (typography.rules / fontSize)));
-  const maxLines = Math.max(2, Math.floor((rulesHeight - topY - options.paddingBottom - 7) / lineHeight));
-  const oracleRaw = oracle ? wrapText(oracle, maxChars) : [];
-  const flavorRaw = flavor ? wrapText(flavor, maxChars) : [];
-  const neededLines = oracleRaw.length + flavorRaw.length + (oracleRaw.length && flavorRaw.length ? 1 : 0);
+  const maxLines = Math.max(2, Math.floor((rulesHeight - topY - options.paddingBottom - rulesTextBottomReserve(typography)) / lineHeight));
+  const oracleRaw = oracle ? wrapRulesText(oracle, availableWidth, fontSize, typography.compact, 'normal') : [];
+  const flavorRaw = flavor ? wrapRulesText(flavor, availableWidth, fontSize, typography.compact, 'italic') : [];
+  const maxTextHeight = Math.max(lineHeight, rulesHeight - topY - options.paddingBottom - rulesTextBottomReserve(typography));
+  const neededHeight =
+    rulesLineBlockHeight(oracleRaw, lineHeight) +
+    rulesLineBlockHeight(flavorRaw, lineHeight) +
+    (oracleRaw.length && flavorRaw.length ? lineHeight * 1.02 : 0);
   return {
     fontSize,
     lineHeight,
@@ -1572,8 +1787,64 @@ function buildRulesTextAtFont(
     maxLines,
     oracleRaw,
     flavorRaw,
-    fits: neededLines <= maxLines
+    fits: neededHeight <= maxTextHeight
   };
+}
+
+function wrapRulesText(value: string, maxWidth: number, fontSize: number, compact: boolean, fontStyle: 'normal' | 'italic' = 'normal'): WrappedRulesLine[] {
+  const lines: WrappedRulesLine[] = [];
+  let nextGap = 0;
+  const paragraphGap = Math.round(fontSize * (compact ? 0.34 : 0.42));
+  for (const paragraph of value.split(/\r?\n/)) {
+    if (paragraph.trim() === '') {
+      if (lines.length > 0) {
+        nextGap = Math.max(nextGap, paragraphGap);
+      }
+      continue;
+    }
+    let line = '';
+    for (const word of paragraph.trim().split(/\s+/)) {
+      const next = line ? `${line} ${word}` : word;
+      if (estimateRuleTextWidth(next, fontSize, fontStyle) > maxWidth && line) {
+        lines.push({ text: line, gapBefore: nextGap });
+        nextGap = 0;
+        line = word;
+      } else {
+        line = next;
+      }
+    }
+    if (line) {
+      lines.push({ text: line, gapBefore: nextGap });
+      nextGap = 0;
+    }
+  }
+  return lines;
+}
+
+function rulesLineBlockHeight(lines: WrappedRulesLine[], lineHeight: number): number {
+  return lines.reduce((height, line) => height + line.gapBefore + lineHeight, 0);
+}
+
+function takeRulesLinesForHeight(lines: WrappedRulesLine[], lineHeight: number, maxHeight: number): WrappedRulesLine[] {
+  const selected: WrappedRulesLine[] = [];
+  let usedHeight = 0;
+  for (const line of lines) {
+    const nextHeight = usedHeight + line.gapBefore + lineHeight;
+    if (nextHeight > maxHeight && selected.length > 0) {
+      break;
+    }
+    if (nextHeight > maxHeight) {
+      selected.push({ ...line, gapBefore: 0 });
+      break;
+    }
+    selected.push(line);
+    usedHeight = nextHeight;
+  }
+  return selected;
+}
+
+function rulesTextBottomReserve(typography: Typography): number {
+  return typography.compact ? 3 : 7;
 }
 
 function rulesTextLayoutOptionsFromFace(face: CardFaceRecord, typography: Typography): RulesTextLayoutOptions {
@@ -1581,9 +1852,9 @@ function rulesTextLayoutOptionsFromFace(face: CardFaceRecord, typography: Typogr
   return {
     fontSize: rulesTextFontSize(face.rulesTextSizeHint, typography),
     paddingTop: clamp(face.rulesTextPaddingTop ?? defaultPaddingTop, -18, 64),
-    paddingRight: clamp(face.rulesTextPaddingRight ?? 0, -24, 64),
+    paddingRight: clamp(face.rulesTextPaddingRight ?? defaultRulesTextPaddingRight(face, typography), -24, 64),
     paddingBottom: clamp(face.rulesTextPaddingBottom ?? 0, -18, 64),
-    paddingLeft: clamp(face.rulesTextPaddingLeft ?? 0, -24, 64)
+    paddingLeft: clamp(face.rulesTextPaddingLeft ?? defaultRulesTextPaddingLeft(face, typography), -24, 64)
   };
 }
 
@@ -1599,6 +1870,20 @@ function defaultRulesTextPaddingTop(face: CardFaceRecord, typography: Typography
   }
 
   return 0;
+}
+
+function defaultRulesTextPaddingRight(face: CardFaceRecord, typography: Typography): number {
+  if (!typography.compact || !face.frameType.startsWith('normal_')) {
+    return 0;
+  }
+  return 24;
+}
+
+function defaultRulesTextPaddingLeft(face: CardFaceRecord, typography: Typography): number {
+  if (!typography.compact || !face.frameType.startsWith('normal_')) {
+    return 0;
+  }
+  return 5;
 }
 
 function startsWithInlineSymbol(value: string | undefined): boolean {

@@ -1,0 +1,3 @@
+set_code,art_id,asset_type,source_mode,source_url,file_path,data_uri,filename,artist,license,permission_status,assigned_card_ids,assigned_variant_ids,notes
+DEMO,DEMO-HERO-ART,art,url,https://example.com/source-art.png,,,,Example Artist,private reference,needs_review,DEMO-001,DEMO-001-V2,URL-backed art assigned to a card and one testing variant.
+DEMO,DEMO-LOCAL-FRAME,frame,local,,sets/DEMO/art/library/demo-local-frame.png,,,Internal Frame Study,owned,owned,,,Local frame asset kept in the active set library.

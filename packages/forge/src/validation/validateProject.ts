@@ -1,5 +1,6 @@
 import type { ForgeProject } from '../domain/schemas.js';
 import { hasRecognizedManaCost } from '../domain/mana.js';
+import { isKnownLayout, layoutSupportFor, RENDERABLE_LAYOUTS } from '../domain/frameSupport.js';
 
 export interface ValidationResult {
   valid: boolean;
@@ -43,8 +44,11 @@ export function validateForgeProject(project: ForgeProject): ValidationResult {
     if (card.setCode !== project.setCode) {
       errors.push(`Card ${card.cardId} belongs to ${card.setCode}, expected ${project.setCode}.`);
     }
-    if (!['normal', 'token'].includes(card.layout)) {
-      warnings.push(`Card ${card.cardId} uses unsupported layout ${card.layout}; preserved for review.`);
+    if (!isKnownLayout(card.layout)) {
+      warnings.push(`Card ${card.cardId} uses unknown layout ${card.layout}; normal fallback rendering will be used.`);
+    } else if (!RENDERABLE_LAYOUTS.has(card.layout)) {
+      const layoutSupport = layoutSupportFor(card.layout);
+      warnings.push(`Card ${card.cardId} uses registered-only layout ${card.layout}; metadata is preserved and ${layoutSupport.fallbackLayout} fallback rendering will be used.`);
     }
     if (card.layout === 'token' && !faces.some((face) => /token/i.test(face.frameType))) {
       warnings.push(`Card ${card.cardId} token layout should use a token frame.`);

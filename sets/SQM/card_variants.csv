@@ -1,0 +1,3 @@
+variant_id,card_id,display_name,kind,status,is_primary,export_policy,tags,notes,created_at,updated_at
+SQM-001-V1,SQM-001,Variant 1,mechanics_test,active,true,default,squirrel;flying;food;playtest,Primary flying build from the initial Squirrel Mania test card.,2026-06-05T17:51:06.000Z,2026-06-06T19:23:15.602Z
+SQM-001-V2,SQM-001,Variant 2,mechanics_test,testing,false,optional,squirrel;reach;food;playtest,Green reach comparison build for rule-variant testing.,2026-06-05T17:51:06.000Z,2026-06-05T17:51:06.000Z
