@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Browse Kyle's Marvel owned Magic card trade binder with filters, sorting, selection, comparison, and export.">
+    <meta name="theme-color" content="#141413">
+    <title>Marvel Trade Binder | Homebrew Forge</title>
+    <script>document.documentElement.classList.add("js-enhanced");</script>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#results">Skip to cards</a>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Homebrew Forge shareable</p>
+        <h1>Marvel Trade Binder</h1>
+      </div>
+      <div class="header-stats" aria-label="Collection summary">
+        <span><strong>425</strong> cards</span>
+        <span><strong>272</strong> names</span>
+        <span><strong>4</strong> sets</span>
+        <span><strong>$263.19</strong> snapshot</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="toolbar" aria-label="Browse controls">
+        <div class="search-row">
+          <label class="field field-search" for="searchInput">
+            <span>Search</span>
+            <input id="searchInput" type="search" placeholder="Name, type, rules text, tags" autocomplete="off">
+          </label>
+          <label class="field" for="sortSelect">
+            <span>Sort</span>
+            <select id="sortSelect">
+              <option value="name-asc">Name A-Z</option>
+              <option value="set-asc">Set and number</option>
+              <option value="market-desc">Market high-low</option>
+              <option value="market-asc">Market low-high</option>
+              <option value="quantity-desc">Quantity high-low</option>
+              <option value="condition-asc">Condition</option>
+              <option value="rarity-desc">Rarity</option>
+            </select>
+          </label>
+          <div class="view-toggle" role="group" aria-label="View mode">
+            <button type="button" data-view="grid" aria-pressed="true">Grid</button>
+            <button type="button" data-view="table" aria-pressed="false">Table</button>
+            <button type="button" data-view="sets" aria-pressed="false">Sets</button>
+            <button type="button" data-view="compare" aria-pressed="false">Compare</button>
+          </div>
+        </div>
+
+        <div class="filter-grid">
+          <label class="field" for="setFilter"><span>Set</span><select id="setFilter"></select></label>
+          <label class="field" for="rarityFilter"><span>Rarity</span><select id="rarityFilter"></select></label>
+          <label class="field" for="colorFilter"><span>Color</span><select id="colorFilter"></select></label>
+          <label class="field" for="typeFilter"><span>Type</span><select id="typeFilter"></select></label>
+          <label class="field" for="finishFilter"><span>Finish</span><select id="finishFilter"></select></label>
+          <label class="field" for="conditionFilter"><span>Condition</span><select id="conditionFilter"></select></label>
+          <label class="field" for="selectionFilter"><span>Status</span><select id="selectionFilter"></select></label>
+          <button id="resetFilters" class="secondary-action" type="button">Reset</button>
+        </div>
+      </section>
+
+      <section class="selection-bar" aria-label="Selection actions">
+        <div>
+          <strong id="resultCount">295</strong>
+          <span id="resultLabel">cards shown</span>
+          <span class="bar-dot" aria-hidden="true"></span>
+          <strong id="selectedCount">0</strong>
+          <span>selected</span>
+          <span class="bar-dot" aria-hidden="true"></span>
+          <strong id="markedCount">0</strong>
+          <span>marked</span>
+        </div>
+        <div class="selection-actions">
+          <button id="selectVisible" type="button">Select shown</button>
+          <button id="selectMarked" type="button">Select marked</button>
+          <button id="compareSelected" type="button">Compare selected</button>
+          <button id="clearSelection" type="button">Clear</button>
+          <button id="downloadCsv" type="button">CSV</button>
+          <button id="downloadTxt" type="button">TXT</button>
+          <button id="downloadXml" type="button">XML</button>
+        </div>
+      </section>
+
+      <section id="results" class="results" aria-live="polite"></section>
+    </main>
+
+    <template id="emptyTemplate">
+      <div class="empty-state">
+        <h2>No cards match</h2>
+        <p>Adjust search or reset filters.</p>
+      </div>
+    </template>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

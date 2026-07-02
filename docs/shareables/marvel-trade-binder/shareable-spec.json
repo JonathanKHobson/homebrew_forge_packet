@@ -1,0 +1,91 @@
+{
+  "slug": "marvel-trade-binder",
+  "title": "Marvel Trade Binder",
+  "type": "collection-trade-shareable",
+  "status": "live",
+  "generatedAt": "2026-07-02T07:29:05.895Z",
+  "source": {
+    "collectionId": "marvel-owned-cards",
+    "collectionName": "Marvel Owned Cards",
+    "sourceUpdatedAt": "2026-07-01T23:51:22.606Z"
+  },
+  "privacy": {
+    "excludes": [
+      "raw source rows",
+      "local file paths",
+      "source import file paths",
+      "purchase source details",
+      "importer IDs",
+      "auto-generated import notes",
+      "full private collection records"
+    ],
+    "includes": [
+      "card identity",
+      "owned quantity",
+      "finish",
+      "condition",
+      "set and collector metadata",
+      "public Scryfall links and image URLs",
+      "market snapshot fields",
+      "public tags",
+      "public notes when present"
+    ]
+  },
+  "features": [
+    "search",
+    "filters",
+    "sort",
+    "grid view",
+    "table view",
+    "set grouped view",
+    "compare view",
+    "select and mark",
+    "CSV export",
+    "TXT export",
+    "XML export"
+  ],
+  "summary": {
+    "title": "Marvel Trade Binder",
+    "collectionId": "marvel-owned-cards",
+    "collectionName": "Marvel Owned Cards",
+    "description": "Kyle's owned Magic: The Gathering | Marvel cards imported from ManaBox and merged with the purchased Avengers Assemble Commander precon.",
+    "generatedAt": "2026-07-02T07:29:05.895Z",
+    "sourceUpdatedAt": "2026-07-01T23:51:22.606Z",
+    "rowCount": 295,
+    "totalQuantity": 425,
+    "uniqueNames": 272,
+    "setCount": 4,
+    "marketTotal": 263.19,
+    "marketTotalFormatted": "$263.19",
+    "sets": [
+      {
+        "code": "MAR",
+        "name": "Marvel Universe",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 20.34
+      },
+      {
+        "code": "MSC",
+        "name": "Marvel Super Heroes Commander",
+        "rows": 87,
+        "quantity": 96,
+        "marketTotal": 149.92
+      },
+      {
+        "code": "MSH",
+        "name": "Marvel Super Heroes",
+        "rows": 205,
+        "quantity": 326,
+        "marketTotal": 92.35
+      },
+      {
+        "code": "SPM",
+        "name": "Marvel's Spider-Man",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.58
+      }
+    ]
+  }
+}

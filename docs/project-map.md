@@ -23,6 +23,8 @@ scripts/
   bootstrap-pnpm.sh       # Installs the repo-local pnpm wrapper for first-time setup
   launch-homebrew-forge-app.sh
                           # Starts the local editor on a stable port and opens the Chrome app-style window
+docs/
+  shareables/             # Published GitHub Pages artifacts, including public Homebrew Forge and collection shareables
 printables/
   commander-token-table-aids/
                           # Editable HTML/CSS source for private print-light token and tracker sheets
