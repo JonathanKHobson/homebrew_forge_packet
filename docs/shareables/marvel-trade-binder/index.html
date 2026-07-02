@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Browse Kyle's Marvel owned Magic card trade binder with filters, sorting, selection, comparison, and export.">
+    <meta name="description" content="Browse Kyle and Eleni owned Magic card binders with filters, tradability notes, comparison, preview, and export.">
     <meta name="theme-color" content="#141413">
-    <title>Marvel Trade Binder | Homebrew Forge</title>
+    <title>Owned Card Trade Binders | Homebrew Forge</title>
     <script>document.documentElement.classList.add("js-enhanced");</script>
     <link rel="stylesheet" href="./styles.css">
   </head>
@@ -14,17 +14,23 @@
     <header class="app-header">
       <div>
         <p class="eyebrow">Homebrew Forge shareable</p>
-        <h1>Marvel Trade Binder</h1>
+        <h1>Owned Card Trade Binders</h1>
       </div>
       <div class="header-stats" aria-label="Collection summary">
-        <span><strong>425</strong> cards</span>
-        <span><strong>272</strong> names</span>
-        <span><strong>4</strong> sets</span>
-        <span><strong>$263.19</strong> snapshot</span>
+        <span><strong>1947</strong> cards</span>
+        <span><strong>1343</strong> names</span>
+        <span><strong>24</strong> binders</span>
+        <span><strong>139</strong> sets</span>
+        <span><strong>$1,533.43</strong> snapshot</span>
       </div>
     </header>
 
     <main>
+      <section class="binder-panel" aria-label="Binder switcher">
+        <div class="section-label">Binders</div>
+        <div id="binderShelf" class="binder-shelf"></div>
+      </section>
+
       <section class="toolbar" aria-label="Browse controls">
         <div class="search-row">
           <label class="field field-search" for="searchInput">
@@ -34,12 +40,13 @@
           <label class="field" for="sortSelect">
             <span>Sort</span>
             <select id="sortSelect">
+              <option value="tradability-asc">Most tradable</option>
               <option value="name-asc">Name A-Z</option>
               <option value="set-asc">Set and number</option>
               <option value="market-desc">Market high-low</option>
               <option value="market-asc">Market low-high</option>
               <option value="quantity-desc">Quantity high-low</option>
-              <option value="condition-asc">Condition</option>
+              <option value="owner-asc">Owner</option>
               <option value="rarity-desc">Rarity</option>
             </select>
           </label>
@@ -52,20 +59,23 @@
         </div>
 
         <div class="filter-grid">
-          <label class="field" for="setFilter"><span>Set</span><select id="setFilter"></select></label>
-          <label class="field" for="rarityFilter"><span>Rarity</span><select id="rarityFilter"></select></label>
-          <label class="field" for="colorFilter"><span>Color</span><select id="colorFilter"></select></label>
-          <label class="field" for="typeFilter"><span>Type</span><select id="typeFilter"></select></label>
-          <label class="field" for="finishFilter"><span>Finish</span><select id="finishFilter"></select></label>
-          <label class="field" for="conditionFilter"><span>Condition</span><select id="conditionFilter"></select></label>
-          <label class="field" for="selectionFilter"><span>Status</span><select id="selectionFilter"></select></label>
+          <label class="field" for="binderFilter"><span>Add binder</span><select id="binderFilter" data-filter="binder"></select></label>
+          <label class="field" for="setFilter"><span>Add set</span><select id="setFilter" data-filter="set"></select></label>
+          <label class="field" for="ownerFilter"><span>Add owner</span><select id="ownerFilter" data-filter="owner"></select></label>
+          <label class="field" for="tradabilityFilter"><span>Add tradability</span><select id="tradabilityFilter" data-filter="tradability"></select></label>
+          <label class="field" for="colorFilter"><span>Add color</span><select id="colorFilter" data-filter="color"></select></label>
+          <label class="field" for="typeFilter"><span>Add type</span><select id="typeFilter" data-filter="type"></select></label>
+          <label class="field" for="rarityFilter"><span>Add rarity</span><select id="rarityFilter" data-filter="rarity"></select></label>
+          <label class="field" for="finishFilter"><span>Add finish</span><select id="finishFilter" data-filter="finish"></select></label>
+          <label class="field" for="conditionFilter"><span>Add condition</span><select id="conditionFilter" data-filter="condition"></select></label>
           <button id="resetFilters" class="secondary-action" type="button">Reset</button>
         </div>
+        <div id="activeFilters" class="active-filters" aria-label="Active filters"></div>
       </section>
 
       <section class="selection-bar" aria-label="Selection actions">
         <div>
-          <strong id="resultCount">295</strong>
+          <strong id="resultCount">1591</strong>
           <span id="resultLabel">cards shown</span>
           <span class="bar-dot" aria-hidden="true"></span>
           <strong id="selectedCount">0</strong>
@@ -87,6 +97,8 @@
 
       <section id="results" class="results" aria-live="polite"></section>
     </main>
+
+    <div id="previewModal" class="preview-modal" hidden></div>
 
     <template id="emptyTemplate">
       <div class="empty-state">

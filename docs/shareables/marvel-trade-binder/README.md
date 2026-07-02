@@ -5,36 +5,46 @@ type: public-shareable
 pin: false
 ---
 
-# Marvel Trade Binder Shareable
+# Owned Card Trade Binders Shareable
 
-Static GitHub Pages artifact for browsing Kyle's Marvel owned collection.
+Static GitHub Pages artifact for browsing Kyle and Eleni owned collection binders.
 
 ## Scope
 
-- Source collection: `marvel-owned-cards`
 - Public artifact: `docs/shareables/marvel-trade-binder/`
-- Generated at: `2026-07-02T07:29:05.895Z`
-- Rows: 295
-- Total quantity: 425
-- Sets: 4
-- Market snapshot: $263.19
+- Generated at: `2026-07-02T21:46:14.838Z`
+- Binders: 24
+- Sets: 139
+- Rows: 1591
+- Total quantity: 1947
+- Market snapshot: $1,533.43
 
-The public data excludes raw import rows, local file paths, source spreadsheet paths, purchase-source details, importer IDs, and auto-generated import notes. It keeps card identity, owned quantity, finish, condition, set data, public Scryfall references, market snapshot fields, tags, and public notes when present.
+The public data excludes raw import rows, local file paths, source spreadsheet paths, purchase-source details, importer IDs, and auto-generated import notes. Partner-owned cards are visible for browsing but marked not tradable.
 
 ## MVP Features
 
-- Search across card name, type, rules text, set, tags, and metadata.
-- Filters for set, rarity, color, type, finish, condition, and selected/marked state.
-- Sort by name, set/collector number, market value, quantity, condition, and rarity.
+- Prominent binder switching across owned collection binders.
+- Persistent multi-select filters with active filter chips and per-chip removal.
+- Owner and tradability filters, plus tradability sorting.
 - Grid, table, set-grouped, and compare views.
+- Full-card preview modal.
 - Local-only select and mark state in the browser.
 - Download selected rows as CSV, TXT, or XML.
+- Scryfall-backed compare search for a visitor's possible trade card.
+
+## Current Tradability Rules
+
+- Eleni-owned cards, including Squirrel Away and partner precons, are not tradable.
+- Dogmeat commander copies are not tradable.
+- Avengers Assemble deck cards are hard trades.
+- Fallout Scrappy Survivors deck cards and red/green/white Fallout cards without blue or black are hard trades.
+- Artist-signed cards are hard trades.
+- Other Kyle-owned cards default to neutral tradability.
 
 ## Future Auto Shareables
 
-1. Add an in-app Shareable Builder action on collections.
-2. Reuse the sanitizer/export DTO so public metadata is explicit before writing files.
-3. Let Kyle choose a privacy profile: public trade, private review, or full local preview.
+1. Move this generator behind an in-app Shareable Builder action on Collections.
+2. Let Kyle choose a privacy profile before writing public data.
+3. Keep tradability rules in a small editable policy file instead of this script.
 4. Generate to `docs/shareables/<slug>/` with `data/cards.json` and `shareable-spec.json`.
 5. Add a publish step that commits and pushes only the generated artifact after visual QA.
-6. Later, add a GitHub Action or local scheduled refresh for chosen collections.
