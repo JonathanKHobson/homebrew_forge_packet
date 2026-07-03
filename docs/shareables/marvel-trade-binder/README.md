@@ -12,7 +12,7 @@ Static GitHub Pages artifact for browsing Kyle and Eleni owned collection binder
 ## Scope
 
 - Public artifact: `docs/shareables/marvel-trade-binder/`
-- Generated at: `2026-07-02T21:46:14.838Z`
+- Generated at: `2026-07-02T23:57:24.321Z`
 - Binders: 24
 - Sets: 139
 - Rows: 1591

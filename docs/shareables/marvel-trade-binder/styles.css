@@ -82,7 +82,7 @@ h1 {
   gap: 0.55rem;
   max-width: 42rem;
 }
-.header-stats span, .selection-bar, .toolbar, .binder-panel, .card, .compare-card, .set-group, .empty-state, .preview-dialog {
+.header-stats span, .selection-bar, .toolbar, .binder-panel, .set-family-panel, .card, .compare-card, .set-group, .empty-state, .preview-dialog {
   border: 1px solid var(--line-soft);
   background: rgba(36, 35, 31, 0.94);
   box-shadow: var(--shadow);
@@ -99,34 +99,41 @@ main {
   margin: 0 auto;
   padding: 1rem clamp(0.75rem, 3vw, 2rem) 2rem;
 }
-.binder-panel, .toolbar {
+.binder-panel, .set-family-panel, .toolbar {
   display: grid;
   gap: 0.8rem;
   padding: 0.9rem;
   border-radius: 8px;
 }
-.binder-panel { margin-bottom: 0.8rem; }
-.binder-shelf {
+.binder-panel, .set-family-panel { margin-bottom: 0.8rem; }
+.binder-shelf, .set-family-shelf {
   display: flex;
   gap: 0.55rem;
   overflow-x: auto;
   padding-bottom: 0.25rem;
 }
-.binder-shelf button {
+.binder-shelf button, .set-family-shelf button {
   flex: 0 0 auto;
   min-width: 12rem;
   max-width: 17rem;
   padding: 0.65rem 0.75rem;
   text-align: left;
 }
-.binder-shelf button[aria-pressed="true"] {
+.set-family-shelf button {
+  min-width: 13rem;
+}
+.binder-shelf button[aria-pressed="true"], .set-family-shelf button[aria-pressed="true"] {
   background: var(--accent);
   border-color: var(--accent);
   color: #17130c;
   font-weight: 800;
 }
-.binder-shelf strong, .binder-shelf span { display: block; }
-.binder-shelf span { margin-top: 0.25rem; font-size: 0.78rem; opacity: 0.78; }
+.set-family-shelf button[data-active-state="partial"] {
+  border-color: rgba(212, 173, 102, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(212, 173, 102, 0.22);
+}
+.binder-shelf strong, .binder-shelf span, .set-family-shelf strong, .set-family-shelf span { display: block; }
+.binder-shelf span, .set-family-shelf span { margin-top: 0.25rem; font-size: 0.78rem; opacity: 0.78; }
 
 .toolbar {
   position: static;
@@ -377,7 +384,30 @@ td strong { color: var(--text); }
 .table-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
 .table-actions button { min-height: 34px; padding-inline: 0.55rem; }
 
-.set-view { display: grid; gap: 1rem; }
+.set-view { display: grid; gap: 1.15rem; }
+.set-family-group {
+  display: grid;
+  gap: 0.75rem;
+}
+.set-family-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.1rem;
+}
+.set-family-title button {
+  text-align: left;
+}
+.set-family-title strong, .set-family-title span {
+  display: block;
+}
+.set-family-title span {
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
 .set-group { border-radius: 8px; overflow: hidden; }
 .set-header {
   display: flex;
@@ -426,6 +456,7 @@ td strong { color: var(--text); }
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.9rem;
 }
+.compare-slot { min-width: 0; }
 .compare-card {
   display: grid;
   grid-template-columns: minmax(130px, 220px) minmax(0, 1fr);
@@ -472,6 +503,7 @@ td strong { color: var(--text); }
 .scryfall-result img { width: 3.2rem; border-radius: 5px; }
 .scryfall-result strong, .scryfall-result span { display: block; }
 .scryfall-result span { color: var(--muted); font-size: 0.82rem; }
+.scryfall-placeholder { margin: 0; color: var(--muted); }
 .candidate-controls {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -578,6 +610,6 @@ td strong { color: var(--text); }
   .grid-view, .compare-card, .preview-dialog, .candidate-controls, .comparison-row { grid-template-columns: 1fr; }
   .set-row { grid-template-columns: 1fr; }
   .set-row-actions { justify-content: flex-start; }
-  .binder-shelf button { min-width: 10rem; }
+  .binder-shelf button, .set-family-shelf button { min-width: 10rem; }
   .card-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

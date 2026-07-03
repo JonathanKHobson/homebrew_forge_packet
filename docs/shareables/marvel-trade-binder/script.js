@@ -173,6 +173,39 @@ function renderBinderShelf() {
   els.binderShelf.innerHTML = buttons.join("");
 }
 
+function setCodesForFamily(family) {
+  return family.codes || (family.sets || []).map((set) => set.code).filter(Boolean);
+}
+function familyActiveState(family) {
+  const codes = setCodesForFamily(family);
+  const activeCount = codes.filter((code) => state.filters.set.has(code)).length;
+  if (activeCount === 0) return "none";
+  if (activeCount === codes.length) return "all";
+  return "partial";
+}
+function renderSetFamilyShelf() {
+  const buttons = [`<button type="button" data-set-family-all aria-pressed="${state.filters.set.size === 0}"><strong>All set families</strong><span>${state.summary.totalQuantity} cards</span></button>`];
+  for (const family of state.summary.setFamilies || []) {
+    const activeState = familyActiveState(family);
+    buttons.push(`<button type="button" data-set-family-id="${escapeHtml(family.id)}" data-active-state="${activeState}" aria-pressed="${activeState === "all"}">
+      <strong>${escapeHtml(family.name)}</strong>
+      <span>${family.quantity} cards - ${family.codes.slice(0, 5).map(escapeHtml).join(", ")}</span>
+    </button>`);
+  }
+  els.setFamilyShelf.innerHTML = buttons.join("");
+}
+function toggleSetFamily(familyId) {
+  const family = (state.summary.setFamilies || []).find((candidate) => candidate.id === familyId);
+  if (!family) return;
+  const codes = setCodesForFamily(family);
+  const allActive = codes.every((code) => state.filters.set.has(code));
+  for (const code of codes) {
+    if (allActive) state.filters.set.delete(code);
+    else state.filters.set.add(code);
+  }
+  applyFilters();
+}
+
 function addFilter(key, value) {
   if (!value || !state.filters[key]) return;
   state.filters[key].add(value);
@@ -256,6 +289,7 @@ function sortCards(cards) {
 function applyFilters() {
   state.filtered = sortCards(state.cards.filter(matchesFilters));
   renderBinderShelf();
+  renderSetFamilyShelf();
   renderActiveFilters();
   render();
 }
@@ -265,6 +299,12 @@ function setView(view) {
     button.setAttribute("aria-pressed", String(button.dataset.view === view));
   });
   render();
+  if (view === "compare") {
+    requestAnimationFrame(() => {
+      els.results.scrollIntoView({ block: "start" });
+      byId("scryfallQuery")?.focus({ preventScroll: true });
+    });
+  }
 }
 
 function toggleSelected(cardId) {
@@ -365,7 +405,7 @@ function renderSets() {
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(card);
   }
-  const sections = Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([setCode, cards]) => {
+  const renderSetSection = ([setCode, cards]) => {
     const quantity = cards.reduce((total, card) => total + card.quantity, 0);
     const value = cards.reduce((total, card) => total + (card.marketTotal || 0), 0);
     const owners = Array.from(new Set(cards.map((card) => card.owner))).join(", ");
@@ -373,8 +413,31 @@ function renderSets() {
       <h2>${escapeHtml(setCode)} - ${escapeHtml(cards[0]?.setName || setCode)}</h2>
       <p>${cards.length} rows - ${quantity} cards - ${owners} - ${money(value)}</p>
     </div><div class="set-list">${cards.map(setRow).join("")}</div></section>`;
-  });
-  return `<div class="set-view">${sections.join("")}</div>`;
+  };
+  const familySections = (state.summary.setFamilies || []).map((family) => {
+    const familySets = (family.sets || [])
+      .map((set) => [set.code, groups.get(set.code)])
+      .filter((entry) => entry[1]?.length)
+      .sort((a, b) => a[0].localeCompare(b[0]));
+    if (familySets.length === 0) return "";
+    const quantity = familySets.reduce((total, [, cards]) => total + cards.reduce((sum, card) => sum + card.quantity, 0), 0);
+    const value = familySets.reduce((total, [, cards]) => total + cards.reduce((sum, card) => sum + (card.marketTotal || 0), 0), 0);
+    const activeState = familyActiveState(family);
+    return `<section class="set-family-group">
+      <div class="set-family-title">
+        <button type="button" data-set-family-id="${escapeHtml(family.id)}" data-active-state="${activeState}" aria-pressed="${activeState === "all"}">
+          <strong>${escapeHtml(family.name)}</strong>
+          <span>${familySets.length} sets - ${quantity} cards - ${money(value)}</span>
+        </button>
+      </div>
+      ${familySets.map(renderSetSection).join("")}
+    </section>`;
+  }).filter(Boolean);
+  const fallbackSections = Array.from(groups.entries())
+    .filter(([setCode]) => !(state.summary.sets || []).some((set) => set.code === setCode))
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(renderSetSection);
+  return `<div class="set-view">${familySections.concat(fallbackSections).join("")}</div>`;
 }
 function detailList(card) {
   const rows = [
@@ -421,19 +484,23 @@ function candidateCompareCard() {
     </div>
   </article>`;
 }
-function renderScryfallTools() {
-  const results = state.compare.results.map((card, index) => `<button type="button" class="scryfall-result" data-scryfall-index="${index}">
+function renderScryfallResultsMarkup() {
+  return state.compare.results.map((card, index) => `<button type="button" class="scryfall-result" data-scryfall-index="${index}">
     ${scryfallImage(card) ? `<img loading="lazy" src="${escapeHtml(scryfallImage(card))}" alt="">` : "<span></span>"}
     <span><strong>${escapeHtml(card.name)}</strong><span>${escapeHtml((card.set || "").toUpperCase())} #${escapeHtml(card.collector_number || "")} - ${escapeHtml(card.rarity || "")} - ${money(scryfallPrice(card))}</span></span>
     <span>${state.compare.selected?.id === card.id ? "On" : "Use"}</span>
   </button>`).join("");
+}
+function renderScryfallTools() {
+  const results = renderScryfallResultsMarkup();
+  const status = state.compare.loading ? "Searching Scryfall..." : state.compare.error;
   return `<div class="compare-tools">
     <div class="compare-search">
       <input id="scryfallQuery" type="search" value="${escapeHtml(state.compare.query)}" placeholder="Search all Scryfall cards">
-      <button id="scryfallSearch" type="button">${state.compare.loading ? "Searching" : "Search"}</button>
+      <button id="scryfallSearch" type="button" ${state.compare.loading ? "disabled" : ""}>${state.compare.loading ? "Searching" : "Search"}</button>
     </div>
-    ${state.compare.error ? `<p class="trade-note">${escapeHtml(state.compare.error)}</p>` : ""}
-    <div class="scryfall-results">${results || '<p class="trade-note">No Scryfall results selected yet.</p>'}</div>
+    <p id="scryfallStatus" class="trade-note" ${status ? "" : "hidden"}>${escapeHtml(status)}</p>
+    <div class="scryfall-results">${results || '<p class="scryfall-placeholder">No Scryfall results selected yet.</p>'}</div>
     <div class="candidate-controls">
       <label>Finish<select id="candidateFinish"><option value="nonfoil">Nonfoil</option><option value="foil">Foil</option><option value="etched">Etched</option></select></label>
       <label>Condition<select id="candidateCondition"><option value="near_mint">Near mint</option><option value="lightly_played">Lightly played</option><option value="moderately_played">Moderately played</option><option value="heavily_played">Heavily played</option><option value="damaged">Damaged</option></select></label>
@@ -462,9 +529,9 @@ function renderCompare() {
   const left = cardById(state.compare.leftId) || state.filtered[0] || state.cards[0];
   if (left && !state.compare.leftId) state.compare.leftId = left.id;
   return `<div class="compare-view">
-    <div class="compare-grid">${ownedCompareCard(left)}${candidateCompareCard()}</div>
+    <div class="compare-grid"><div id="ownedCompareSlot" class="compare-slot">${ownedCompareCard(left)}</div><div id="candidateCompareSlot" class="compare-slot">${candidateCompareCard()}</div></div>
     ${renderScryfallTools()}
-    ${comparisonBreakdown(left)}
+    <div id="comparisonBreakdownSlot">${comparisonBreakdown(left)}</div>
   </div>`;
 }
 function renderEmpty() { return byId("emptyTemplate").innerHTML; }
@@ -562,7 +629,7 @@ function downloadXml() {
   download("owned-card-trade-binder-selection.xml", "application/xml", `<?xml version="1.0" encoding="UTF-8"?>\\n<tradeSelection>\\n${body}\\n</tradeSelection>\\n`);
 }
 
-let scryfallTimer = null;
+let scryfallRequest = null;
 function buildScryfallQuery(query) {
   const trimmed = query.trim();
   if (/[:!<>=]/.test(trimmed)) return trimmed;
@@ -573,19 +640,44 @@ function buildScryfallQuery(query) {
     .map((part) => "name:" + part)
     .join(" ");
 }
+function syncScryfallStatus() {
+  const button = byId("scryfallSearch");
+  const status = byId("scryfallStatus");
+  if (button) {
+    button.disabled = state.compare.loading;
+    button.textContent = state.compare.loading ? "Searching" : "Search";
+  }
+  if (status) {
+    const text = state.compare.loading ? "Searching Scryfall..." : state.compare.error;
+    status.hidden = !text;
+    status.textContent = text;
+  }
+}
+function syncScryfallResults() {
+  const list = document.querySelector(".scryfall-results");
+  if (list) list.innerHTML = renderScryfallResultsMarkup() || '<p class="scryfall-placeholder">No Scryfall results selected yet.</p>';
+}
 async function searchScryfall() {
   const query = state.compare.query.trim();
+  if (scryfallRequest) scryfallRequest.abort();
   if (query.length < 2) {
     state.compare.results = [];
     state.compare.error = "";
-    render();
+    state.compare.loading = false;
+    syncScryfallStatus();
+    syncScryfallResults();
     return;
   }
+  const controller = new AbortController();
+  scryfallRequest = controller;
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
   state.compare.loading = true;
   state.compare.error = "";
-  render();
+  state.compare.results = [];
+  syncScryfallStatus();
   try {
-    const response = await fetch("https://api.scryfall.com/cards/search?unique=prints&order=name&q=" + encodeURIComponent(buildScryfallQuery(query)));
+    const response = await fetch("https://api.scryfall.com/cards/search?unique=prints&order=name&q=" + encodeURIComponent(buildScryfallQuery(query)), { signal: controller.signal });
+    if (scryfallRequest !== controller) return;
     if (response.status === 404) {
       state.compare.results = [];
       state.compare.error = "No Scryfall cards matched.";
@@ -597,22 +689,32 @@ async function searchScryfall() {
       state.compare.error = "";
     }
   } catch (error) {
-    state.compare.error = "Scryfall search failed. Try again in a moment.";
+    if (scryfallRequest !== controller) return;
+    state.compare.error = error.name === "AbortError" ? "Scryfall search timed out. Try again." : "Scryfall search failed. Try again in a moment.";
     state.compare.results = [];
   } finally {
-    state.compare.loading = false;
-    render();
+    clearTimeout(timeoutId);
+    if (scryfallRequest === controller) {
+      scryfallRequest = null;
+      state.compare.loading = false;
+      syncScryfallStatus();
+      syncScryfallResults();
+    }
   }
-}
-function debounceScryfallSearch() {
-  clearTimeout(scryfallTimer);
-  scryfallTimer = setTimeout(searchScryfall, 450);
 }
 function syncCompareControls() {
   const finish = byId("candidateFinish");
   const condition = byId("candidateCondition");
   if (finish) finish.value = state.compare.finish;
   if (condition) condition.value = state.compare.condition;
+}
+function syncCandidateComparison() {
+  const left = cardById(state.compare.leftId) || state.filtered[0] || state.cards[0];
+  const candidateSlot = byId("candidateCompareSlot");
+  const breakdownSlot = byId("comparisonBreakdownSlot");
+  if (candidateSlot) candidateSlot.innerHTML = candidateCompareCard();
+  if (breakdownSlot) breakdownSlot.innerHTML = comparisonBreakdown(left);
+  syncCompareControls();
 }
 
 function wireEvents() {
@@ -645,6 +747,16 @@ function wireEvents() {
       state.filters.binder.has(id) ? state.filters.binder.delete(id) : state.filters.binder.add(id);
       applyFilters();
     }
+  });
+  els.setFamilyShelf.addEventListener("click", (event) => {
+    const all = event.target.closest("[data-set-family-all]");
+    const button = event.target.closest("[data-set-family-id]");
+    if (all) {
+      state.filters.set.clear();
+      applyFilters();
+      return;
+    }
+    if (button) toggleSetFamily(button.dataset.setFamilyId);
   });
   els.activeFilters.addEventListener("click", (event) => {
     const remove = event.target.closest("[data-remove-filter]");
@@ -687,15 +799,30 @@ function wireEvents() {
   els.results.addEventListener("input", (event) => {
     if (event.target.id === "scryfallQuery") {
       state.compare.query = event.target.value;
-      debounceScryfallSearch();
+    }
+  });
+  els.results.addEventListener("keydown", (event) => {
+    if (event.target.id === "scryfallQuery" && event.key === "Enter") {
+      event.preventDefault();
+      state.compare.query = event.target.value;
+      searchScryfall();
     }
   });
   els.results.addEventListener("click", (event) => {
-    if (event.target.closest("#scryfallSearch")) searchScryfall();
+    const familyButton = event.target.closest("[data-set-family-id]");
+    if (familyButton) {
+      toggleSetFamily(familyButton.dataset.setFamilyId);
+      return;
+    }
+    if (event.target.closest("#scryfallSearch")) {
+      const input = byId("scryfallQuery");
+      if (input) state.compare.query = input.value;
+      searchScryfall();
+    }
     const result = event.target.closest("[data-scryfall-index]");
     if (result) {
       state.compare.selected = state.compare.results[Number(result.dataset.scryfallIndex)];
-      render();
+      syncCandidateComparison();
     }
   });
   els.results.addEventListener("change", (event) => {
@@ -703,7 +830,7 @@ function wireEvents() {
     if (event.target.id === "candidateCondition") state.compare.condition = event.target.value;
     if (event.target.id === "candidateAltered") state.compare.altered = event.target.checked;
     if (event.target.id === "candidateMisprint") state.compare.misprint = event.target.checked;
-    render();
+    if (event.target.id?.startsWith("candidate")) syncCandidateComparison();
   });
   els.previewModal.addEventListener("click", (event) => {
     if (event.target === els.previewModal || event.target.closest("[data-action='close-preview']")) closePreview();
@@ -715,7 +842,7 @@ function wireEvents() {
 
 async function init() {
   for (const id of [
-    "binderShelf", "searchInput", "sortSelect", "binderFilter", "setFilter", "ownerFilter", "tradabilityFilter", "colorFilter", "typeFilter", "rarityFilter", "finishFilter", "conditionFilter", "resetFilters", "activeFilters", "selectVisible", "selectMarked", "compareSelected", "clearSelection", "downloadCsv", "downloadTxt", "downloadXml", "resultCount", "resultLabel", "selectedCount", "markedCount", "results", "previewModal",
+    "binderShelf", "setFamilyShelf", "searchInput", "sortSelect", "binderFilter", "setFilter", "ownerFilter", "tradabilityFilter", "colorFilter", "typeFilter", "rarityFilter", "finishFilter", "conditionFilter", "resetFilters", "activeFilters", "selectVisible", "selectMarked", "compareSelected", "clearSelection", "downloadCsv", "downloadTxt", "downloadXml", "resultCount", "resultLabel", "selectedCount", "markedCount", "results", "previewModal",
   ]) els[id] = byId(id);
 
   const response = await fetch("./data/cards.json");
