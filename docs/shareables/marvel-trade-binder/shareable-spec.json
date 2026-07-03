@@ -3,12 +3,12 @@
   "title": "Owned Card Trade Binders",
   "type": "owned-collection-trade-shareable",
   "status": "live",
-  "generatedAt": "2026-07-03T00:48:49.017Z",
+  "generatedAt": "2026-07-03T07:10:47.210Z",
   "source": {
     "collectionPurpose": "owned",
     "collectionKind": "binder",
     "binderCount": 24,
-    "setCount": 139
+    "setCount": 141
   },
   "privacy": {
     "excludes": [
@@ -54,21 +54,21 @@
   "summary": {
     "title": "Owned Card Trade Binders",
     "slug": "marvel-trade-binder",
-    "generatedAt": "2026-07-03T00:48:49.017Z",
-    "rowCount": 1591,
-    "totalQuantity": 1947,
-    "uniqueNames": 1343,
+    "generatedAt": "2026-07-03T07:10:47.210Z",
+    "rowCount": 1602,
+    "totalQuantity": 1958,
+    "uniqueNames": 1354,
     "binderCount": 24,
-    "setCount": 139,
-    "marketTotal": 1533.43,
-    "marketTotalFormatted": "$1,533.43",
+    "setCount": 141,
+    "marketTotal": 1582.51,
+    "marketTotalFormatted": "$1,582.51",
     "owners": {
-      "Kyle": 1341,
+      "Kyle": 1352,
       "Eleni": 606
     },
     "tradability": {
       "high_value": 254,
-      "neutral": 1086,
+      "neutral": 1097,
       "not_tradable": 607
     },
     "binders": [
@@ -91,9 +91,9 @@
         "setCodes": [
           "ACR"
         ],
-        "rows": 54,
-        "quantity": 60,
-        "marketTotal": 33.57
+        "rows": 55,
+        "quantity": 61,
+        "marketTotal": 34.65
       },
       {
         "id": "avatar-the-last-airbender-owned-cards",
@@ -127,9 +127,9 @@
           "DMU",
           "DOM"
         ],
-        "rows": 12,
-        "quantity": 12,
-        "marketTotal": 1.46
+        "rows": 13,
+        "quantity": 13,
+        "marketTotal": 18.63
       },
       {
         "id": "fallout-themed-cards",
@@ -322,6 +322,7 @@
           "DGM",
           "DSC",
           "DSK",
+          "DTK",
           "ECC",
           "ECL",
           "EMN",
@@ -344,12 +345,14 @@
           "NEO",
           "ONE",
           "ORI",
+          "OTC",
           "OTJ",
           "POR",
           "RNA",
           "ROE",
           "RTR",
           "RVR",
+          "SLD",
           "SNC",
           "SPG",
           "TDC",
@@ -357,9 +360,9 @@
           "XLN",
           "ZNR"
         ],
-        "rows": 91,
-        "quantity": 91,
-        "marketTotal": 57.59
+        "rows": 97,
+        "quantity": 97,
+        "marketTotal": 87.8
       },
       {
         "id": "partner-animated-army",
@@ -441,9 +444,9 @@
           "SOS",
           "STX"
         ],
-        "rows": 53,
-        "quantity": 66,
-        "marketTotal": 13.6
+        "rows": 55,
+        "quantity": 68,
+        "marketTotal": 14.11
       },
       {
         "id": "squirrel-away",
@@ -506,9 +509,9 @@
           "WOE",
           "WOT"
         ],
-        "rows": 10,
-        "quantity": 10,
-        "marketTotal": 2.89
+        "rows": 11,
+        "quantity": 11,
+        "marketTotal": 3
       }
     ],
     "sets": [
@@ -536,9 +539,9 @@
       {
         "code": "ACR",
         "name": "Assassin's Creed",
-        "rows": 54,
-        "quantity": 60,
-        "marketTotal": 33.57
+        "rows": 55,
+        "quantity": 61,
+        "marketTotal": 34.65
       },
       {
         "code": "AER",
@@ -725,9 +728,9 @@
       {
         "code": "DMR",
         "name": "Dominaria Remastered",
-        "rows": 3,
-        "quantity": 4,
-        "marketTotal": 0.83
+        "rows": 4,
+        "quantity": 5,
+        "marketTotal": 18
       },
       {
         "code": "DMU",
@@ -756,6 +759,13 @@
         "rows": 3,
         "quantity": 3,
         "marketTotal": 3.96
+      },
+      {
+        "code": "DTK",
+        "name": "Dragons of Tarkir",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.21
       },
       {
         "code": "ECC",
@@ -1089,9 +1099,9 @@
       {
         "code": "MMQ",
         "name": "Mercadian Masques",
-        "rows": 19,
-        "quantity": 29,
-        "marketTotal": 13.95
+        "rows": 20,
+        "quantity": 30,
+        "marketTotal": 14.47
       },
       {
         "code": "MOC",
@@ -1159,16 +1169,16 @@
       {
         "code": "OTC",
         "name": "Outlaws of Thunder Junction Commander",
-        "rows": 1,
-        "quantity": 1,
-        "marketTotal": 0
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 6.19
       },
       {
         "code": "OTJ",
         "name": "Outlaws of Thunder Junction",
-        "rows": 3,
-        "quantity": 3,
-        "marketTotal": 0.47
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 0.62
       },
       {
         "code": "PCA",
@@ -1255,6 +1265,13 @@
         "marketTotal": 0.26
       },
       {
+        "code": "SLD",
+        "name": "Secret Lair Drop",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 23.14
+      },
+      {
         "code": "SNC",
         "name": "Streets of New Capenna",
         "rows": 5,
@@ -1278,9 +1295,9 @@
       {
         "code": "SOS",
         "name": "Secrets of Strixhaven",
-        "rows": 48,
-        "quantity": 61,
-        "marketTotal": 12.23
+        "rows": 50,
+        "quantity": 63,
+        "marketTotal": 12.74
       },
       {
         "code": "SPG",
@@ -1439,9 +1456,9 @@
       {
         "code": "WOE",
         "name": "Wilds of Eldraine",
-        "rows": 10,
-        "quantity": 10,
-        "marketTotal": 1.56
+        "rows": 11,
+        "quantity": 11,
+        "marketTotal": 1.67
       },
       {
         "code": "WOT",
@@ -1536,16 +1553,16 @@
       {
         "id": "assassins-creed",
         "name": "Assassin's Creed Universes Beyond",
-        "rows": 54,
-        "quantity": 60,
-        "marketTotal": 33.57,
+        "rows": 55,
+        "quantity": 61,
+        "marketTotal": 34.65,
         "sets": [
           {
             "code": "ACR",
             "name": "Assassin's Creed",
-            "rows": 54,
-            "quantity": 60,
-            "marketTotal": 33.57
+            "rows": 55,
+            "quantity": 61,
+            "marketTotal": 34.65
           }
         ],
         "codes": [
@@ -1601,9 +1618,9 @@
       {
         "id": "classic-magic",
         "name": "Classic Magic",
-        "rows": 57,
-        "quantity": 93,
-        "marketTotal": 316.01,
+        "rows": 58,
+        "quantity": 94,
+        "marketTotal": 316.53,
         "sets": [
           {
             "code": "3ED",
@@ -1678,9 +1695,9 @@
           {
             "code": "MMQ",
             "name": "Mercadian Masques",
-            "rows": 19,
-            "quantity": 29,
-            "marketTotal": 13.95
+            "rows": 20,
+            "quantity": 30,
+            "marketTotal": 14.47
           },
           {
             "code": "PCY",
@@ -2018,16 +2035,16 @@
       {
         "id": "dominaria",
         "name": "Dominaria",
-        "rows": 14,
-        "quantity": 15,
-        "marketTotal": 2.08,
+        "rows": 15,
+        "quantity": 16,
+        "marketTotal": 19.25,
         "sets": [
           {
             "code": "DMR",
             "name": "Dominaria Remastered",
-            "rows": 3,
-            "quantity": 4,
-            "marketTotal": 0.83
+            "rows": 4,
+            "quantity": 5,
+            "marketTotal": 18
           },
           {
             "code": "DMU",
@@ -2527,9 +2544,9 @@
       {
         "id": "other-magic",
         "name": "Other Magic Sets",
-        "rows": 17,
-        "quantity": 17,
-        "marketTotal": 9.44,
+        "rows": 18,
+        "quantity": 18,
+        "marketTotal": 32.58,
         "sets": [
           {
             "code": "AER",
@@ -2581,6 +2598,13 @@
             "marketTotal": 0.89
           },
           {
+            "code": "SLD",
+            "name": "Secret Lair Drop",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 23.14
+          },
+          {
             "code": "SPG",
             "name": "Special Guests",
             "rows": 1,
@@ -2603,6 +2627,7 @@
           "IKO",
           "KHM",
           "MOM",
+          "SLD",
           "SPG",
           "UNF"
         ]
@@ -2610,23 +2635,23 @@
       {
         "id": "outlaws-thunder-junction",
         "name": "Outlaws of Thunder Junction",
-        "rows": 4,
-        "quantity": 4,
-        "marketTotal": 0.47,
+        "rows": 7,
+        "quantity": 7,
+        "marketTotal": 6.81,
         "sets": [
           {
             "code": "OTC",
             "name": "Outlaws of Thunder Junction Commander",
-            "rows": 1,
-            "quantity": 1,
-            "marketTotal": 0
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 6.19
           },
           {
             "code": "OTJ",
             "name": "Outlaws of Thunder Junction",
-            "rows": 3,
-            "quantity": 3,
-            "marketTotal": 0.47
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 0.62
           }
         ],
         "codes": [
@@ -2731,9 +2756,9 @@
       {
         "id": "strixhaven",
         "name": "Strixhaven",
-        "rows": 154,
-        "quantity": 187,
-        "marketTotal": 128.34,
+        "rows": 156,
+        "quantity": 189,
+        "marketTotal": 128.85,
         "sets": [
           {
             "code": "C21",
@@ -2759,9 +2784,9 @@
           {
             "code": "SOS",
             "name": "Secrets of Strixhaven",
-            "rows": 48,
-            "quantity": 61,
-            "marketTotal": 12.23
+            "rows": 50,
+            "quantity": 63,
+            "marketTotal": 12.74
           },
           {
             "code": "STX",
@@ -2782,10 +2807,17 @@
       {
         "id": "tarkir",
         "name": "Tarkir",
-        "rows": 14,
-        "quantity": 15,
-        "marketTotal": 36.94,
+        "rows": 15,
+        "quantity": 16,
+        "marketTotal": 37.15,
         "sets": [
+          {
+            "code": "DTK",
+            "name": "Dragons of Tarkir",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.21
+          },
           {
             "code": "FRF",
             "name": "Fate Reforged",
@@ -2816,6 +2848,7 @@
           }
         ],
         "codes": [
+          "DTK",
           "FRF",
           "KTK",
           "TDC",
@@ -2887,16 +2920,16 @@
       {
         "id": "eldraine",
         "name": "Wilds of Eldraine",
-        "rows": 11,
-        "quantity": 11,
-        "marketTotal": 2.89,
+        "rows": 12,
+        "quantity": 12,
+        "marketTotal": 3,
         "sets": [
           {
             "code": "WOE",
             "name": "Wilds of Eldraine",
-            "rows": 10,
-            "quantity": 10,
-            "marketTotal": 1.56
+            "rows": 11,
+            "quantity": 11,
+            "marketTotal": 1.67
           },
           {
             "code": "WOT",

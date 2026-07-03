@@ -2,21 +2,21 @@
   "summary": {
     "title": "Owned Card Trade Binders",
     "slug": "marvel-trade-binder",
-    "generatedAt": "2026-07-03T00:48:49.017Z",
-    "rowCount": 1591,
-    "totalQuantity": 1947,
-    "uniqueNames": 1343,
+    "generatedAt": "2026-07-03T07:10:47.210Z",
+    "rowCount": 1602,
+    "totalQuantity": 1958,
+    "uniqueNames": 1354,
     "binderCount": 24,
-    "setCount": 139,
-    "marketTotal": 1533.43,
-    "marketTotalFormatted": "$1,533.43",
+    "setCount": 141,
+    "marketTotal": 1582.51,
+    "marketTotalFormatted": "$1,582.51",
     "owners": {
-      "Kyle": 1341,
+      "Kyle": 1352,
       "Eleni": 606
     },
     "tradability": {
       "high_value": 254,
-      "neutral": 1086,
+      "neutral": 1097,
       "not_tradable": 607
     },
     "binders": [
@@ -39,9 +39,9 @@
         "setCodes": [
           "ACR"
         ],
-        "rows": 54,
-        "quantity": 60,
-        "marketTotal": 33.57
+        "rows": 55,
+        "quantity": 61,
+        "marketTotal": 34.65
       },
       {
         "id": "avatar-the-last-airbender-owned-cards",
@@ -75,9 +75,9 @@
           "DMU",
           "DOM"
         ],
-        "rows": 12,
-        "quantity": 12,
-        "marketTotal": 1.46
+        "rows": 13,
+        "quantity": 13,
+        "marketTotal": 18.63
       },
       {
         "id": "fallout-themed-cards",
@@ -270,6 +270,7 @@
           "DGM",
           "DSC",
           "DSK",
+          "DTK",
           "ECC",
           "ECL",
           "EMN",
@@ -292,12 +293,14 @@
           "NEO",
           "ONE",
           "ORI",
+          "OTC",
           "OTJ",
           "POR",
           "RNA",
           "ROE",
           "RTR",
           "RVR",
+          "SLD",
           "SNC",
           "SPG",
           "TDC",
@@ -305,9 +308,9 @@
           "XLN",
           "ZNR"
         ],
-        "rows": 91,
-        "quantity": 91,
-        "marketTotal": 57.59
+        "rows": 97,
+        "quantity": 97,
+        "marketTotal": 87.8
       },
       {
         "id": "partner-animated-army",
@@ -389,9 +392,9 @@
           "SOS",
           "STX"
         ],
-        "rows": 53,
-        "quantity": 66,
-        "marketTotal": 13.6
+        "rows": 55,
+        "quantity": 68,
+        "marketTotal": 14.11
       },
       {
         "id": "squirrel-away",
@@ -454,9 +457,9 @@
           "WOE",
           "WOT"
         ],
-        "rows": 10,
-        "quantity": 10,
-        "marketTotal": 2.89
+        "rows": 11,
+        "quantity": 11,
+        "marketTotal": 3
       }
     ],
     "sets": [
@@ -484,9 +487,9 @@
       {
         "code": "ACR",
         "name": "Assassin's Creed",
-        "rows": 54,
-        "quantity": 60,
-        "marketTotal": 33.57
+        "rows": 55,
+        "quantity": 61,
+        "marketTotal": 34.65
       },
       {
         "code": "AER",
@@ -673,9 +676,9 @@
       {
         "code": "DMR",
         "name": "Dominaria Remastered",
-        "rows": 3,
-        "quantity": 4,
-        "marketTotal": 0.83
+        "rows": 4,
+        "quantity": 5,
+        "marketTotal": 18
       },
       {
         "code": "DMU",
@@ -704,6 +707,13 @@
         "rows": 3,
         "quantity": 3,
         "marketTotal": 3.96
+      },
+      {
+        "code": "DTK",
+        "name": "Dragons of Tarkir",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.21
       },
       {
         "code": "ECC",
@@ -1037,9 +1047,9 @@
       {
         "code": "MMQ",
         "name": "Mercadian Masques",
-        "rows": 19,
-        "quantity": 29,
-        "marketTotal": 13.95
+        "rows": 20,
+        "quantity": 30,
+        "marketTotal": 14.47
       },
       {
         "code": "MOC",
@@ -1107,16 +1117,16 @@
       {
         "code": "OTC",
         "name": "Outlaws of Thunder Junction Commander",
-        "rows": 1,
-        "quantity": 1,
-        "marketTotal": 0
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 6.19
       },
       {
         "code": "OTJ",
         "name": "Outlaws of Thunder Junction",
-        "rows": 3,
-        "quantity": 3,
-        "marketTotal": 0.47
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 0.62
       },
       {
         "code": "PCA",
@@ -1203,6 +1213,13 @@
         "marketTotal": 0.26
       },
       {
+        "code": "SLD",
+        "name": "Secret Lair Drop",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 23.14
+      },
+      {
         "code": "SNC",
         "name": "Streets of New Capenna",
         "rows": 5,
@@ -1226,9 +1243,9 @@
       {
         "code": "SOS",
         "name": "Secrets of Strixhaven",
-        "rows": 48,
-        "quantity": 61,
-        "marketTotal": 12.23
+        "rows": 50,
+        "quantity": 63,
+        "marketTotal": 12.74
       },
       {
         "code": "SPG",
@@ -1387,9 +1404,9 @@
       {
         "code": "WOE",
         "name": "Wilds of Eldraine",
-        "rows": 10,
-        "quantity": 10,
-        "marketTotal": 1.56
+        "rows": 11,
+        "quantity": 11,
+        "marketTotal": 1.67
       },
       {
         "code": "WOT",
@@ -1484,16 +1501,16 @@
       {
         "id": "assassins-creed",
         "name": "Assassin's Creed Universes Beyond",
-        "rows": 54,
-        "quantity": 60,
-        "marketTotal": 33.57,
+        "rows": 55,
+        "quantity": 61,
+        "marketTotal": 34.65,
         "sets": [
           {
             "code": "ACR",
             "name": "Assassin's Creed",
-            "rows": 54,
-            "quantity": 60,
-            "marketTotal": 33.57
+            "rows": 55,
+            "quantity": 61,
+            "marketTotal": 34.65
           }
         ],
         "codes": [
@@ -1549,9 +1566,9 @@
       {
         "id": "classic-magic",
         "name": "Classic Magic",
-        "rows": 57,
-        "quantity": 93,
-        "marketTotal": 316.01,
+        "rows": 58,
+        "quantity": 94,
+        "marketTotal": 316.53,
         "sets": [
           {
             "code": "3ED",
@@ -1626,9 +1643,9 @@
           {
             "code": "MMQ",
             "name": "Mercadian Masques",
-            "rows": 19,
-            "quantity": 29,
-            "marketTotal": 13.95
+            "rows": 20,
+            "quantity": 30,
+            "marketTotal": 14.47
           },
           {
             "code": "PCY",
@@ -1966,16 +1983,16 @@
       {
         "id": "dominaria",
         "name": "Dominaria",
-        "rows": 14,
-        "quantity": 15,
-        "marketTotal": 2.08,
+        "rows": 15,
+        "quantity": 16,
+        "marketTotal": 19.25,
         "sets": [
           {
             "code": "DMR",
             "name": "Dominaria Remastered",
-            "rows": 3,
-            "quantity": 4,
-            "marketTotal": 0.83
+            "rows": 4,
+            "quantity": 5,
+            "marketTotal": 18
           },
           {
             "code": "DMU",
@@ -2475,9 +2492,9 @@
       {
         "id": "other-magic",
         "name": "Other Magic Sets",
-        "rows": 17,
-        "quantity": 17,
-        "marketTotal": 9.44,
+        "rows": 18,
+        "quantity": 18,
+        "marketTotal": 32.58,
         "sets": [
           {
             "code": "AER",
@@ -2529,6 +2546,13 @@
             "marketTotal": 0.89
           },
           {
+            "code": "SLD",
+            "name": "Secret Lair Drop",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 23.14
+          },
+          {
             "code": "SPG",
             "name": "Special Guests",
             "rows": 1,
@@ -2551,6 +2575,7 @@
           "IKO",
           "KHM",
           "MOM",
+          "SLD",
           "SPG",
           "UNF"
         ]
@@ -2558,23 +2583,23 @@
       {
         "id": "outlaws-thunder-junction",
         "name": "Outlaws of Thunder Junction",
-        "rows": 4,
-        "quantity": 4,
-        "marketTotal": 0.47,
+        "rows": 7,
+        "quantity": 7,
+        "marketTotal": 6.81,
         "sets": [
           {
             "code": "OTC",
             "name": "Outlaws of Thunder Junction Commander",
-            "rows": 1,
-            "quantity": 1,
-            "marketTotal": 0
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 6.19
           },
           {
             "code": "OTJ",
             "name": "Outlaws of Thunder Junction",
-            "rows": 3,
-            "quantity": 3,
-            "marketTotal": 0.47
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 0.62
           }
         ],
         "codes": [
@@ -2679,9 +2704,9 @@
       {
         "id": "strixhaven",
         "name": "Strixhaven",
-        "rows": 154,
-        "quantity": 187,
-        "marketTotal": 128.34,
+        "rows": 156,
+        "quantity": 189,
+        "marketTotal": 128.85,
         "sets": [
           {
             "code": "C21",
@@ -2707,9 +2732,9 @@
           {
             "code": "SOS",
             "name": "Secrets of Strixhaven",
-            "rows": 48,
-            "quantity": 61,
-            "marketTotal": 12.23
+            "rows": 50,
+            "quantity": 63,
+            "marketTotal": 12.74
           },
           {
             "code": "STX",
@@ -2730,10 +2755,17 @@
       {
         "id": "tarkir",
         "name": "Tarkir",
-        "rows": 14,
-        "quantity": 15,
-        "marketTotal": 36.94,
+        "rows": 15,
+        "quantity": 16,
+        "marketTotal": 37.15,
         "sets": [
+          {
+            "code": "DTK",
+            "name": "Dragons of Tarkir",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.21
+          },
           {
             "code": "FRF",
             "name": "Fate Reforged",
@@ -2764,6 +2796,7 @@
           }
         ],
         "codes": [
+          "DTK",
           "FRF",
           "KTK",
           "TDC",
@@ -2835,16 +2868,16 @@
       {
         "id": "eldraine",
         "name": "Wilds of Eldraine",
-        "rows": 11,
-        "quantity": 11,
-        "marketTotal": 2.89,
+        "rows": 12,
+        "quantity": 12,
+        "marketTotal": 3,
         "sets": [
           {
             "code": "WOE",
             "name": "Wilds of Eldraine",
-            "rows": 10,
-            "quantity": 10,
-            "marketTotal": 1.56
+            "rows": 11,
+            "quantity": 11,
+            "marketTotal": 1.67
           },
           {
             "code": "WOT",
@@ -3064,7 +3097,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Distract the Guards",
       "quantity": 1,
@@ -3134,7 +3169,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Fall of the First Civilization",
       "quantity": 1,
@@ -3203,7 +3240,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Haystack",
       "quantity": 1,
@@ -3269,7 +3308,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Layla Hassan",
       "quantity": 1,
@@ -3341,7 +3382,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Senu, Keen-Eyed Protector",
       "quantity": 1,
@@ -3413,7 +3456,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Templar Knight",
       "quantity": 1,
@@ -3481,7 +3526,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "What Must Be Done",
       "quantity": 1,
@@ -3552,7 +3599,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Escape Detection",
       "quantity": 1,
@@ -3622,7 +3671,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Assassin Initiate",
       "quantity": 1,
@@ -3689,7 +3740,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Chain Assassination",
       "quantity": 1,
@@ -3759,7 +3812,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Desmond Miles",
       "quantity": 1,
@@ -3832,7 +3887,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Hemlock Vial",
       "quantity": 1,
@@ -3899,7 +3956,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Petty Larceny",
       "quantity": 2,
@@ -3971,7 +4030,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Phantom Blade",
       "quantity": 1,
@@ -4041,7 +4102,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Restart Sequence",
       "quantity": 1,
@@ -4112,7 +4175,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "The Revelations of Ezio",
       "quantity": 2,
@@ -4181,7 +4246,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Hidden Footblade",
       "quantity": 1,
@@ -4251,7 +4318,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Hidden Footblade",
       "quantity": 1,
@@ -4321,7 +4390,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Monastery Raid",
       "quantity": 1,
@@ -4392,7 +4463,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Origin of the Hidden Ones",
       "quantity": 1,
@@ -4460,7 +4533,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Overpowering Attack",
       "quantity": 1,
@@ -4530,7 +4605,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Overpowering Attack",
       "quantity": 3,
@@ -4600,7 +4677,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "The Spear of Leonidas",
       "quantity": 1,
@@ -4673,7 +4752,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Viewpoint Synchronization",
       "quantity": 1,
@@ -4743,7 +4824,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Adéwalé, Breaker of Chains",
       "quantity": 1,
@@ -4805,6 +4888,82 @@
       }
     },
     {
+      "id": "assassin-candidate-binder-0055",
+      "collectionId": "assassin-candidate-binder",
+      "binderName": "Assassin's Ledger",
+      "binderTags": [
+        "owned",
+        "acr",
+        "assassins-ledger",
+        "assassin",
+        "magic-assassins-creed",
+        "manabox",
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Altaïr Ibn-La'Ahad",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "ACR",
+      "setName": "Assassin's Creed",
+      "collectorNumber": "45",
+      "collectorSort": 45,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Assassin's Ledger",
+      "marketPrice": 1.08,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 1.08,
+      "notes": "",
+      "starred": true,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "mythic",
+      "manaCost": "{R}{W}{B}",
+      "manaValue": 3,
+      "typeLine": "Legendary Creature — Human Assassin",
+      "typeBucket": "Creature",
+      "oracleText": "First strike\nWhenever Altaïr attacks, exile up to one target Assassin creature card from your graveyard with a memory counter on it. Then for each creature card you own in exile with a memory counter on it, create a tapped and attacking token that's a copy of it. Exile those tokens at end of combat.",
+      "colors": [
+        "B",
+        "R",
+        "W"
+      ],
+      "colorIdentity": [
+        "B",
+        "R",
+        "W"
+      ],
+      "keywords": [
+        "First strike"
+      ],
+      "imageUrl": "https://cards.scryfall.io/normal/front/3/5/358026de-ab7c-4a17-8cac-cfbee391b127.jpg?1782690863",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/3/5/358026de-ab7c-4a17-8cac-cfbee391b127.jpg?1782690863",
+      "scryfallUri": "https://scryfall.com/card/acr/45/alta%C3%AFr-ibn-laahad?utm_source=api",
+      "releasedAt": "2024-07-05",
+      "artist": "Axel Sauerwald",
+      "publicTags": [
+        "assassin",
+        "assassins-ledger",
+        "owned-card-correction",
+        "legendary",
+        "creature",
+        "interaction"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "assassin-candidate-binder-0027",
       "collectionId": "assassin-candidate-binder",
       "binderName": "Assassin's Ledger",
@@ -4815,7 +4974,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Bleeding Effect",
       "quantity": 1,
@@ -4884,7 +5045,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Eivor, Wolf-Kissed",
       "quantity": 1,
@@ -4961,7 +5124,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Ezio, Brash Novice",
       "quantity": 1,
@@ -5030,7 +5195,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Haytham Kenway",
       "quantity": 1,
@@ -5102,7 +5269,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Kassandra, Eagle Bearer",
       "quantity": 1,
@@ -5177,7 +5346,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Lydia Frye",
       "quantity": 1,
@@ -5250,7 +5421,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Adrestia",
       "quantity": 1,
@@ -5318,7 +5491,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Apple of Eden, Isu Relic",
       "quantity": 1,
@@ -5382,7 +5557,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Hidden Blade",
       "quantity": 1,
@@ -5448,7 +5625,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Mjölnir, Storm Hammer",
       "quantity": 1,
@@ -5515,7 +5694,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Smoke Bomb",
       "quantity": 1,
@@ -5579,7 +5760,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Staff of Eden, Vault's Key",
       "quantity": 1,
@@ -5643,7 +5826,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Towering Viewpoint",
       "quantity": 1,
@@ -5710,7 +5895,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Yggdrasil, Rebirth Engine",
       "quantity": 1,
@@ -5775,7 +5962,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Path to Exile",
       "quantity": 1,
@@ -5843,7 +6032,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Rest in Peace",
       "quantity": 1,
@@ -5911,7 +6102,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Coastal Piracy",
       "quantity": 1,
@@ -5978,7 +6171,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Go for the Throat",
       "quantity": 1,
@@ -6045,7 +6240,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Mortify",
       "quantity": 1,
@@ -6114,7 +6311,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Terminate",
       "quantity": 1,
@@ -6183,7 +6382,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Roshan, Hidden Magister",
       "quantity": 2,
@@ -6251,7 +6452,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Arno Dorian",
       "quantity": 2,
@@ -6324,7 +6527,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Ezio, Brash Novice",
       "quantity": 1,
@@ -6393,7 +6598,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Lydia Frye",
       "quantity": 1,
@@ -6466,7 +6673,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Shaun & Rebecca, Agents",
       "quantity": 1,
@@ -6542,7 +6751,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Shay Cormac",
       "quantity": 1,
@@ -6611,7 +6822,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Royal Assassin",
       "quantity": 1,
@@ -6679,7 +6892,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "The Animus",
       "quantity": 1,
@@ -6744,7 +6959,9 @@
         "assassin",
         "magic-assassins-creed",
         "manabox",
-        "batch-2026-07-02-assassin-corrections"
+        "batch-2026-07-02-assassin-corrections",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Brotherhood Ambushers",
       "quantity": 1,
@@ -9382,7 +9599,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Impulse",
       "quantity": 1,
@@ -9436,6 +9655,71 @@
       }
     },
     {
+      "id": "dominaria-owned-cards-0013",
+      "collectionId": "dominaria-owned-cards",
+      "binderName": "Dominaria Owned Cards",
+      "binderTags": [
+        "owned",
+        "dominaria",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Entomb",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "DMR",
+      "setName": "Dominaria Remastered",
+      "collectorNumber": "82",
+      "collectorSort": 82,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Dominaria Owned Cards",
+      "marketPrice": 17.17,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 17.17,
+      "notes": "",
+      "starred": true,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "rare",
+      "manaCost": "{B}",
+      "manaValue": 1,
+      "typeLine": "Instant",
+      "typeBucket": "Instant",
+      "oracleText": "Search your library for a card, put that card into your graveyard, then shuffle.",
+      "colors": [
+        "B"
+      ],
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "imageUrl": "https://cards.scryfall.io/normal/front/3/c/3caa9c55-5e3b-436b-84a9-b7ccebf63799.jpg?1782735264",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/3/c/3caa9c55-5e3b-436b-84a9-b7ccebf63799.jpg?1782735264",
+      "scryfallUri": "https://scryfall.com/card/dmr/82/entomb?utm_source=api",
+      "releasedAt": "2023-01-13",
+      "artist": "Seb McKinnon",
+      "publicTags": [
+        "dominaria",
+        "owned-card-correction",
+        "instant"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "dominaria-owned-cards-0011",
       "collectionId": "dominaria-owned-cards",
       "binderName": "Dominaria Owned Cards",
@@ -9444,7 +9728,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Artillery Blast",
       "quantity": 1,
@@ -9509,7 +9795,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Clockwork Drawbridge",
       "quantity": 1,
@@ -9574,7 +9862,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Mesa Cavalier",
       "quantity": 1,
@@ -9638,7 +9928,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tolarian Geyser",
       "quantity": 1,
@@ -9704,7 +9996,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Balduvian Atrocity",
       "quantity": 1,
@@ -9770,7 +10064,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Toxic Abomination",
       "quantity": 1,
@@ -9832,7 +10128,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Meria's Outrider",
       "quantity": 1,
@@ -9898,7 +10196,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Vineshaper Prodigy",
       "quantity": 1,
@@ -9963,7 +10263,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Lagomos, Hand of Hatred",
       "quantity": 1,
@@ -10028,7 +10330,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tura Kennerüd, Skyknight",
       "quantity": 1,
@@ -10095,7 +10399,9 @@
         "dominaria",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Sorcerer's Wand",
       "quantity": 1,
@@ -65300,7 +65606,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Fountain of Youth",
       "quantity": 1,
@@ -65360,7 +65668,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Cathartic Reunion",
       "quantity": 1,
@@ -65425,7 +65735,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Aeronaut Admiral",
       "quantity": 1,
@@ -65491,7 +65803,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Barricade Breaker",
       "quantity": 1,
@@ -65554,7 +65868,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Cogwork Assembler",
       "quantity": 1,
@@ -65616,7 +65932,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Robe of Stars",
       "quantity": 1,
@@ -65683,7 +66001,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Illusory Wrappings",
       "quantity": 1,
@@ -65749,7 +66069,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Naga Oracle",
       "quantity": 1,
@@ -65815,7 +66137,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tah-Crop Skirmisher",
       "quantity": 1,
@@ -65882,7 +66206,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Brute Strength",
       "quantity": 1,
@@ -65947,7 +66273,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Violent Impact",
       "quantity": 1,
@@ -66015,7 +66343,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Vicious Shadows",
       "quantity": 1,
@@ -66080,7 +66410,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Qasali Ambusher",
       "quantity": 1,
@@ -66148,7 +66480,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Assassin's Strike",
       "quantity": 1,
@@ -66213,7 +66547,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Courier Griffin",
       "quantity": 1,
@@ -66279,7 +66615,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Kitesail Scout",
       "quantity": 1,
@@ -66345,7 +66683,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Shadow Glider",
       "quantity": 1,
@@ -66411,7 +66751,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Wave-Wing Elemental",
       "quantity": 1,
@@ -66478,7 +66820,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Defiant Bloodlord",
       "quantity": 1,
@@ -66544,7 +66888,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Summon Undead",
       "quantity": 1,
@@ -66610,7 +66956,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Goblin Trailblazer",
       "quantity": 1,
@@ -66676,7 +67024,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Sandstone Oracle",
       "quantity": 1,
@@ -66740,7 +67090,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Ajani's Sunstriker",
       "quantity": 1,
@@ -66807,7 +67159,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Armadillo Cloak",
       "quantity": 1,
@@ -66876,7 +67230,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Marauding Mako",
       "quantity": 1,
@@ -66943,7 +67299,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Jungle Hollow",
       "quantity": 1,
@@ -67009,7 +67367,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Boros Battleshaper",
       "quantity": 1,
@@ -67075,7 +67435,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tangled Islet",
       "quantity": 1,
@@ -67141,7 +67503,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Nowhere to Run",
       "quantity": 1,
@@ -67207,7 +67571,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Fear of Missing Out",
       "quantity": 1,
@@ -67275,7 +67641,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Wary Watchdog",
       "quantity": 1,
@@ -67332,6 +67700,77 @@
       }
     },
     {
+      "id": "owned-cards-july-2026-general-0095",
+      "collectionId": "owned-cards-july-2026-general",
+      "binderName": "Owned Cards - July 2026 General Binder",
+      "binderTags": [
+        "owned",
+        "general-owned-cards",
+        "july-2026-scan",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Silumgar Assassin",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "DTK",
+      "setName": "Dragons of Tarkir",
+      "collectorNumber": "121",
+      "collectorSort": 121,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Owned Cards - July 2026 General Binder",
+      "marketPrice": 0.21,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 0.21,
+      "notes": "",
+      "starred": false,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "rare",
+      "manaCost": "{1}{B}",
+      "manaValue": 2,
+      "typeLine": "Creature — Human Assassin",
+      "typeBucket": "Creature",
+      "oracleText": "Creatures with power greater than this creature's power can't block it.\nMegamorph {2}{B} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its megamorph cost and put a +1/+1 counter on it.)\nWhen this creature is turned face up, destroy target creature with power 3 or less an opponent controls.",
+      "colors": [
+        "B"
+      ],
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Megamorph"
+      ],
+      "imageUrl": "https://cards.scryfall.io/normal/front/e/c/ecc4693f-59fe-4671-b8c6-66fe53a76bbe.jpg?1782712728",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/e/c/ecc4693f-59fe-4671-b8c6-66fe53a76bbe.jpg?1782712728",
+      "scryfallUri": "https://scryfall.com/card/dtk/121/silumgar-assassin?utm_source=api",
+      "releasedAt": "2015-03-27",
+      "artist": "Yohann Schepacz",
+      "publicTags": [
+        "general-owned-cards",
+        "july-2026-scan",
+        "owned-card-correction",
+        "creature",
+        "assassin",
+        "interaction"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "owned-cards-july-2026-general-0059",
       "collectionId": "owned-cards-july-2026-general",
       "binderName": "Owned Cards - July 2026 General Binder",
@@ -67341,7 +67780,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Commander's Sphere",
       "quantity": 1,
@@ -67402,7 +67843,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Burning Curiosity",
       "quantity": 1,
@@ -67469,7 +67912,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Impolite Entrance",
       "quantity": 1,
@@ -67534,7 +67979,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Blood Mist",
       "quantity": 1,
@@ -67598,7 +68045,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Soul-Guide Lantern",
       "quantity": 1,
@@ -67660,7 +68109,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Adarkar Wastes",
       "quantity": 1,
@@ -67727,7 +68178,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Hullcarver",
       "quantity": 1,
@@ -67795,7 +68248,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Requiem Monolith",
       "quantity": 1,
@@ -67861,7 +68316,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Mogg Assassin",
       "quantity": 1,
@@ -67927,7 +68384,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Soulflayer",
       "quantity": 1,
@@ -67994,7 +68453,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Charnel Troll",
       "quantity": 1,
@@ -68063,7 +68524,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tentative Connection",
       "quantity": 1,
@@ -68127,7 +68590,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Excavation Mole",
       "quantity": 1,
@@ -68194,7 +68659,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tsabo's Assassin",
       "quantity": 1,
@@ -68260,7 +68727,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Dragonscale Boon",
       "quantity": 1,
@@ -68324,7 +68793,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Siege Rhino",
       "quantity": 1,
@@ -68394,7 +68865,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Contested Game Ball",
       "quantity": 1,
@@ -68458,7 +68931,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Scampering Surveyor",
       "quantity": 1,
@@ -68519,7 +68994,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Sunbird Standard // Sunbird Effigy",
       "quantity": 1,
@@ -68586,7 +69063,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Swashbuckler's Whip",
       "quantity": 1,
@@ -68651,7 +69130,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Skeleton Archer",
       "quantity": 1,
@@ -68716,7 +69197,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Chandra, Heart of Fire",
       "quantity": 1,
@@ -68781,7 +69264,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Sure Strike",
       "quantity": 1,
@@ -68846,7 +69331,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Bestial Menace",
       "quantity": 1,
@@ -68910,7 +69397,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Mortarpod",
       "quantity": 1,
@@ -68975,7 +69464,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Vampire Aristocrat",
       "quantity": 1,
@@ -69039,7 +69530,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Notorious Assassin",
       "quantity": 1,
@@ -69096,6 +69589,75 @@
       }
     },
     {
+      "id": "owned-cards-july-2026-general-0096",
+      "collectionId": "owned-cards-july-2026-general",
+      "binderName": "Owned Cards - July 2026 General Binder",
+      "binderTags": [
+        "owned",
+        "general-owned-cards",
+        "july-2026-scan",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Silent Assassin",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "MMQ",
+      "setName": "Mercadian Masques",
+      "collectorNumber": "160",
+      "collectorSort": 160,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Owned Cards - July 2026 General Binder",
+      "marketPrice": 0.52,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 0.52,
+      "notes": "",
+      "starred": false,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "rare",
+      "manaCost": "{B}{B}",
+      "manaValue": 2,
+      "typeLine": "Creature — Human Mercenary Assassin",
+      "typeBucket": "Creature",
+      "oracleText": "{3}{B}: Destroy target blocking creature at end of combat.",
+      "colors": [
+        "B"
+      ],
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "imageUrl": "https://cards.scryfall.io/normal/front/b/a/ba34034a-1150-41c8-a340-543f529ae07f.jpg?1782720301",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/b/a/ba34034a-1150-41c8-a340-543f529ae07f.jpg?1782720301",
+      "scryfallUri": "https://scryfall.com/card/mmq/160/silent-assassin?utm_source=api",
+      "releasedAt": "1999-10-04",
+      "artist": "rk post",
+      "publicTags": [
+        "general-owned-cards",
+        "july-2026-scan",
+        "owned-card-correction",
+        "creature",
+        "assassin",
+        "interaction"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "owned-cards-july-2026-general-0049",
       "collectionId": "owned-cards-july-2026-general",
       "binderName": "Owned Cards - July 2026 General Binder",
@@ -69105,7 +69667,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Beamtown Beatstick",
       "quantity": 1,
@@ -69174,7 +69738,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Wary Thespian",
       "quantity": 1,
@@ -69240,7 +69806,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Halo Forager",
       "quantity": 1,
@@ -69309,7 +69877,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Chishiro, the Shattered Blade",
       "quantity": 1,
@@ -69376,7 +69946,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Lion Sash",
       "quantity": 1,
@@ -69445,7 +70017,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Assassin's Ink",
       "quantity": 1,
@@ -69510,7 +70084,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Gift of Wrath",
       "quantity": 1,
@@ -69576,7 +70152,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Patchwork Automaton",
       "quantity": 1,
@@ -69639,7 +70217,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Ichorplate Golem",
       "quantity": 1,
@@ -69700,7 +70280,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Prosthetic Injector",
       "quantity": 1,
@@ -69764,7 +70346,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Ribskiff",
       "quantity": 1,
@@ -69829,7 +70413,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Myr Convert",
       "quantity": 1,
@@ -69893,7 +70479,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Undercity Troll",
       "quantity": 1,
@@ -69953,6 +70541,155 @@
       }
     },
     {
+      "id": "owned-cards-july-2026-general-0093",
+      "collectionId": "owned-cards-july-2026-general",
+      "binderName": "Owned Cards - July 2026 General Binder",
+      "binderTags": [
+        "owned",
+        "general-owned-cards",
+        "july-2026-scan",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Mari, the Killing Quill",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "OTC",
+      "setName": "Outlaws of Thunder Junction Commander",
+      "collectorNumber": "138",
+      "collectorSort": 138,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Owned Cards - July 2026 General Binder",
+      "marketPrice": 4.68,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 4.68,
+      "notes": "",
+      "starred": false,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "rare",
+      "manaCost": "{1}{B}{B}",
+      "manaValue": 3,
+      "typeLine": "Legendary Creature — Vampire Assassin",
+      "typeBucket": "Creature",
+      "oracleText": "Whenever a creature an opponent controls dies, exile it with a hit counter on it.\nAssassins, Mercenaries, and Rogues you control have deathtouch and \"Whenever this creature deals combat damage to a player, you may remove a hit counter from a card that player owns in exile. If you do, draw a card and create two Treasure tokens.\"",
+      "colors": [
+        "B"
+      ],
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Treasure"
+      ],
+      "imageUrl": "https://cards.scryfall.io/normal/front/6/b/6b4b3c1a-671c-422d-a98c-7d750760ca46.jpg?1782692335",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/6/b/6b4b3c1a-671c-422d-a98c-7d750760ca46.jpg?1782692335",
+      "scryfallUri": "https://scryfall.com/card/otc/138/mari-the-killing-quill?utm_source=api",
+      "releasedAt": "2024-04-19",
+      "artist": "Rob Rey",
+      "publicTags": [
+        "general-owned-cards",
+        "july-2026-scan",
+        "owned-card-correction",
+        "legendary",
+        "creature",
+        "assassin",
+        "draw",
+        "interaction"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
+      "id": "owned-cards-july-2026-general-0097",
+      "collectionId": "owned-cards-july-2026-general",
+      "binderName": "Owned Cards - July 2026 General Binder",
+      "binderTags": [
+        "owned",
+        "general-owned-cards",
+        "july-2026-scan",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Queen Marchesa",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "OTC",
+      "setName": "Outlaws of Thunder Junction Commander",
+      "collectorNumber": "239",
+      "collectorSort": 239,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Owned Cards - July 2026 General Binder",
+      "marketPrice": 1.51,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 1.51,
+      "notes": "",
+      "starred": false,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "rare",
+      "manaCost": "{1}{R}{W}{B}",
+      "manaValue": 4,
+      "typeLine": "Legendary Creature — Human Assassin",
+      "typeBucket": "Creature",
+      "oracleText": "Deathtouch, haste\nWhen Queen Marchesa enters, you become the monarch.\nAt the beginning of your upkeep, if an opponent is the monarch, create a 1/1 black Assassin creature token with deathtouch and haste.",
+      "colors": [
+        "B",
+        "R",
+        "W"
+      ],
+      "colorIdentity": [
+        "B",
+        "R",
+        "W"
+      ],
+      "keywords": [
+        "Haste",
+        "Deathtouch"
+      ],
+      "imageUrl": "https://cards.scryfall.io/normal/front/0/f/0fdae05f-7bdc-45fb-b9b9-e5ec3766f965.jpg?1782692256",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/0/f/0fdae05f-7bdc-45fb-b9b9-e5ec3766f965.jpg?1782692256",
+      "scryfallUri": "https://scryfall.com/card/otc/239/queen-marchesa?utm_source=api",
+      "releasedAt": "2024-04-19",
+      "artist": "Kieran Yanner",
+      "publicTags": [
+        "general-owned-cards",
+        "july-2026-scan",
+        "owned-card-correction",
+        "legendary",
+        "creature",
+        "assassin"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "owned-cards-july-2026-general-0013",
       "collectionId": "owned-cards-july-2026-general",
       "binderName": "Owned Cards - July 2026 General Binder",
@@ -69962,7 +70699,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Boneyard Desecrator",
       "quantity": 1,
@@ -70029,7 +70768,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Nezumi Linkbreaker",
       "quantity": 1,
@@ -70084,6 +70825,79 @@
       }
     },
     {
+      "id": "owned-cards-july-2026-general-0092",
+      "collectionId": "owned-cards-july-2026-general",
+      "binderName": "Owned Cards - July 2026 General Binder",
+      "binderTags": [
+        "owned",
+        "general-owned-cards",
+        "july-2026-scan",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Rooftop Assassin",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "OTJ",
+      "setName": "Outlaws of Thunder Junction",
+      "collectorNumber": "103",
+      "collectorSort": 103,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Owned Cards - July 2026 General Binder",
+      "marketPrice": 0.15,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 0.15,
+      "notes": "",
+      "starred": false,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "common",
+      "manaCost": "{3}{B}",
+      "manaValue": 4,
+      "typeLine": "Creature — Vampire Assassin",
+      "typeBucket": "Creature",
+      "oracleText": "Flash\nFlying, lifelink\nWhen this creature enters, destroy target creature an opponent controls that was dealt damage this turn.",
+      "colors": [
+        "B"
+      ],
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Flying",
+        "Lifelink",
+        "Flash"
+      ],
+      "imageUrl": "https://cards.scryfall.io/normal/front/e/4/e4e4311a-8583-4cf0-8126-508dbfbcddb6.jpg?1782692067",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/e/4/e4e4311a-8583-4cf0-8126-508dbfbcddb6.jpg?1782692067",
+      "scryfallUri": "https://scryfall.com/card/otj/103/rooftop-assassin?utm_source=api",
+      "releasedAt": "2024-04-19",
+      "artist": "Josu Hernaiz",
+      "publicTags": [
+        "general-owned-cards",
+        "july-2026-scan",
+        "owned-card-correction",
+        "creature",
+        "assassin",
+        "interaction"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "owned-cards-july-2026-general-0040",
       "collectionId": "owned-cards-july-2026-general",
       "binderName": "Owned Cards - July 2026 General Binder",
@@ -70093,7 +70907,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Gila Courser",
       "quantity": 1,
@@ -70160,7 +70976,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Serpent Assassin",
       "quantity": 1,
@@ -70226,7 +71044,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Plague Wight",
       "quantity": 1,
@@ -70290,7 +71110,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Guul Draz Assassin",
       "quantity": 1,
@@ -70357,7 +71179,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Grim Roustabout",
       "quantity": 1,
@@ -70424,7 +71248,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Thrill-Kill Assassin",
       "quantity": 1,
@@ -70492,7 +71318,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Golgari Findbroker",
       "quantity": 1,
@@ -70549,6 +71377,73 @@
       }
     },
     {
+      "id": "owned-cards-july-2026-general-0094",
+      "collectionId": "owned-cards-july-2026-general",
+      "binderName": "Owned Cards - July 2026 General Binder",
+      "binderTags": [
+        "owned",
+        "general-owned-cards",
+        "july-2026-scan",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Buried Alive",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "SLD",
+      "setName": "Secret Lair Drop",
+      "collectorNumber": "1673",
+      "collectorSort": 1673,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Owned Cards - July 2026 General Binder",
+      "marketPrice": 23.14,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 23.14,
+      "notes": "",
+      "starred": true,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "rare",
+      "manaCost": "{2}{B}",
+      "manaValue": 3,
+      "typeLine": "Sorcery",
+      "typeBucket": "Sorcery",
+      "oracleText": "Search your library for up to three creature cards, put them into your graveyard, then shuffle.",
+      "colors": [
+        "B"
+      ],
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [],
+      "imageUrl": "https://cards.scryfall.io/normal/front/b/0/b06ef600-51a0-48e7-b19b-0b15b3e6fc69.jpg?1782729545",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/b/0/b06ef600-51a0-48e7-b19b-0b15b3e6fc69.jpg?1782729545",
+      "scryfallUri": "https://scryfall.com/card/sld/1673/buried-alive?utm_source=api",
+      "releasedAt": "2024-07-29",
+      "artist": "Filipe Pagliuso",
+      "publicTags": [
+        "general-owned-cards",
+        "july-2026-scan",
+        "owned-card-correction",
+        "sorcery"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "owned-cards-july-2026-general-0044",
       "collectionId": "owned-cards-july-2026-general",
       "binderName": "Owned Cards - July 2026 General Binder",
@@ -70558,7 +71453,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Midnight Assassin",
       "quantity": 1,
@@ -70627,7 +71524,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Plasma Jockey",
       "quantity": 1,
@@ -70694,7 +71593,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Warm Welcome",
       "quantity": 1,
@@ -70758,7 +71659,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Arc Spitter",
       "quantity": 1,
@@ -70822,7 +71725,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Scuttling Butler",
       "quantity": 1,
@@ -70883,7 +71788,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Adrix and Nev, Twincasters",
       "quantity": 1,
@@ -70952,7 +71859,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Contaminated Aquifer",
       "quantity": 1,
@@ -71018,7 +71927,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Assassinate",
       "quantity": 1,
@@ -71083,7 +71994,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Nightshade Assassin",
       "quantity": 1,
@@ -71152,7 +72065,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Navigator's Ruin",
       "quantity": 1,
@@ -71219,7 +72134,9 @@
         "july-2026-scan",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Relic Robber",
       "quantity": 1,
@@ -100083,7 +101000,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Duty Beyond Death",
       "quantity": 1,
@@ -100147,7 +101066,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Deduce",
       "quantity": 1,
@@ -100213,7 +101134,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Disdainful Stroke",
       "quantity": 1,
@@ -100276,7 +101199,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Abrade",
       "quantity": 1,
@@ -100340,7 +101265,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Shared Roots",
       "quantity": 1,
@@ -100403,7 +101330,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "The Dawning Archaic",
       "quantity": 1,
@@ -100466,7 +101395,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Sundering Archaic",
       "quantity": 1,
@@ -100528,7 +101459,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Dig Site Inventory",
       "quantity": 1,
@@ -100594,7 +101527,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Honorbound Page // Forum's Favor",
       "quantity": 1,
@@ -100661,7 +101596,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Primary Research",
       "quantity": 1,
@@ -100725,7 +101662,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Shattered Acolyte",
       "quantity": 1,
@@ -100791,7 +101730,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Spiritcall Enthusiast // Scrollboost",
       "quantity": 1,
@@ -100857,7 +101798,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Summoned Dromedary",
       "quantity": 1,
@@ -100922,7 +101865,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Banishing Betrayal",
       "quantity": 1,
@@ -100987,7 +101932,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Deluge Virtuoso",
       "quantity": 1,
@@ -101052,7 +101999,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Deluge Virtuoso",
       "quantity": 4,
@@ -101117,7 +102066,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Fractalize",
       "quantity": 2,
@@ -101180,7 +102131,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Landscape Painter // Vibrant Idea",
       "quantity": 2,
@@ -101246,7 +102199,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Muse's Encouragement",
       "quantity": 1,
@@ -101311,7 +102266,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Muse's Encouragement",
       "quantity": 2,
@@ -101376,7 +102333,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Orysa, Tide Choreographer",
       "quantity": 2,
@@ -101441,7 +102400,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Quick Study",
       "quantity": 1,
@@ -101505,7 +102466,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Quick Study",
       "quantity": 1,
@@ -101569,7 +102532,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Run Behind",
       "quantity": 1,
@@ -101632,7 +102597,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Spellbook Seeker // Careful Study",
       "quantity": 1,
@@ -101699,7 +102666,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Textbook Tabulator",
       "quantity": 1,
@@ -101765,7 +102734,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Forum Necroscribe",
       "quantity": 1,
@@ -101831,7 +102802,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Heated Argument",
       "quantity": 1,
@@ -101895,7 +102868,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Rubble Rouser",
       "quantity": 1,
@@ -101960,7 +102935,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Strife Scholar // Awaken the Ages",
       "quantity": 1,
@@ -102027,7 +103004,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tablet of Discovery",
       "quantity": 1,
@@ -102092,7 +103071,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tome Blast",
       "quantity": 2,
@@ -102158,7 +103139,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Burrog Barrage",
       "quantity": 1,
@@ -102222,7 +103205,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Hungry Graffalon",
       "quantity": 2,
@@ -102288,7 +103273,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Mindful Biomancer",
       "quantity": 2,
@@ -102351,7 +103338,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Oracle's Restoration",
       "quantity": 1,
@@ -102415,7 +103404,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Shopkeeper's Bane",
       "quantity": 1,
@@ -102480,7 +103471,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tenured Concocter",
       "quantity": 1,
@@ -102547,7 +103540,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Thornfist Striker",
       "quantity": 1,
@@ -102613,7 +103608,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Wild Hypothesis",
       "quantity": 1,
@@ -102678,7 +103675,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Applied Geometry",
       "quantity": 1,
@@ -102734,6 +103733,77 @@
       }
     },
     {
+      "id": "secrets-of-strixhaven-owned-cards-0054",
+      "collectionId": "secrets-of-strixhaven-owned-cards",
+      "binderName": "Secrets of Strixhaven Owned Cards",
+      "binderTags": [
+        "owned",
+        "secrets-of-strixhaven",
+        "strixhaven",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Ark of Hunger",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "SOS",
+      "setName": "Secrets of Strixhaven",
+      "collectorNumber": "173",
+      "collectorSort": 173,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Secrets of Strixhaven Owned Cards",
+      "marketPrice": 0.42,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 0.42,
+      "notes": "",
+      "starred": false,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "rare",
+      "manaCost": "{2}{R}{W}",
+      "manaValue": 4,
+      "typeLine": "Artifact",
+      "typeBucket": "Artifact",
+      "oracleText": "Whenever one or more cards leave your graveyard, this artifact deals 1 damage to each opponent and you gain 1 life.\n{T}: Mill a card. You may play that card this turn.",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "colorIdentity": [
+        "R",
+        "W"
+      ],
+      "keywords": [
+        "Mill"
+      ],
+      "imageUrl": "https://cards.scryfall.io/normal/front/7/9/79d01c19-162b-4a12-9e27-18366d95eaa0.jpg?1782682886",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/7/9/79d01c19-162b-4a12-9e27-18366d95eaa0.jpg?1782682886",
+      "scryfallUri": "https://scryfall.com/card/sos/173/ark-of-hunger?utm_source=api",
+      "releasedAt": "2026-04-24",
+      "artist": "Ksenia Kim",
+      "publicTags": [
+        "secrets-of-strixhaven",
+        "owned-card-correction",
+        "artifact",
+        "interaction"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "secrets-of-strixhaven-owned-cards-0026",
       "collectionId": "secrets-of-strixhaven-owned-cards",
       "binderName": "Secrets of Strixhaven Owned Cards",
@@ -102743,7 +103813,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Elemental Mascot",
       "quantity": 1,
@@ -102813,7 +103885,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Embrace the Paradox",
       "quantity": 1,
@@ -102879,7 +103953,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Fractal Mascot",
       "quantity": 1,
@@ -102946,7 +104022,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Imperious Inkmage",
       "quantity": 1,
@@ -103014,7 +104092,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Paradox Surveyor",
       "quantity": 1,
@@ -103081,7 +104161,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Pterafractyl",
       "quantity": 4,
@@ -103148,7 +104230,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Pursue the Past",
       "quantity": 1,
@@ -103217,7 +104301,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Quandrix Charm",
       "quantity": 1,
@@ -103283,7 +104369,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Stadium Tidalmage",
       "quantity": 1,
@@ -103349,7 +104437,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Page, Loose Leaf",
       "quantity": 1,
@@ -103412,7 +104502,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Potioner's Trove",
       "quantity": 1,
@@ -103462,6 +104554,76 @@
       }
     },
     {
+      "id": "secrets-of-strixhaven-owned-cards-0055",
+      "collectionId": "secrets-of-strixhaven-owned-cards",
+      "binderName": "Secrets of Strixhaven Owned Cards",
+      "binderTags": [
+        "owned",
+        "secrets-of-strixhaven",
+        "strixhaven",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Fields of Strife",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "SOS",
+      "setName": "Secrets of Strixhaven",
+      "collectorNumber": "255",
+      "collectorSort": 255,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Secrets of Strixhaven Owned Cards",
+      "marketPrice": 0.09,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 0.09,
+      "notes": "",
+      "starred": false,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "common",
+      "manaCost": "",
+      "manaValue": 0,
+      "typeLine": "Land",
+      "typeBucket": "Land",
+      "oracleText": "This land enters tapped.\n{T}: Add {R} or {W}.\n{2}{R}{W}, {T}: Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+      "colors": [
+        "R",
+        "W"
+      ],
+      "colorIdentity": [
+        "R",
+        "W"
+      ],
+      "keywords": [
+        "Surveil"
+      ],
+      "imageUrl": "https://cards.scryfall.io/normal/front/3/d/3dc7a4c3-c356-4fba-bea0-e8788da3eb57.jpg?1782682821",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/3/d/3dc7a4c3-c356-4fba-bea0-e8788da3eb57.jpg?1782682821",
+      "scryfallUri": "https://scryfall.com/card/sos/255/fields-of-strife?utm_source=api",
+      "releasedAt": "2026-04-24",
+      "artist": "Josu Solano",
+      "publicTags": [
+        "secrets-of-strixhaven",
+        "owned-card-correction",
+        "land"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "secrets-of-strixhaven-owned-cards-0001",
       "collectionId": "secrets-of-strixhaven-owned-cards",
       "binderName": "Secrets of Strixhaven Owned Cards",
@@ -103471,7 +104633,9 @@
         "strixhaven",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Tome Shredder",
       "quantity": 1,
@@ -108360,7 +109524,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Break the Spell",
       "quantity": 1,
@@ -108424,7 +109590,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Knight of Doves",
       "quantity": 1,
@@ -108486,7 +109654,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Diminisher Witch",
       "quantity": 1,
@@ -108551,7 +109721,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Disdainful Stroke",
       "quantity": 1,
@@ -108605,6 +109777,76 @@
       }
     },
     {
+      "id": "wilds-of-eldraine-owned-cards-0011",
+      "collectionId": "wilds-of-eldraine-owned-cards",
+      "binderName": "Wilds of Eldraine Owned Cards",
+      "binderTags": [
+        "owned",
+        "wilds-of-eldraine",
+        "manabox",
+        "owned-card-scan",
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
+      ],
+      "name": "Stingblade Assassin",
+      "quantity": 1,
+      "owner": "Kyle",
+      "setCode": "WOE",
+      "setName": "Wilds of Eldraine",
+      "collectorNumber": "109",
+      "collectorSort": 109,
+      "finish": "nonfoil",
+      "condition": "near_mint",
+      "language": "english",
+      "publicLocation": "Wilds of Eldraine Owned Cards",
+      "marketPrice": 0.11,
+      "marketCurrency": "USD",
+      "marketPriceSource": "scryfall",
+      "marketPriceUpdatedAt": "2026-07-03T06:57:36.854Z",
+      "marketTotal": 0.11,
+      "notes": "",
+      "starred": false,
+      "flagged": false,
+      "altered": false,
+      "misprint": false,
+      "rarity": "common",
+      "manaCost": "{3}{B}",
+      "manaValue": 4,
+      "typeLine": "Creature — Faerie Assassin",
+      "typeBucket": "Creature",
+      "oracleText": "Flash\nFlying\nWhen this creature enters, destroy target creature an opponent controls that was dealt damage this turn.",
+      "colors": [
+        "B"
+      ],
+      "colorIdentity": [
+        "B"
+      ],
+      "keywords": [
+        "Flying",
+        "Flash"
+      ],
+      "imageUrl": "https://cards.scryfall.io/normal/front/b/7/b71b7dd9-6a1d-4c71-873b-782a0a2e7d1d.jpg?1782696579",
+      "largeImageUrl": "https://cards.scryfall.io/large/front/b/7/b71b7dd9-6a1d-4c71-873b-782a0a2e7d1d.jpg?1782696579",
+      "scryfallUri": "https://scryfall.com/card/woe/109/stingblade-assassin?utm_source=api",
+      "releasedAt": "2023-09-08",
+      "artist": "Nicholas Gregory",
+      "publicTags": [
+        "wilds-of-eldraine",
+        "owned-card-correction",
+        "creature",
+        "assassin",
+        "interaction"
+      ],
+      "tradability": {
+        "key": "neutral",
+        "label": "Tradable",
+        "rank": 1,
+        "personalValue": 3,
+        "reason": "Neutral trade value"
+      }
+    },
+    {
       "id": "wilds-of-eldraine-owned-cards-0005",
       "collectionId": "wilds-of-eldraine-owned-cards",
       "binderName": "Wilds of Eldraine Owned Cards",
@@ -108613,7 +109855,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Warehouse Tabby",
       "quantity": 1,
@@ -108675,7 +109919,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Kindled Heroism",
       "quantity": 1,
@@ -108739,7 +109985,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Unruly Catapult",
       "quantity": 1,
@@ -108805,7 +110053,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Hamlet Glutton",
       "quantity": 1,
@@ -108870,7 +110120,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Spellscorn Coven // Take It Back",
       "quantity": 1,
@@ -108936,7 +110188,9 @@
         "wilds-of-eldraine",
         "manabox",
         "owned-card-scan",
-        "batch-2026-07-02-owned-cards"
+        "batch-2026-07-02-owned-cards",
+        "owned-card-correction",
+        "batch-2026-07-03-additional-card-corrections"
       ],
       "name": "Utopia Sprawl",
       "quantity": 1,
