@@ -6,9 +6,11 @@ const state = {
   selected: new Set(),
   marked: new Set(),
   previewId: null,
+  reviewId: null,
   filters: {
     search: "",
     binder: new Set(),
+    setFamily: new Set(),
     set: new Set(),
     owner: new Set(),
     tradability: new Set(),
@@ -36,6 +38,7 @@ const state = {
 const els = {};
 const filterLabels = {
   binder: "Binder",
+  setFamily: "Set family",
   set: "Set",
   owner: "Owner",
   tradability: "Tradability",
@@ -133,9 +136,43 @@ function fillSelect(select, options, label) {
   select.append(new Option(label, ""));
   for (const [value, optionLabel] of options) select.append(new Option(optionLabel, value));
 }
+function fillSetFamilySelect(select) {
+  select.innerHTML = "";
+  select.append(new Option("Choose set family", ""));
+  for (const family of state.summary.setFamilies || []) {
+    const option = new Option(`${family.name} (${family.codes.length} sets)`, family.id);
+    select.append(option);
+  }
+}
+function fillSetSelectGrouped(select) {
+  select.innerHTML = "";
+  select.append(new Option("Choose set", ""));
+  const seen = new Set();
+  for (const family of state.summary.setFamilies || []) {
+    const group = document.createElement("optgroup");
+    group.label = family.name;
+    for (const set of family.sets || []) {
+      seen.add(set.code);
+      group.append(new Option(`${set.code} - ${set.name || set.code}`, set.code));
+    }
+    if (group.children.length > 0) select.append(group);
+  }
+  const extras = uniqueOptions(
+    state.cards.filter((card) => !seen.has(card.setCode)),
+    (card) => card.setCode,
+    (value, card) => value + " - " + (card.setName || value),
+  );
+  if (extras.length > 0) {
+    const group = document.createElement("optgroup");
+    group.label = "Other sets";
+    for (const [value, optionLabel] of extras) group.append(new Option(optionLabel, value));
+    select.append(group);
+  }
+}
 function initFilters() {
   fillSelect(els.binderFilter, uniqueOptions(state.cards, (card) => card.collectionId, (value, card) => card.binderName), "Choose binder");
-  fillSelect(els.setFilter, uniqueOptions(state.cards, (card) => card.setCode, (value, card) => value + " - " + (card.setName || value)), "Choose set");
+  fillSetFamilySelect(els.setFamilyFilter);
+  fillSetSelectGrouped(els.setFilter);
   fillSelect(els.ownerFilter, uniqueOptions(state.cards, (card) => card.owner), "Choose owner");
   fillSelect(els.tradabilityFilter, uniqueOptions(state.cards, (card) => card.tradability.key, (value, card) => card.tradability.label), "Choose tradability");
   fillSelect(els.colorFilter, [["W", "White"], ["U", "Blue"], ["B", "Black"], ["R", "Red"], ["G", "Green"], ["Colorless", "Colorless"]], "Choose color");
@@ -146,6 +183,9 @@ function initFilters() {
 }
 
 function optionLabel(key, value) {
+  if (key === "setFamily") {
+    return (state.summary.setFamilies || []).find((family) => family.id === value)?.name || value;
+  }
   const card = state.cards.find((candidate) => {
     if (key === "binder") return candidate.collectionId === value;
     if (key === "set") return candidate.setCode === value;
@@ -178,13 +218,14 @@ function setCodesForFamily(family) {
 }
 function familyActiveState(family) {
   const codes = setCodesForFamily(family);
+  if (state.filters.setFamily.has(family.id)) return "all";
   const activeCount = codes.filter((code) => state.filters.set.has(code)).length;
   if (activeCount === 0) return "none";
   if (activeCount === codes.length) return "all";
   return "partial";
 }
 function renderSetFamilyShelf() {
-  const buttons = [`<button type="button" data-set-family-all aria-pressed="${state.filters.set.size === 0}"><strong>All set families</strong><span>${state.summary.totalQuantity} cards</span></button>`];
+  const buttons = [`<button type="button" data-set-family-all aria-pressed="${state.filters.setFamily.size === 0}"><strong>All set families</strong><span>${state.summary.totalQuantity} cards</span></button>`];
   for (const family of state.summary.setFamilies || []) {
     const activeState = familyActiveState(family);
     buttons.push(`<button type="button" data-set-family-id="${escapeHtml(family.id)}" data-active-state="${activeState}" aria-pressed="${activeState === "all"}">
@@ -197,12 +238,7 @@ function renderSetFamilyShelf() {
 function toggleSetFamily(familyId) {
   const family = (state.summary.setFamilies || []).find((candidate) => candidate.id === familyId);
   if (!family) return;
-  const codes = setCodesForFamily(family);
-  const allActive = codes.every((code) => state.filters.set.has(code));
-  for (const code of codes) {
-    if (allActive) state.filters.set.delete(code);
-    else state.filters.set.add(code);
-  }
+  state.filters.setFamily.has(family.id) ? state.filters.setFamily.delete(family.id) : state.filters.setFamily.add(family.id);
   applyFilters();
 }
 
@@ -216,7 +252,7 @@ function removeFilter(key, value) {
   applyFilters();
 }
 function clearFilters() {
-  for (const key of ["binder", "set", "owner", "tradability", "color", "type", "rarity", "finish", "condition"]) state.filters[key].clear();
+  for (const key of ["binder", "setFamily", "set", "owner", "tradability", "color", "type", "rarity", "finish", "condition"]) state.filters[key].clear();
   state.filters.search = "";
   state.filters.sort = "tradability-asc";
   els.searchInput.value = "";
@@ -226,7 +262,7 @@ function clearFilters() {
 }
 function renderActiveFilters() {
   const chips = [];
-  for (const key of ["binder", "set", "owner", "tradability", "color", "type", "rarity", "finish", "condition"]) {
+  for (const key of ["binder", "setFamily", "set", "owner", "tradability", "color", "type", "rarity", "finish", "condition"]) {
     for (const value of state.filters[key]) {
       chips.push(`<span class="filter-chip">${filterLabels[key]}: ${escapeHtml(optionLabel(key, value))}
         <button type="button" aria-label="Remove ${escapeHtml(filterLabels[key])} ${escapeHtml(value)}" data-remove-filter="${key}" data-filter-value="${escapeHtml(value)}">x</button>
@@ -242,6 +278,12 @@ function renderActiveFilters() {
 function multiMatch(set, value) {
   return set.size === 0 || set.has(value);
 }
+function familyMatch(card) {
+  if (state.filters.setFamily.size === 0) return true;
+  return (state.summary.setFamilies || []).some((family) => {
+    return state.filters.setFamily.has(family.id) && setCodesForFamily(family).includes(card.setCode);
+  });
+}
 function colorMatch(card) {
   if (state.filters.color.size === 0) return true;
   const label = colorLabel(card.colorIdentity);
@@ -253,6 +295,7 @@ function matchesFilters(card) {
   const search = normalize(state.filters.search);
   if (search && !normalize(cardSearchText(card)).includes(search)) return false;
   if (!multiMatch(state.filters.binder, card.collectionId)) return false;
+  if (!familyMatch(card)) return false;
   if (!multiMatch(state.filters.set, card.setCode)) return false;
   if (!multiMatch(state.filters.owner, card.owner)) return false;
   if (!multiMatch(state.filters.tradability, card.tradability.key)) return false;
@@ -288,6 +331,9 @@ function sortCards(cards) {
 }
 function applyFilters() {
   state.filtered = sortCards(state.cards.filter(matchesFilters));
+  if (state.view === "review" && !state.filtered.some((card) => card.id === state.reviewId)) {
+    state.reviewId = state.filtered[0]?.id || null;
+  }
   renderBinderShelf();
   renderSetFamilyShelf();
   renderActiveFilters();
@@ -295,14 +341,17 @@ function applyFilters() {
 }
 function setView(view) {
   state.view = view;
+  if (view === "review" && !state.filtered.some((card) => card.id === state.reviewId)) {
+    state.reviewId = state.filtered[0]?.id || null;
+  }
   document.querySelectorAll(".view-toggle button").forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.view === view));
   });
   render();
-  if (view === "compare") {
+  if (view === "compare" || view === "review") {
     requestAnimationFrame(() => {
       els.results.scrollIntoView({ block: "start" });
-      byId("scryfallQuery")?.focus({ preventScroll: true });
+      if (view === "compare") byId("scryfallQuery")?.focus({ preventScroll: true });
     });
   }
 }
@@ -318,6 +367,28 @@ function toggleMarked(cardId) {
 function startCompare(cardId) {
   state.compare.leftId = cardId;
   setView("compare");
+}
+function startReview(cardId) {
+  state.reviewId = cardId;
+  setView("review");
+}
+function reviewIndex() {
+  if (state.filtered.length === 0) return -1;
+  const index = state.filtered.findIndex((card) => card.id === state.reviewId);
+  return index === -1 ? 0 : index;
+}
+function reviewCard() {
+  const index = reviewIndex();
+  if (index === -1) return null;
+  const card = state.filtered[index];
+  state.reviewId = card.id;
+  return card;
+}
+function moveReview(step) {
+  if (state.filtered.length === 0) return;
+  const nextIndex = (reviewIndex() + step + state.filtered.length) % state.filtered.length;
+  state.reviewId = state.filtered[nextIndex].id;
+  render();
 }
 function openPreview(cardId) {
   state.previewId = cardId;
@@ -355,6 +426,7 @@ function cardShell(card) {
       <div class="card-actions">
         <button type="button" data-action="select" data-card-id="${escapeHtml(card.id)}" class="${selected ? "is-on" : ""}">${selected ? "Selected" : "Select"}</button>
         <button type="button" data-action="mark" data-card-id="${escapeHtml(card.id)}" class="${marked ? "is-on" : ""}">${marked ? "Marked" : "Mark"}</button>
+        <button type="button" data-action="review" data-card-id="${escapeHtml(card.id)}">Review</button>
         <button type="button" data-action="compare" data-card-id="${escapeHtml(card.id)}">Compare</button>
         <button type="button" data-action="preview" data-card-id="${escapeHtml(card.id)}">View</button>
       </div>
@@ -379,6 +451,7 @@ function renderTable() {
     <td><div class="table-actions">
       <button type="button" data-action="select" data-card-id="${escapeHtml(card.id)}">${state.selected.has(card.id) ? "Selected" : "Select"}</button>
       <button type="button" data-action="mark" data-card-id="${escapeHtml(card.id)}">${state.marked.has(card.id) ? "Marked" : "Mark"}</button>
+      <button type="button" data-action="review" data-card-id="${escapeHtml(card.id)}">Review</button>
       <button type="button" data-action="compare" data-card-id="${escapeHtml(card.id)}">Compare</button>
       <button type="button" data-action="preview" data-card-id="${escapeHtml(card.id)}">View</button>
     </div></td>
@@ -393,6 +466,7 @@ function setRow(card) {
     <div class="set-row-actions">
       <button type="button" data-action="select" data-card-id="${escapeHtml(card.id)}">${state.selected.has(card.id) ? "Selected" : "Select"}</button>
       <button type="button" data-action="mark" data-card-id="${escapeHtml(card.id)}">${state.marked.has(card.id) ? "Marked" : "Mark"}</button>
+      <button type="button" data-action="review" data-card-id="${escapeHtml(card.id)}">Review</button>
       <button type="button" data-action="compare" data-card-id="${escapeHtml(card.id)}">Compare</button>
       <button type="button" data-action="preview" data-card-id="${escapeHtml(card.id)}">View</button>
     </div>
@@ -456,6 +530,36 @@ function detailList(card) {
     ["Snapshot", card.marketPriceSource + (card.marketPriceUpdatedAt ? " - " + card.marketPriceUpdatedAt.slice(0, 10) : "")],
   ];
   return `<dl class="detail-list">${rows.map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`).join("")}</dl>`;
+}
+function renderReview() {
+  const card = reviewCard();
+  if (!card) return renderEmpty();
+  const index = reviewIndex();
+  return `<div class="review-view">
+    <div class="review-toolbar">
+      <p><strong>${index + 1}</strong> of ${state.filtered.length} shown</p>
+      <div class="review-actions">
+        <button type="button" data-review-step="-1">Previous</button>
+        <button type="button" data-review-step="1">Next</button>
+        <button type="button" data-view-jump="grid">Back to grid</button>
+      </div>
+    </div>
+    <article class="review-card">
+      <div>${card.largeImageUrl || card.imageUrl ? `<img src="${escapeHtml(card.largeImageUrl || card.imageUrl)}" alt="${escapeHtml(card.name)} card image">` : `<div class="no-image">${escapeHtml(card.name)}</div>`}</div>
+      <div>
+        <h2>${escapeHtml(card.name)}</h2>
+        <p class="oracle">${escapeHtml(card.oracleText || card.typeLine)}</p>
+        ${detailList(card)}
+        <div class="card-actions">
+          <button type="button" data-action="select" data-card-id="${escapeHtml(card.id)}" class="${state.selected.has(card.id) ? "is-on" : ""}">${state.selected.has(card.id) ? "Selected" : "Select"}</button>
+          <button type="button" data-action="mark" data-card-id="${escapeHtml(card.id)}" class="${state.marked.has(card.id) ? "is-on" : ""}">${state.marked.has(card.id) ? "Marked" : "Mark"}</button>
+          <button type="button" data-action="compare" data-card-id="${escapeHtml(card.id)}">Compare</button>
+          <button type="button" data-action="preview" data-card-id="${escapeHtml(card.id)}">View</button>
+          <button type="button" data-view-jump="grid">Grid</button>
+        </div>
+      </div>
+    </article>
+  </div>`;
 }
 function ownedCompareCard(card) {
   if (!card) return `<article class="compare-card"><div></div><div><h2>Select one of Kyle's cards</h2></div></article>`;
@@ -529,6 +633,10 @@ function renderCompare() {
   const left = cardById(state.compare.leftId) || state.filtered[0] || state.cards[0];
   if (left && !state.compare.leftId) state.compare.leftId = left.id;
   return `<div class="compare-view">
+    <div class="view-exit">
+      <p><strong>Compare view</strong></p>
+      <button type="button" data-view-jump="grid">Back to grid</button>
+    </div>
     <div class="compare-grid"><div id="ownedCompareSlot" class="compare-slot">${ownedCompareCard(left)}</div><div id="candidateCompareSlot" class="compare-slot">${candidateCompareCard()}</div></div>
     ${renderScryfallTools()}
     <div id="comparisonBreakdownSlot">${comparisonBreakdown(left)}</div>
@@ -555,6 +663,7 @@ function render() {
   }
   if (state.view === "table") els.results.innerHTML = renderTable();
   else if (state.view === "sets") els.results.innerHTML = renderSets();
+  else if (state.view === "review") els.results.innerHTML = renderReview();
   else if (state.view === "compare") els.results.innerHTML = renderCompare();
   else els.results.innerHTML = renderGrid();
   syncCompareControls();
@@ -752,7 +861,7 @@ function wireEvents() {
     const all = event.target.closest("[data-set-family-all]");
     const button = event.target.closest("[data-set-family-id]");
     if (all) {
-      state.filters.set.clear();
+      state.filters.setFamily.clear();
       applyFilters();
       return;
     }
@@ -793,6 +902,7 @@ function wireEvents() {
     const cardId = button.dataset.cardId;
     if (button.dataset.action === "select") toggleSelected(cardId);
     if (button.dataset.action === "mark") toggleMarked(cardId);
+    if (button.dataset.action === "review") startReview(cardId);
     if (button.dataset.action === "compare") startCompare(cardId);
     if (button.dataset.action === "preview") openPreview(cardId);
   });
@@ -809,6 +919,16 @@ function wireEvents() {
     }
   });
   els.results.addEventListener("click", (event) => {
+    const viewJump = event.target.closest("[data-view-jump]");
+    if (viewJump) {
+      setView(viewJump.dataset.viewJump);
+      return;
+    }
+    const reviewStep = event.target.closest("[data-review-step]");
+    if (reviewStep) {
+      moveReview(Number(reviewStep.dataset.reviewStep));
+      return;
+    }
     const familyButton = event.target.closest("[data-set-family-id]");
     if (familyButton) {
       toggleSetFamily(familyButton.dataset.setFamilyId);
@@ -842,7 +962,7 @@ function wireEvents() {
 
 async function init() {
   for (const id of [
-    "binderShelf", "setFamilyShelf", "searchInput", "sortSelect", "binderFilter", "setFilter", "ownerFilter", "tradabilityFilter", "colorFilter", "typeFilter", "rarityFilter", "finishFilter", "conditionFilter", "resetFilters", "activeFilters", "selectVisible", "selectMarked", "compareSelected", "clearSelection", "downloadCsv", "downloadTxt", "downloadXml", "resultCount", "resultLabel", "selectedCount", "markedCount", "results", "previewModal",
+    "binderShelf", "setFamilyShelf", "searchInput", "sortSelect", "binderFilter", "setFamilyFilter", "setFilter", "ownerFilter", "tradabilityFilter", "colorFilter", "typeFilter", "rarityFilter", "finishFilter", "conditionFilter", "resetFilters", "activeFilters", "selectVisible", "selectMarked", "compareSelected", "clearSelection", "downloadCsv", "downloadTxt", "downloadXml", "resultCount", "resultLabel", "selectedCount", "markedCount", "results", "previewModal",
   ]) els[id] = byId(id);
 
   const response = await fetch("./data/cards.json");

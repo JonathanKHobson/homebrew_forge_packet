@@ -12,7 +12,7 @@ Static GitHub Pages artifact for browsing Kyle and Eleni owned collection binder
 ## Scope
 
 - Public artifact: `docs/shareables/marvel-trade-binder/`
-- Generated at: `2026-07-02T23:57:24.321Z`
+- Generated at: `2026-07-03T00:48:49.017Z`
 - Binders: 24
 - Sets: 139
 - Rows: 1591
@@ -24,9 +24,10 @@ The public data excludes raw import rows, local file paths, source spreadsheet p
 ## MVP Features
 
 - Prominent binder switching across owned collection binders.
+- Set-family switching plus family-grouped set dropdowns.
 - Persistent multi-select filters with active filter chips and per-chip removal.
 - Owner and tradability filters, plus tradability sorting.
-- Grid, table, set-grouped, and compare views.
+- Grid, table, single-card review, set-grouped, and compare views.
 - Full-card preview modal.
 - Local-only select and mark state in the browser.
 - Download selected rows as CSV, TXT, or XML.
