@@ -12,14 +12,14 @@ Static GitHub Pages artifact for browsing Kyle and Eleni owned collection binder
 ## Scope
 
 - Public artifact: `docs/shareables/marvel-trade-binder/`
-- Generated at: `2026-07-03T19:13:40.938Z`
+- Generated at: `2026-07-10T01:24:15.721Z`
 - Binders: 25
 - Sets: 161
-- Rows: 1705
-- Total quantity: 2140
-- Market snapshot: $1,595.41
+- Rows: 1732
+- Total quantity: 2185
+- Market snapshot: $1,605.76
 
-The public data excludes raw import rows, local file paths, source spreadsheet paths, purchase-source details, importer IDs, and auto-generated import notes. Partner-owned cards are visible for browsing but marked not tradable.
+The public data excludes raw import rows, local file paths, source spreadsheet paths, importer IDs, and auto-generated import notes. Partner-owned cards are visible for browsing but marked not tradable. Explicit Forge trade status is authoritative when present, and designated private Scryfall IDs are omitted before totals are calculated.
 
 ## MVP Features
 
@@ -41,6 +41,7 @@ The public data excludes raw import rows, local file paths, source spreadsheet p
 - Fallout Scrappy Survivors deck cards and red/green/white Fallout cards without blue or black are hard trades.
 - Artist-signed cards are hard trades.
 - Other Kyle-owned cards default to neutral tradability.
+- Explicit `trade_status` values from collection rows override inferred trade policy.
 
 ## Future Auto Shareables
 

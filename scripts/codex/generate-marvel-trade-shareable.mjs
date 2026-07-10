@@ -10,6 +10,9 @@ const dataDir = path.join(outputDir, "data");
 const localCardImageDir = path.join(outputDir, "assets", "local-card-images");
 const localCardImages = new Map();
 const generatedAt = new Date().toISOString();
+const privatePublicScryfallIds = new Set([
+  "824e1378-b09e-4de1-ae48-4fc026220ab6",
+]);
 
 const deckTradeRules = {
   avengers: {
@@ -461,11 +464,18 @@ function collectionIsPublicOwnedBinder(metadata, rows) {
   return rows.some((row) => row.ownership_status === "owned" || row.ownership_status === "proxy");
 }
 
+function rowScryfallId(row) {
+  const sourceRow = parseMaybeJson(row.source_row);
+  const scryfall = getScryfallRecord(sourceRow);
+  return String(row.scryfall_id || scryfall.id || "").trim().toLowerCase();
+}
+
 function rowIsPublicOwned(row) {
   return (
     row.ownership_status === "owned" &&
     !parseBoolean(row.homebrew) &&
-    !parseBoolean(row.marked_for_deletion)
+    !parseBoolean(row.marked_for_deletion) &&
+    !privatePublicScryfallIds.has(rowScryfallId(row))
   );
 }
 
@@ -559,6 +569,33 @@ function deriveTradability({ owner, collectionId, tags, name, colorIdentity, dec
   };
 }
 
+function humanizeTradeStatus(status) {
+  return status
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function explicitTradability(row) {
+  const status = String(row.trade_status || "").trim().toLowerCase();
+  if (!status) return null;
+  const defaults = {
+    available: { label: "Available to trade", rank: 1, personalValue: 1 },
+    maybe: { label: "Maybe trade", rank: 2, personalValue: 3 },
+    reserved: { label: "Reserved", rank: 3, personalValue: 5 },
+    not_for_trade: { label: "Not tradable", rank: 4, personalValue: 5 },
+    traded: { label: "Traded", rank: 5, personalValue: 5 },
+  };
+  const definition = defaults[status] || { label: humanizeTradeStatus(status), rank: 3, personalValue: 3 };
+  return {
+    key: status,
+    label: definition.label,
+    rank: definition.rank,
+    personalValue: parseNumber(row.personal_value) ?? definition.personalValue,
+    reason: publicNote(row.trade_notes) || `Forge trade status: ${humanizeTradeStatus(status)}`,
+  };
+}
+
 function toPublicCard(row, context) {
   const sourceRow = parseMaybeJson(row.source_row);
   const scryfall = getScryfallRecord(sourceRow);
@@ -579,7 +616,7 @@ function toPublicCard(row, context) {
         personalValue: 5,
         reason: "Custom proxy, not official owned inventory",
       }
-    : deriveTradability({
+    : explicitTradability(row) || deriveTradability({
         owner,
         collectionId: context.collectionId,
         tags,
@@ -587,6 +624,10 @@ function toPublicCard(row, context) {
         colorIdentity,
         decks: context.decks,
       });
+  const tradeStatus = String(row.trade_status || "").trim() || tradability.key;
+  const personalValue = parseNumber(row.personal_value) ?? tradability.personalValue;
+  const scryfallId = row.scryfall_id || scryfall.id || "";
+  const marketCurrency = row.estimated_market_currency || "USD";
 
   return {
     id: `${context.collectionId}-${String(context.rowIndex + 1).padStart(4, "0")}`,
@@ -596,6 +637,9 @@ function toPublicCard(row, context) {
     name,
     quantity,
     owner,
+    ownershipStatus: row.ownership_status || "owned",
+    entryId: row.entry_id || "",
+    scryfallId,
     setCode: row.set_code || scryfall.set?.toUpperCase() || "",
     setName: row.set_name || scryfall.set_name || "",
     collectorNumber: row.collector_number || scryfall.collector_number || "",
@@ -603,11 +647,23 @@ function toPublicCard(row, context) {
     finish: normalizeToken(row.finish),
     condition: normalizeToken(row.condition),
     language: normalizeToken(row.language || scryfall.lang || "en", "en"),
-    publicLocation: context.metadata.name || "Owned binder",
+    publicLocation: row.location || context.metadata.name || "Owned binder",
+    source: row.source || "",
+    reviewStatus: row.review_status || "",
+    reviewNotes: publicNote(row.review_notes),
+    purchasePrice: parseNumber(row.purchase_price),
+    purchaseCurrency: row.purchase_currency || "",
+    purchaseDate: row.purchase_date || "",
     marketPrice,
-    marketCurrency: row.estimated_market_currency || "USD",
+    marketCurrency,
     marketPriceSource: row.market_price_source || (scryfall.prices ? "scryfall" : "snapshot"),
     marketPriceUpdatedAt: row.market_price_updated_at || "",
+    marketSnapshot: {
+      price: marketPrice,
+      currency: marketCurrency,
+      source: row.market_price_source || (scryfall.prices ? "scryfall" : "snapshot"),
+      updatedAt: row.market_price_updated_at || "",
+    },
     marketTotal: marketPrice === null ? null : Number((marketPrice * quantity).toFixed(2)),
     notes: publicNote(row.notes),
     starred: parseBoolean(row.starred),
@@ -631,6 +687,9 @@ function toPublicCard(row, context) {
     releasedAt: scryfall.released_at || "",
     artist: scryfall.artist || "",
     publicTags: publicTags(tags),
+    tradeStatus,
+    personalValue,
+    tradeNotes: publicNote(row.trade_notes),
     tradability,
   };
 }
@@ -2596,7 +2655,7 @@ Static GitHub Pages artifact for browsing Kyle and Eleni owned collection binder
 - Total quantity: ${summary.totalQuantity}
 - Market snapshot: ${summary.marketTotalFormatted}
 
-The public data excludes raw import rows, local file paths, source spreadsheet paths, purchase-source details, importer IDs, and auto-generated import notes. Partner-owned cards are visible for browsing but marked not tradable.
+The public data excludes raw import rows, local file paths, source spreadsheet paths, importer IDs, and auto-generated import notes. Partner-owned cards are visible for browsing but marked not tradable. Explicit Forge trade status is authoritative when present, and designated private Scryfall IDs are omitted before totals are calculated.
 
 ## MVP Features
 
@@ -2618,6 +2677,7 @@ The public data excludes raw import rows, local file paths, source spreadsheet p
 - Fallout Scrappy Survivors deck cards and red/green/white Fallout cards without blue or black are hard trades.
 - Artist-signed cards are hard trades.
 - Other Kyle-owned cards default to neutral tradability.
+- Explicit \`trade_status\` values from collection rows override inferred trade policy.
 
 ## Future Auto Shareables
 
@@ -2647,7 +2707,6 @@ function specJson(summary) {
         "raw source rows",
         "local file paths",
         "source import file paths",
-        "purchase source details",
         "importer IDs",
         "auto-generated import notes",
         "full private collection records",
@@ -2656,9 +2715,13 @@ function specJson(summary) {
         "card identity",
         "owned quantity",
         "owner",
+        "ownership and entry identity",
         "tradability label and reason",
+        "trade status, personal value, and trade notes",
         "finish",
         "condition",
+        "language",
+        "purchase price, currency, and date",
         "set and collector metadata",
         "public Scryfall links and image URLs",
         "market snapshot fields",
@@ -2682,6 +2745,7 @@ function specJson(summary) {
       "CSV export",
       "TXT export",
       "XML export",
+      "privacy exclusions applied before public totals",
     ],
     summary,
   };

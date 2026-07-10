@@ -3,7 +3,7 @@
   "title": "Owned Card Trade Binders",
   "type": "owned-collection-trade-shareable",
   "status": "live",
-  "generatedAt": "2026-07-03T19:13:40.938Z",
+  "generatedAt": "2026-07-10T01:24:15.721Z",
   "source": {
     "collectionPurpose": "owned",
     "collectionKind": "binder",
@@ -15,7 +15,6 @@
       "raw source rows",
       "local file paths",
       "source import file paths",
-      "purchase source details",
       "importer IDs",
       "auto-generated import notes",
       "full private collection records"
@@ -24,9 +23,13 @@
       "card identity",
       "owned quantity",
       "owner",
+      "ownership and entry identity",
       "tradability label and reason",
+      "trade status, personal value, and trade notes",
       "finish",
       "condition",
+      "language",
+      "purchase price, currency, and date",
       "set and collector metadata",
       "public Scryfall links and image URLs",
       "market snapshot fields",
@@ -49,27 +52,28 @@
     "select and mark",
     "CSV export",
     "TXT export",
-    "XML export"
+    "XML export",
+    "privacy exclusions applied before public totals"
   ],
   "summary": {
     "title": "Owned Card Trade Binders",
     "slug": "marvel-trade-binder",
-    "generatedAt": "2026-07-03T19:13:40.938Z",
-    "rowCount": 1705,
-    "totalQuantity": 2140,
-    "uniqueNames": 1388,
+    "generatedAt": "2026-07-10T01:24:15.721Z",
+    "rowCount": 1732,
+    "totalQuantity": 2185,
+    "uniqueNames": 1411,
     "binderCount": 25,
     "setCount": 161,
-    "marketTotal": 1595.41,
-    "marketTotalFormatted": "$1,595.41",
+    "marketTotal": 1605.76,
+    "marketTotalFormatted": "$1,605.76",
     "owners": {
-      "Kyle": 1534,
+      "Kyle": 1579,
       "Eleni": 606
     },
     "tradability": {
-      "high_value": 313,
-      "neutral": 1217,
-      "not_tradable": 610
+      "not_for_trade": 2025,
+      "available": 60,
+      "not_tradable": 100
     },
     "binders": [
       {
@@ -196,9 +200,9 @@
           "TMSC",
           "TMSH"
         ],
-        "rows": 348,
-        "quantity": 508,
-        "marketTotal": 271.55
+        "rows": 371,
+        "quantity": 549,
+        "marketTotal": 281.37
       },
       {
         "id": "misc-bulk-cards",
@@ -389,9 +393,9 @@
           "XLN",
           "ZNR"
         ],
-        "rows": 107,
-        "quantity": 108,
-        "marketTotal": 103.07
+        "rows": 109,
+        "quantity": 110,
+        "marketTotal": 103.32
       },
       {
         "id": "partner-animated-army",
@@ -474,9 +478,9 @@
           "STX",
           "TSOS"
         ],
-        "rows": 61,
-        "quantity": 74,
-        "marketTotal": 15.81
+        "rows": 63,
+        "quantity": 76,
+        "marketTotal": 16.09
       },
       {
         "id": "squirrel-away",
@@ -752,9 +756,9 @@
       {
         "code": "DFT",
         "name": "Aetherdrift",
-        "rows": 2,
-        "quantity": 2,
-        "marketTotal": 0.78
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.85
       },
       {
         "code": "DGM",
@@ -815,9 +819,9 @@
       {
         "code": "ECL",
         "name": "Lorwyn Eclipsed",
-        "rows": 2,
-        "quantity": 2,
-        "marketTotal": 0.57
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.75
       },
       {
         "code": "ELD",
@@ -1172,16 +1176,16 @@
       {
         "code": "MSC",
         "name": "Marvel Super Heroes Commander",
-        "rows": 170,
-        "quantity": 190,
-        "marketTotal": 271.29
+        "rows": 178,
+        "quantity": 198,
+        "marketTotal": 274.98
       },
       {
         "code": "MSH",
         "name": "Marvel Super Heroes",
-        "rows": 229,
-        "quantity": 366,
-        "marketTotal": 99.76
+        "rows": 243,
+        "quantity": 398,
+        "marketTotal": 105.76
       },
       {
         "code": "NCC",
@@ -1347,9 +1351,9 @@
       {
         "code": "SOS",
         "name": "Secrets of Strixhaven",
-        "rows": 54,
-        "quantity": 67,
-        "marketTotal": 14.44
+        "rows": 56,
+        "quantity": 69,
+        "marketTotal": 14.72
       },
       {
         "code": "SPG",
@@ -1361,9 +1365,9 @@
       {
         "code": "SPM",
         "name": "Marvel's Spider-Man",
-        "rows": 20,
-        "quantity": 20,
-        "marketTotal": 3.21
+        "rows": 21,
+        "quantity": 21,
+        "marketTotal": 3.34
       },
       {
         "code": "STX",
@@ -2510,9 +2514,9 @@
       {
         "id": "lorwyn",
         "name": "Lorwyn",
-        "rows": 6,
-        "quantity": 7,
-        "marketTotal": 2.03,
+        "rows": 7,
+        "quantity": 8,
+        "marketTotal": 2.21,
         "sets": [
           {
             "code": "ECC",
@@ -2524,9 +2528,9 @@
           {
             "code": "ECL",
             "name": "Lorwyn Eclipsed",
-            "rows": 2,
-            "quantity": 2,
-            "marketTotal": 0.57
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.75
           },
           {
             "code": "LRW",
@@ -2545,9 +2549,9 @@
       {
         "id": "marvel",
         "name": "Marvel Universes Beyond",
-        "rows": 433,
-        "quantity": 615,
-        "marketTotal": 394.6,
+        "rows": 456,
+        "quantity": 656,
+        "marketTotal": 404.42,
         "sets": [
           {
             "code": "MAR",
@@ -2559,23 +2563,23 @@
           {
             "code": "MSC",
             "name": "Marvel Super Heroes Commander",
-            "rows": 170,
-            "quantity": 190,
-            "marketTotal": 271.29
+            "rows": 178,
+            "quantity": 198,
+            "marketTotal": 274.98
           },
           {
             "code": "MSH",
             "name": "Marvel Super Heroes",
-            "rows": 229,
-            "quantity": 366,
-            "marketTotal": 99.76
+            "rows": 243,
+            "quantity": 398,
+            "marketTotal": 105.76
           },
           {
             "code": "SPM",
             "name": "Marvel's Spider-Man",
-            "rows": 20,
-            "quantity": 20,
-            "marketTotal": 3.21
+            "rows": 21,
+            "quantity": 21,
+            "marketTotal": 3.34
           },
           {
             "code": "TMSC",
@@ -2811,9 +2815,9 @@
       {
         "id": "other-magic",
         "name": "Other Magic Sets",
-        "rows": 23,
-        "quantity": 23,
-        "marketTotal": 32.77,
+        "rows": 24,
+        "quantity": 24,
+        "marketTotal": 32.84,
         "sets": [
           {
             "code": "AER",
@@ -2839,9 +2843,9 @@
           {
             "code": "DFT",
             "name": "Aetherdrift",
-            "rows": 2,
-            "quantity": 2,
-            "marketTotal": 0.78
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.85
           },
           {
             "code": "HA7",
@@ -3063,9 +3067,9 @@
       {
         "id": "strixhaven",
         "name": "Strixhaven",
-        "rows": 162,
-        "quantity": 195,
-        "marketTotal": 130.55,
+        "rows": 164,
+        "quantity": 197,
+        "marketTotal": 130.83,
         "sets": [
           {
             "code": "C21",
@@ -3091,9 +3095,9 @@
           {
             "code": "SOS",
             "name": "Secrets of Strixhaven",
-            "rows": 54,
-            "quantity": 67,
-            "marketTotal": 14.44
+            "rows": 56,
+            "quantity": 69,
+            "marketTotal": 14.72
           },
           {
             "code": "STX",
