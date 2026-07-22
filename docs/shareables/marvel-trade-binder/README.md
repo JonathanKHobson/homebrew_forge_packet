@@ -12,12 +12,12 @@ Static GitHub Pages artifact for browsing Kyle and Eleni owned collection binder
 ## Scope
 
 - Public artifact: `docs/shareables/marvel-trade-binder/`
-- Generated at: `2026-07-10T01:24:15.721Z`
+- Generated at: `2026-07-22T07:39:26.295Z`
 - Binders: 25
 - Sets: 161
-- Rows: 1732
-- Total quantity: 2185
-- Market snapshot: $1,605.76
+- Rows: 1736
+- Total quantity: 2191
+- Market snapshot: $1,609.63
 
 The public data excludes raw import rows, local file paths, source spreadsheet paths, importer IDs, and auto-generated import notes. Partner-owned cards are visible for browsing but marked not tradable. Explicit Forge trade status is authoritative when present, and designated private Scryfall IDs are omitted before totals are calculated.
 

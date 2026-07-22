@@ -3,7 +3,7 @@
   "title": "Owned Card Trade Binders",
   "type": "owned-collection-trade-shareable",
   "status": "live",
-  "generatedAt": "2026-07-10T01:24:15.721Z",
+  "generatedAt": "2026-07-22T07:39:26.295Z",
   "source": {
     "collectionPurpose": "owned",
     "collectionKind": "binder",
@@ -58,21 +58,21 @@
   "summary": {
     "title": "Owned Card Trade Binders",
     "slug": "marvel-trade-binder",
-    "generatedAt": "2026-07-10T01:24:15.721Z",
-    "rowCount": 1732,
-    "totalQuantity": 2185,
-    "uniqueNames": 1411,
+    "generatedAt": "2026-07-22T07:39:26.295Z",
+    "rowCount": 1736,
+    "totalQuantity": 2191,
+    "uniqueNames": 1414,
     "binderCount": 25,
     "setCount": 161,
-    "marketTotal": 1605.76,
-    "marketTotalFormatted": "$1,605.76",
+    "marketTotal": 1609.63,
+    "marketTotalFormatted": "$1,609.63",
     "owners": {
-      "Kyle": 1579,
+      "Kyle": 1585,
       "Eleni": 606
     },
     "tradability": {
-      "not_for_trade": 2025,
-      "available": 60,
+      "not_for_trade": 2023,
+      "available": 68,
       "not_tradable": 100
     },
     "binders": [
@@ -200,9 +200,9 @@
           "TMSC",
           "TMSH"
         ],
-        "rows": 371,
-        "quantity": 549,
-        "marketTotal": 281.37
+        "rows": 375,
+        "quantity": 555,
+        "marketTotal": 285.24
       },
       {
         "id": "misc-bulk-cards",
@@ -1176,9 +1176,9 @@
       {
         "code": "MSC",
         "name": "Marvel Super Heroes Commander",
-        "rows": 178,
-        "quantity": 198,
-        "marketTotal": 274.98
+        "rows": 182,
+        "quantity": 204,
+        "marketTotal": 278.85
       },
       {
         "code": "MSH",
@@ -2549,9 +2549,9 @@
       {
         "id": "marvel",
         "name": "Marvel Universes Beyond",
-        "rows": 456,
-        "quantity": 656,
-        "marketTotal": 404.42,
+        "rows": 460,
+        "quantity": 662,
+        "marketTotal": 408.29,
         "sets": [
           {
             "code": "MAR",
@@ -2563,9 +2563,9 @@
           {
             "code": "MSC",
             "name": "Marvel Super Heroes Commander",
-            "rows": 178,
-            "quantity": 198,
-            "marketTotal": 274.98
+            "rows": 182,
+            "quantity": 204,
+            "marketTotal": 278.85
           },
           {
             "code": "MSH",
