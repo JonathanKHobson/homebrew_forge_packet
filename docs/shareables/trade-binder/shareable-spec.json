@@ -1,0 +1,3404 @@
+{
+  "slug": "trade-binder",
+  "title": "Trade Binder",
+  "type": "owned-collection-trade-shareable",
+  "status": "live",
+  "generatedAt": "2026-07-26T02:14:05.802Z",
+  "source": {
+    "collectionPurpose": "owned",
+    "collectionKind": "binder",
+    "binderCount": 26,
+    "setCount": 164
+  },
+  "privacy": {
+    "excludes": [
+      "raw source rows",
+      "local file paths",
+      "source import file paths",
+      "importer IDs",
+      "auto-generated import notes",
+      "full private collection records"
+    ],
+    "includes": [
+      "card identity",
+      "owned quantity",
+      "owner",
+      "ownership and entry identity",
+      "tradability label and reason",
+      "trade status, personal value, and trade notes",
+      "finish",
+      "condition",
+      "language",
+      "purchase price, currency, and date",
+      "set and collector metadata",
+      "public Scryfall links and image URLs",
+      "market snapshot fields",
+      "public tags",
+      "public notes when present"
+    ]
+  },
+  "features": [
+    "binder switcher",
+    "persistent multi-select filters",
+    "active filter chips",
+    "owner filter",
+    "tradability filter and sort",
+    "search",
+    "grid view",
+    "table view",
+    "set grouped view",
+    "full-card preview",
+    "Scryfall compare search",
+    "select and mark",
+    "CSV export",
+    "TXT export",
+    "XML export",
+    "privacy exclusions applied before public totals"
+  ],
+  "summary": {
+    "title": "Trade Binder",
+    "slug": "trade-binder",
+    "generatedAt": "2026-07-26T02:14:05.802Z",
+    "rowCount": 1742,
+    "totalQuantity": 2198,
+    "uniqueNames": 1421,
+    "binderCount": 26,
+    "setCount": 164,
+    "marketTotal": 1487.28,
+    "marketTotalFormatted": "$1,487.28",
+    "owners": {
+      "Kyle": 1592,
+      "Eleni": 606
+    },
+    "tradability": {
+      "not_for_trade": 2030,
+      "available": 68,
+      "not_tradable": 100
+    },
+    "binders": [
+      {
+        "id": "artist-signed-cards",
+        "name": "Artist Signed Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "PIP",
+          "TDM"
+        ],
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 45
+      },
+      {
+        "id": "assassin-candidate-binder",
+        "name": "Assassin's Ledger",
+        "owner": "Kyle",
+        "setCodes": [
+          "ACR",
+          "TACR"
+        ],
+        "rows": 59,
+        "quantity": 69,
+        "marketTotal": 35.27
+      },
+      {
+        "id": "avatar-the-last-airbender-owned-cards",
+        "name": "Avatar: The Last Airbender Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "TLA"
+        ],
+        "rows": 15,
+        "quantity": 15,
+        "marketTotal": 6.3
+      },
+      {
+        "id": "bloomburrow-owned-cards",
+        "name": "Bloomburrow Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "BLB",
+          "BLC",
+          "TBLB",
+          "TBLC"
+        ],
+        "rows": 31,
+        "quantity": 37,
+        "marketTotal": 16.24
+      },
+      {
+        "id": "custom-token-photos",
+        "name": "Custom Token Photos",
+        "owner": "Kyle",
+        "setCodes": [
+          "CUSTOM"
+        ],
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0
+      },
+      {
+        "id": "dominaria-owned-cards",
+        "name": "Dominaria Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "DMR",
+          "DMU",
+          "DOM"
+        ],
+        "rows": 13,
+        "quantity": 13,
+        "marketTotal": 1.68
+      },
+      {
+        "id": "fallout-themed-cards",
+        "name": "Fallout Theme Binder",
+        "owner": "Kyle",
+        "setCodes": [
+          "PIP",
+          "TPIP"
+        ],
+        "rows": 104,
+        "quantity": 123,
+        "marketTotal": 126.34
+      },
+      {
+        "id": "final-fantasy-owned-cards",
+        "name": "Final Fantasy Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "FIC",
+          "FIN",
+          "TFIC",
+          "TFIN"
+        ],
+        "rows": 109,
+        "quantity": 132,
+        "marketTotal": 89.21
+      },
+      {
+        "id": "foundations-owned-cards",
+        "name": "Foundations Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "FDN",
+          "J25",
+          "TFDN"
+        ],
+        "rows": 26,
+        "quantity": 40,
+        "marketTotal": 6.62
+      },
+      {
+        "id": "marvel-owned-cards",
+        "name": "Marvel Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "MAR",
+          "MSC",
+          "MSH",
+          "SPE",
+          "SPM",
+          "TMSC",
+          "TMSH"
+        ],
+        "rows": 377,
+        "quantity": 557,
+        "marketTotal": 301.33
+      },
+      {
+        "id": "misc-bulk-cards",
+        "name": "Misc Bulk Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "2XM",
+          "ARB",
+          "BBD",
+          "BRO",
+          "CMD",
+          "CMR",
+          "FIC",
+          "FRF",
+          "IMA",
+          "KHM",
+          "LCC",
+          "LTC",
+          "M10",
+          "M11",
+          "M12",
+          "M13",
+          "M14",
+          "M15",
+          "M19",
+          "M20",
+          "M21",
+          "M3C",
+          "MIR",
+          "MMQ",
+          "PCA",
+          "PIP",
+          "UMA",
+          "W16",
+          "W17",
+          "ZNC"
+        ],
+        "rows": 190,
+        "quantity": 238,
+        "marketTotal": 37.55
+      },
+      {
+        "id": "misc-old-cards",
+        "name": "Misc Old Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "10E",
+          "2XM",
+          "3ED",
+          "ATH",
+          "BFZ",
+          "BRB",
+          "BRR",
+          "CLU",
+          "CM2",
+          "DDG",
+          "DDQ",
+          "DMR",
+          "EMA",
+          "EOC",
+          "FDN",
+          "HA7",
+          "INR",
+          "INV",
+          "ITP",
+          "JVC",
+          "KTK",
+          "LRW",
+          "M11",
+          "M15",
+          "M21",
+          "MIR",
+          "MM2",
+          "MMQ",
+          "ORI",
+          "PCY",
+          "PLC",
+          "POR",
+          "RAV",
+          "ROE",
+          "SHM",
+          "TMP",
+          "TSP",
+          "TSR",
+          "UDS",
+          "UGL",
+          "ULG",
+          "USG",
+          "WC98",
+          "WC99",
+          "WWK",
+          "ZEN"
+        ],
+        "rows": 62,
+        "quantity": 111,
+        "marketTotal": 125.19
+      },
+      {
+        "id": "modern-horizons-owned-cards",
+        "name": "Modern Horizons Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "H2R",
+          "MH2",
+          "MH3"
+        ],
+        "rows": 9,
+        "quantity": 9,
+        "marketTotal": 2.24
+      },
+      {
+        "id": "murders-at-karlov-manor-owned-cards",
+        "name": "Murders at Karlov Manor Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "MKC",
+          "MKM",
+          "TMKM"
+        ],
+        "rows": 31,
+        "quantity": 32,
+        "marketTotal": 17.8
+      },
+      {
+        "id": "owned-cards-july-2026-general",
+        "name": "Owned Cards - July 2026 General Binder",
+        "owner": "Kyle",
+        "setCodes": [
+          "10E",
+          "2XM",
+          "AER",
+          "AFC",
+          "AKH",
+          "ALA",
+          "BBD",
+          "BFZ",
+          "C21",
+          "CLB",
+          "CMR",
+          "CNS",
+          "DDE",
+          "DFT",
+          "DGM",
+          "DSC",
+          "DSK",
+          "DTK",
+          "ECC",
+          "ECL",
+          "ELD",
+          "EMN",
+          "EOC",
+          "EOE",
+          "EXO",
+          "FRF",
+          "GRN",
+          "IKO",
+          "INV",
+          "KTK",
+          "LCI",
+          "M21",
+          "MIC",
+          "MM2",
+          "MM3",
+          "MMQ",
+          "MOM",
+          "NEC",
+          "NEO",
+          "ONE",
+          "ORI",
+          "OTC",
+          "OTJ",
+          "PLST",
+          "POR",
+          "RNA",
+          "ROE",
+          "RTR",
+          "RVR",
+          "SLD",
+          "SNC",
+          "SPG",
+          "TDC",
+          "TDM",
+          "TDSC",
+          "TMOM",
+          "TOTC",
+          "TRTR",
+          "TSR",
+          "TWAR",
+          "XLN",
+          "ZNR"
+        ],
+        "rows": 114,
+        "quantity": 115,
+        "marketTotal": 159.33
+      },
+      {
+        "id": "partner-animated-army",
+        "name": "Partner Animated Army",
+        "owner": "Eleni",
+        "setCodes": [
+          "BLB",
+          "BLC"
+        ],
+        "rows": 84,
+        "quantity": 100,
+        "marketTotal": 71.91
+      },
+      {
+        "id": "partner-family-matters",
+        "name": "Partner Family Matters",
+        "owner": "Eleni",
+        "setCodes": [
+          "BLB",
+          "BLC"
+        ],
+        "rows": 90,
+        "quantity": 100,
+        "marketTotal": 77.63
+      },
+      {
+        "id": "partner-peace-offering",
+        "name": "Partner Peace Offering",
+        "owner": "Eleni",
+        "setCodes": [
+          "BLB",
+          "BLC"
+        ],
+        "rows": 91,
+        "quantity": 100,
+        "marketTotal": 86.97
+      },
+      {
+        "id": "partner-villains-unleashed-scene-box",
+        "name": "Partner Villains Unleashed Scene Box",
+        "owner": "Eleni",
+        "setCodes": [
+          "MSC"
+        ],
+        "rows": 6,
+        "quantity": 6,
+        "marketTotal": 23.12
+      },
+      {
+        "id": "partner-wakanda-forever",
+        "name": "Partner Wakanda Forever",
+        "owner": "Eleni",
+        "setCodes": [
+          "MSC",
+          "MSH"
+        ],
+        "rows": 78,
+        "quantity": 100,
+        "marketTotal": 99.93
+      },
+      {
+        "id": "partner-witherbloom-witchcraft",
+        "name": "Partner Witherbloom Witchcraft",
+        "owner": "Eleni",
+        "setCodes": [
+          "C21",
+          "STX"
+        ],
+        "rows": 80,
+        "quantity": 100,
+        "marketTotal": 114.35
+      },
+      {
+        "id": "secrets-of-strixhaven-owned-cards",
+        "name": "Secrets of Strixhaven Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "SOA",
+          "SOS",
+          "STX",
+          "TSOS"
+        ],
+        "rows": 63,
+        "quantity": 76,
+        "marketTotal": 16.09
+      },
+      {
+        "id": "squirrel-away",
+        "name": "Squirrel Away",
+        "owner": "Eleni",
+        "setCodes": [
+          "2XM",
+          "AFR",
+          "BLB",
+          "BLC",
+          "BRO",
+          "CLB",
+          "DMR",
+          "DSC",
+          "ECC",
+          "EOC",
+          "HOB",
+          "INR",
+          "MH1",
+          "MH2",
+          "MH3",
+          "MKC",
+          "MOC",
+          "NCC",
+          "OTC",
+          "PIP",
+          "SOC",
+          "SOS",
+          "SPM",
+          "TDC",
+          "TDM",
+          "TMC",
+          "TMT",
+          "TOR",
+          "TSR",
+          "UNF",
+          "WOE"
+        ],
+        "rows": 86,
+        "quantity": 100,
+        "marketTotal": 0
+      },
+      {
+        "id": "teenage-mutant-ninja-turtles-owned-cards",
+        "name": "Teenage Mutant Ninja Turtles Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "PZA",
+          "TMT"
+        ],
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 4.96
+      },
+      {
+        "id": "warhammer-40000-owned-cards",
+        "name": "Warhammer 40,000 Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "40K"
+        ],
+        "rows": 2,
+        "quantity": 3,
+        "marketTotal": 19.1
+      },
+      {
+        "id": "wilds-of-eldraine-owned-cards",
+        "name": "Wilds of Eldraine Owned Cards",
+        "owner": "Kyle",
+        "setCodes": [
+          "TWOE",
+          "WOE",
+          "WOT"
+        ],
+        "rows": 13,
+        "quantity": 13,
+        "marketTotal": 3.12
+      }
+    ],
+    "sets": [
+      {
+        "code": "10E",
+        "name": "Tenth Edition",
+        "rows": 3,
+        "quantity": 4,
+        "marketTotal": 0.79
+      },
+      {
+        "code": "2XM",
+        "name": "Double Masters",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 2.6
+      },
+      {
+        "code": "3ED",
+        "name": "Revised Edition",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.45
+      },
+      {
+        "code": "40K",
+        "name": "Warhammer 40,000 Commander",
+        "rows": 2,
+        "quantity": 3,
+        "marketTotal": 19.1
+      },
+      {
+        "code": "ACR",
+        "name": "Assassin's Creed",
+        "rows": 56,
+        "quantity": 63,
+        "marketTotal": 35.27
+      },
+      {
+        "code": "AER",
+        "name": "Aether Revolt",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.34
+      },
+      {
+        "code": "AFC",
+        "name": "Forgotten Realms Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 16.44
+      },
+      {
+        "code": "AFR",
+        "name": "Adventures in the Forgotten Realms",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "AKH",
+        "name": "Amonkhet",
+        "rows": 6,
+        "quantity": 7,
+        "marketTotal": 0.64
+      },
+      {
+        "code": "ALA",
+        "name": "Shards of Alara",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 2.81
+      },
+      {
+        "code": "ARB",
+        "name": "Alara Reborn",
+        "rows": 25,
+        "quantity": 29,
+        "marketTotal": 5.04
+      },
+      {
+        "code": "ATH",
+        "name": "Anthologies",
+        "rows": 1,
+        "quantity": 2,
+        "marketTotal": 4.56
+      },
+      {
+        "code": "BBD",
+        "name": "Battlebond",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.19
+      },
+      {
+        "code": "BFZ",
+        "name": "Battle for Zendikar",
+        "rows": 6,
+        "quantity": 7,
+        "marketTotal": 1.04
+      },
+      {
+        "code": "BLB",
+        "name": "Bloomburrow",
+        "rows": 52,
+        "quantity": 93,
+        "marketTotal": 15.27
+      },
+      {
+        "code": "BLC",
+        "name": "Bloomburrow Commander",
+        "rows": 263,
+        "quantity": 263,
+        "marketTotal": 237.48
+      },
+      {
+        "code": "BRB",
+        "name": "Battle Royale Box Set",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 2.98
+      },
+      {
+        "code": "BRO",
+        "name": "The Brothers' War",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.3
+      },
+      {
+        "code": "BRR",
+        "name": "The Brothers' War Retro Artifacts",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.41
+      },
+      {
+        "code": "C21",
+        "name": "Commander 2021",
+        "rows": 75,
+        "quantity": 75,
+        "marketTotal": 111.19
+      },
+      {
+        "code": "CLB",
+        "name": "Commander Legends: Battle for Baldur's Gate",
+        "rows": 5,
+        "quantity": 5,
+        "marketTotal": 12.72
+      },
+      {
+        "code": "CLU",
+        "name": "Ravnica: Clue Edition",
+        "rows": 1,
+        "quantity": 3,
+        "marketTotal": 8.4
+      },
+      {
+        "code": "CM2",
+        "name": "Commander Anthology Volume II",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.19
+      },
+      {
+        "code": "CMD",
+        "name": "Commander 2011",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.27
+      },
+      {
+        "code": "CMR",
+        "name": "Commander Legends",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.7
+      },
+      {
+        "code": "CNS",
+        "name": "Conspiracy",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.24
+      },
+      {
+        "code": "CUSTOM",
+        "name": "Crystal Sully Custom Tokens",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0
+      },
+      {
+        "code": "DDE",
+        "name": "Duel Decks: Phyrexia vs. the Coalition",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 1.65
+      },
+      {
+        "code": "DDG",
+        "name": "Duel Decks: Knights vs. Dragons",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.27
+      },
+      {
+        "code": "DDQ",
+        "name": "Duel Decks: Blessed vs. Cursed",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.19
+      },
+      {
+        "code": "DFT",
+        "name": "Aetherdrift",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.85
+      },
+      {
+        "code": "DGM",
+        "name": "Dragon's Maze",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.28
+      },
+      {
+        "code": "DMR",
+        "name": "Dominaria Remastered",
+        "rows": 3,
+        "quantity": 4,
+        "marketTotal": 0.83
+      },
+      {
+        "code": "DMU",
+        "name": "Dominaria United",
+        "rows": 11,
+        "quantity": 11,
+        "marketTotal": 1.3
+      },
+      {
+        "code": "DOM",
+        "name": "Dominaria",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.17
+      },
+      {
+        "code": "DSC",
+        "name": "Duskmourn: House of Horror Commander",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 0.29
+      },
+      {
+        "code": "DSK",
+        "name": "Duskmourn: House of Horror",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 3.96
+      },
+      {
+        "code": "DTK",
+        "name": "Dragons of Tarkir",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.21
+      },
+      {
+        "code": "ECC",
+        "name": "Lorwyn Eclipsed Commander",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.3
+      },
+      {
+        "code": "ECL",
+        "name": "Lorwyn Eclipsed",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.75
+      },
+      {
+        "code": "ELD",
+        "name": "Throne of Eldraine",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.13
+      },
+      {
+        "code": "EMA",
+        "name": "Eternal Masters",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.27
+      },
+      {
+        "code": "EMN",
+        "name": "Eldritch Moon",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 1.2
+      },
+      {
+        "code": "EOC",
+        "name": "Edge of Eternities Commander",
+        "rows": 5,
+        "quantity": 5,
+        "marketTotal": 0.92
+      },
+      {
+        "code": "EOE",
+        "name": "Edge of Eternities",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.57
+      },
+      {
+        "code": "EXO",
+        "name": "Exodus",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 1.14
+      },
+      {
+        "code": "FDN",
+        "name": "Foundations",
+        "rows": 19,
+        "quantity": 22,
+        "marketTotal": 4.64
+      },
+      {
+        "code": "FIC",
+        "name": "Final Fantasy Commander",
+        "rows": 97,
+        "quantity": 104,
+        "marketTotal": 87.3
+      },
+      {
+        "code": "FIN",
+        "name": "Final Fantasy",
+        "rows": 10,
+        "quantity": 12,
+        "marketTotal": 3.14
+      },
+      {
+        "code": "FRF",
+        "name": "Fate Reforged",
+        "rows": 6,
+        "quantity": 7,
+        "marketTotal": 1.02
+      },
+      {
+        "code": "GRN",
+        "name": "Guilds of Ravnica",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.11
+      },
+      {
+        "code": "H2R",
+        "name": "Modern Horizons 2 Timeshifts",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.38
+      },
+      {
+        "code": "HA7",
+        "name": "Historic Anthology 7",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "HOB",
+        "name": "The Hobbit",
+        "rows": 2,
+        "quantity": 16,
+        "marketTotal": 0
+      },
+      {
+        "code": "IKO",
+        "name": "Ikoria: Lair of Behemoths",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.33
+      },
+      {
+        "code": "IMA",
+        "name": "Iconic Masters",
+        "rows": 1,
+        "quantity": 2,
+        "marketTotal": 0.28
+      },
+      {
+        "code": "INR",
+        "name": "Innistrad Remastered",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.2
+      },
+      {
+        "code": "INV",
+        "name": "Invasion",
+        "rows": 4,
+        "quantity": 6,
+        "marketTotal": 5
+      },
+      {
+        "code": "ITP",
+        "name": "Introductory Two-Player Set",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 10
+      },
+      {
+        "code": "J25",
+        "name": "Foundations Jumpstart",
+        "rows": 4,
+        "quantity": 17,
+        "marketTotal": 2.82
+      },
+      {
+        "code": "JVC",
+        "name": "Duel Decks Anthology: Jace vs. Chandra",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 1.22
+      },
+      {
+        "code": "KHM",
+        "name": "Kaldheim",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.69
+      },
+      {
+        "code": "KTK",
+        "name": "Khans of Tarkir",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.57
+      },
+      {
+        "code": "LCC",
+        "name": "The Lost Caverns of Ixalan Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.3
+      },
+      {
+        "code": "LCI",
+        "name": "The Lost Caverns of Ixalan",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 0.93
+      },
+      {
+        "code": "LRW",
+        "name": "Lorwyn",
+        "rows": 1,
+        "quantity": 2,
+        "marketTotal": 1.16
+      },
+      {
+        "code": "LTC",
+        "name": "Tales of Middle-earth Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.38
+      },
+      {
+        "code": "M10",
+        "name": "Magic 2010",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.08
+      },
+      {
+        "code": "M11",
+        "name": "Magic 2011",
+        "rows": 2,
+        "quantity": 4,
+        "marketTotal": 0.58
+      },
+      {
+        "code": "M12",
+        "name": "Magic 2012",
+        "rows": 8,
+        "quantity": 8,
+        "marketTotal": 1
+      },
+      {
+        "code": "M13",
+        "name": "Magic 2013",
+        "rows": 28,
+        "quantity": 39,
+        "marketTotal": 5.19
+      },
+      {
+        "code": "M14",
+        "name": "Magic 2014",
+        "rows": 43,
+        "quantity": 54,
+        "marketTotal": 7.47
+      },
+      {
+        "code": "M15",
+        "name": "Magic 2015",
+        "rows": 24,
+        "quantity": 33,
+        "marketTotal": 4.43
+      },
+      {
+        "code": "M19",
+        "name": "Core Set 2019",
+        "rows": 6,
+        "quantity": 7,
+        "marketTotal": 1.19
+      },
+      {
+        "code": "M20",
+        "name": "Core Set 2020",
+        "rows": 5,
+        "quantity": 5,
+        "marketTotal": 0.73
+      },
+      {
+        "code": "M21",
+        "name": "Core Set 2021",
+        "rows": 6,
+        "quantity": 6,
+        "marketTotal": 1.22
+      },
+      {
+        "code": "M3C",
+        "name": "Modern Horizons 3 Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.2
+      },
+      {
+        "code": "MAR",
+        "name": "Marvel Universe",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 20.34
+      },
+      {
+        "code": "MH1",
+        "name": "Modern Horizons",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "MH2",
+        "name": "Modern Horizons 2",
+        "rows": 12,
+        "quantity": 12,
+        "marketTotal": 0.17
+      },
+      {
+        "code": "MH3",
+        "name": "Modern Horizons 3",
+        "rows": 8,
+        "quantity": 8,
+        "marketTotal": 1.69
+      },
+      {
+        "code": "MIC",
+        "name": "Midnight Hunt Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.09
+      },
+      {
+        "code": "MIR",
+        "name": "Mirage",
+        "rows": 2,
+        "quantity": 3,
+        "marketTotal": 1.81
+      },
+      {
+        "code": "MKC",
+        "name": "Murders at Karlov Manor Commander",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.48
+      },
+      {
+        "code": "MKM",
+        "name": "Murders at Karlov Manor",
+        "rows": 26,
+        "quantity": 27,
+        "marketTotal": 17.32
+      },
+      {
+        "code": "MM2",
+        "name": "Modern Masters 2015",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.45
+      },
+      {
+        "code": "MM3",
+        "name": "Modern Masters 2017",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.18
+      },
+      {
+        "code": "MMQ",
+        "name": "Mercadian Masques",
+        "rows": 20,
+        "quantity": 30,
+        "marketTotal": 14.47
+      },
+      {
+        "code": "MOC",
+        "name": "March of the Machine Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "MOM",
+        "name": "March of the Machine",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 7.32
+      },
+      {
+        "code": "MSC",
+        "name": "Marvel Super Heroes Commander",
+        "rows": 182,
+        "quantity": 204,
+        "marketTotal": 278.85
+      },
+      {
+        "code": "MSH",
+        "name": "Marvel Super Heroes",
+        "rows": 244,
+        "quantity": 399,
+        "marketTotal": 105.94
+      },
+      {
+        "code": "NCC",
+        "name": "New Capenna Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "NEC",
+        "name": "Neon Dynasty Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 1
+      },
+      {
+        "code": "NEO",
+        "name": "Kamigawa: Neon Dynasty",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 3.13
+      },
+      {
+        "code": "ONE",
+        "name": "Phyrexia: All Will Be One",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 0.7
+      },
+      {
+        "code": "ORI",
+        "name": "Magic Origins",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.17
+      },
+      {
+        "code": "OTC",
+        "name": "Outlaws of Thunder Junction Commander",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 17.74
+      },
+      {
+        "code": "OTJ",
+        "name": "Outlaws of Thunder Junction",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 0.62
+      },
+      {
+        "code": "PCA",
+        "name": "Planechase Anthology",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.89
+      },
+      {
+        "code": "PCY",
+        "name": "Prophecy",
+        "rows": 1,
+        "quantity": 4,
+        "marketTotal": 1.16
+      },
+      {
+        "code": "PIP",
+        "name": "Fallout",
+        "rows": 95,
+        "quantity": 104,
+        "marketTotal": 136.64
+      },
+      {
+        "code": "PLC",
+        "name": "Planar Chaos",
+        "rows": 2,
+        "quantity": 4,
+        "marketTotal": 3.04
+      },
+      {
+        "code": "PLST",
+        "name": "The List",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 12.41
+      },
+      {
+        "code": "POR",
+        "name": "Portal",
+        "rows": 3,
+        "quantity": 7,
+        "marketTotal": 4.41
+      },
+      {
+        "code": "PZA",
+        "name": "Teenage Mutant Ninja Turtles Source Material",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 2.82
+      },
+      {
+        "code": "RAV",
+        "name": "Ravnica: City of Guilds",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.85
+      },
+      {
+        "code": "RNA",
+        "name": "Ravnica Allegiance",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.06
+      },
+      {
+        "code": "ROE",
+        "name": "Rise of the Eldrazi",
+        "rows": 2,
+        "quantity": 4,
+        "marketTotal": 3.24
+      },
+      {
+        "code": "RTR",
+        "name": "Return to Ravnica",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.1
+      },
+      {
+        "code": "RVR",
+        "name": "Ravnica Remastered",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0.5
+      },
+      {
+        "code": "SHM",
+        "name": "Shadowmoor",
+        "rows": 1,
+        "quantity": 2,
+        "marketTotal": 0.26
+      },
+      {
+        "code": "SLD",
+        "name": "Secret Lair Drop",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 47.77
+      },
+      {
+        "code": "SNC",
+        "name": "Streets of New Capenna",
+        "rows": 5,
+        "quantity": 5,
+        "marketTotal": 0.8
+      },
+      {
+        "code": "SOA",
+        "name": "Secrets of Strixhaven Mystical Archive",
+        "rows": 5,
+        "quantity": 5,
+        "marketTotal": 1.27
+      },
+      {
+        "code": "SOC",
+        "name": "Secrets of Strixhaven Commander",
+        "rows": 19,
+        "quantity": 19,
+        "marketTotal": 0
+      },
+      {
+        "code": "SOS",
+        "name": "Secrets of Strixhaven",
+        "rows": 56,
+        "quantity": 69,
+        "marketTotal": 14.72
+      },
+      {
+        "code": "SPE",
+        "name": "Marvel's Spider-Man Eternal",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 15.91
+      },
+      {
+        "code": "SPG",
+        "name": "Special Guests",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 6.41
+      },
+      {
+        "code": "SPM",
+        "name": "Marvel's Spider-Man",
+        "rows": 21,
+        "quantity": 21,
+        "marketTotal": 3.34
+      },
+      {
+        "code": "STX",
+        "name": "Strixhaven: School of Mages",
+        "rows": 7,
+        "quantity": 27,
+        "marketTotal": 3.65
+      },
+      {
+        "code": "TACR",
+        "name": "Assassin's Creed Tokens",
+        "rows": 3,
+        "quantity": 6,
+        "marketTotal": 0
+      },
+      {
+        "code": "TBLB",
+        "name": "Bloomburrow Tokens",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "TBLC",
+        "name": "Bloomburrow Commander Tokens",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "TDC",
+        "name": "Tarkir: Dragonstorm Commander",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.35
+      },
+      {
+        "code": "TDM",
+        "name": "Tarkir: Dragonstorm",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 37.85
+      },
+      {
+        "code": "TDSC",
+        "name": "Duskmourn Commander Tokens",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "TFDN",
+        "name": "Foundations Tokens",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 0
+      },
+      {
+        "code": "TFIC",
+        "name": "Final Fantasy Commander Tokens",
+        "rows": 2,
+        "quantity": 4,
+        "marketTotal": 0
+      },
+      {
+        "code": "TFIN",
+        "name": "Final Fantasy Tokens",
+        "rows": 4,
+        "quantity": 16,
+        "marketTotal": 0
+      },
+      {
+        "code": "TLA",
+        "name": "Avatar: The Last Airbender",
+        "rows": 15,
+        "quantity": 15,
+        "marketTotal": 6.3
+      },
+      {
+        "code": "TMC",
+        "name": "Teenage Mutant Ninja Turtles Eternal",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "TMKM",
+        "name": "Murders at Karlov Manor Tokens",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0
+      },
+      {
+        "code": "TMOM",
+        "name": "March of the Machine Tokens",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "TMP",
+        "name": "Tempest",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.61
+      },
+      {
+        "code": "TMSC",
+        "name": "Marvel Super Heroes Commander Tokens",
+        "rows": 1,
+        "quantity": 10,
+        "marketTotal": 0
+      },
+      {
+        "code": "TMSH",
+        "name": "Marvel Super Heroes Tokens",
+        "rows": 12,
+        "quantity": 28,
+        "marketTotal": 0
+      },
+      {
+        "code": "TMT",
+        "name": "Teenage Mutant Ninja Turtles",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 2.14
+      },
+      {
+        "code": "TOR",
+        "name": "Torment",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "TOTC",
+        "name": "Outlaws of Thunder Junction Commander Tokens",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0
+      },
+      {
+        "code": "TPIP",
+        "name": "Fallout Tokens",
+        "rows": 12,
+        "quantity": 22,
+        "marketTotal": 0
+      },
+      {
+        "code": "TRTR",
+        "name": "Return to Ravnica Tokens",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.35
+      },
+      {
+        "code": "TSOS",
+        "name": "Secrets of Strixhaven Tokens",
+        "rows": 2,
+        "quantity": 2,
+        "marketTotal": 0
+      },
+      {
+        "code": "TSP",
+        "name": "Time Spiral",
+        "rows": 2,
+        "quantity": 4,
+        "marketTotal": 1.9
+      },
+      {
+        "code": "TSR",
+        "name": "Time Spiral Remastered",
+        "rows": 4,
+        "quantity": 4,
+        "marketTotal": 0.51
+      },
+      {
+        "code": "TWAR",
+        "name": "War of the Spark Tokens",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.19
+      },
+      {
+        "code": "TWOE",
+        "name": "Wilds of Eldraine Tokens",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "UDS",
+        "name": "Urza's Destiny",
+        "rows": 1,
+        "quantity": 4,
+        "marketTotal": 1.04
+      },
+      {
+        "code": "UGL",
+        "name": "Unglued",
+        "rows": 2,
+        "quantity": 3,
+        "marketTotal": 21.42
+      },
+      {
+        "code": "ULG",
+        "name": "Urza's Legacy",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.45
+      },
+      {
+        "code": "UMA",
+        "name": "Ultimate Masters",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.1
+      },
+      {
+        "code": "UNF",
+        "name": "Unfinity",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0
+      },
+      {
+        "code": "USG",
+        "name": "Urza's Saga",
+        "rows": 2,
+        "quantity": 6,
+        "marketTotal": 2.36
+      },
+      {
+        "code": "W16",
+        "name": "Welcome Deck 2016",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.02
+      },
+      {
+        "code": "W17",
+        "name": "Welcome Deck 2017",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.36
+      },
+      {
+        "code": "WC98",
+        "name": "World Championship Decks 1998",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 12.52
+      },
+      {
+        "code": "WC99",
+        "name": "World Championship Decks 1999",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 8.48
+      },
+      {
+        "code": "WOE",
+        "name": "Wilds of Eldraine",
+        "rows": 12,
+        "quantity": 12,
+        "marketTotal": 1.79
+      },
+      {
+        "code": "WOT",
+        "name": "Wilds of Eldraine: Enchanting Tales",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 1.33
+      },
+      {
+        "code": "WWK",
+        "name": "Worldwake",
+        "rows": 1,
+        "quantity": 2,
+        "marketTotal": 0.26
+      },
+      {
+        "code": "XLN",
+        "name": "Ixalan",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.08
+      },
+      {
+        "code": "ZEN",
+        "name": "Zendikar",
+        "rows": 6,
+        "quantity": 18,
+        "marketTotal": 16.27
+      },
+      {
+        "code": "ZNC",
+        "name": "Zendikar Rising Commander",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.35
+      },
+      {
+        "code": "ZNR",
+        "name": "Zendikar Rising",
+        "rows": 1,
+        "quantity": 1,
+        "marketTotal": 0.27
+      }
+    ],
+    "setFamilies": [
+      {
+        "id": "alara",
+        "name": "Alara",
+        "rows": 27,
+        "quantity": 31,
+        "marketTotal": 7.85,
+        "sets": [
+          {
+            "code": "ALA",
+            "name": "Shards of Alara",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 2.81
+          },
+          {
+            "code": "ARB",
+            "name": "Alara Reborn",
+            "rows": 25,
+            "quantity": 29,
+            "marketTotal": 5.04
+          }
+        ],
+        "codes": [
+          "ALA",
+          "ARB"
+        ]
+      },
+      {
+        "id": "amonkhet",
+        "name": "Amonkhet",
+        "rows": 6,
+        "quantity": 7,
+        "marketTotal": 0.64,
+        "sets": [
+          {
+            "code": "AKH",
+            "name": "Amonkhet",
+            "rows": 6,
+            "quantity": 7,
+            "marketTotal": 0.64
+          }
+        ],
+        "codes": [
+          "AKH"
+        ]
+      },
+      {
+        "id": "assassins-creed",
+        "name": "Assassin's Creed Universes Beyond",
+        "rows": 59,
+        "quantity": 69,
+        "marketTotal": 35.27,
+        "sets": [
+          {
+            "code": "ACR",
+            "name": "Assassin's Creed",
+            "rows": 56,
+            "quantity": 63,
+            "marketTotal": 35.27
+          },
+          {
+            "code": "TACR",
+            "name": "Assassin's Creed Tokens",
+            "rows": 3,
+            "quantity": 6,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "ACR",
+          "TACR"
+        ]
+      },
+      {
+        "id": "avatar",
+        "name": "Avatar: The Last Airbender Universes Beyond",
+        "rows": 15,
+        "quantity": 15,
+        "marketTotal": 6.3,
+        "sets": [
+          {
+            "code": "TLA",
+            "name": "Avatar: The Last Airbender",
+            "rows": 15,
+            "quantity": 15,
+            "marketTotal": 6.3
+          }
+        ],
+        "codes": [
+          "TLA"
+        ]
+      },
+      {
+        "id": "bloomburrow",
+        "name": "Bloomburrow",
+        "rows": 317,
+        "quantity": 358,
+        "marketTotal": 252.75,
+        "sets": [
+          {
+            "code": "BLB",
+            "name": "Bloomburrow",
+            "rows": 52,
+            "quantity": 93,
+            "marketTotal": 15.27
+          },
+          {
+            "code": "BLC",
+            "name": "Bloomburrow Commander",
+            "rows": 263,
+            "quantity": 263,
+            "marketTotal": 237.48
+          },
+          {
+            "code": "TBLB",
+            "name": "Bloomburrow Tokens",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "TBLC",
+            "name": "Bloomburrow Commander Tokens",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "BLB",
+          "BLC",
+          "TBLB",
+          "TBLC"
+        ]
+      },
+      {
+        "id": "classic-magic",
+        "name": "Classic Magic",
+        "rows": 55,
+        "quantity": 91,
+        "marketTotal": 102.98,
+        "sets": [
+          {
+            "code": "3ED",
+            "name": "Revised Edition",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.45
+          },
+          {
+            "code": "ATH",
+            "name": "Anthologies",
+            "rows": 1,
+            "quantity": 2,
+            "marketTotal": 4.56
+          },
+          {
+            "code": "BRB",
+            "name": "Battle Royale Box Set",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 2.98
+          },
+          {
+            "code": "DDG",
+            "name": "Duel Decks: Knights vs. Dragons",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.27
+          },
+          {
+            "code": "DDQ",
+            "name": "Duel Decks: Blessed vs. Cursed",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.19
+          },
+          {
+            "code": "EXO",
+            "name": "Exodus",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 1.14
+          },
+          {
+            "code": "INV",
+            "name": "Invasion",
+            "rows": 4,
+            "quantity": 6,
+            "marketTotal": 5
+          },
+          {
+            "code": "ITP",
+            "name": "Introductory Two-Player Set",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 10
+          },
+          {
+            "code": "JVC",
+            "name": "Duel Decks Anthology: Jace vs. Chandra",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 1.22
+          },
+          {
+            "code": "MIR",
+            "name": "Mirage",
+            "rows": 2,
+            "quantity": 3,
+            "marketTotal": 1.81
+          },
+          {
+            "code": "MMQ",
+            "name": "Mercadian Masques",
+            "rows": 20,
+            "quantity": 30,
+            "marketTotal": 14.47
+          },
+          {
+            "code": "PCY",
+            "name": "Prophecy",
+            "rows": 1,
+            "quantity": 4,
+            "marketTotal": 1.16
+          },
+          {
+            "code": "PLC",
+            "name": "Planar Chaos",
+            "rows": 2,
+            "quantity": 4,
+            "marketTotal": 3.04
+          },
+          {
+            "code": "POR",
+            "name": "Portal",
+            "rows": 3,
+            "quantity": 7,
+            "marketTotal": 4.41
+          },
+          {
+            "code": "ROE",
+            "name": "Rise of the Eldrazi",
+            "rows": 2,
+            "quantity": 4,
+            "marketTotal": 3.24
+          },
+          {
+            "code": "SHM",
+            "name": "Shadowmoor",
+            "rows": 1,
+            "quantity": 2,
+            "marketTotal": 0.26
+          },
+          {
+            "code": "TMP",
+            "name": "Tempest",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.61
+          },
+          {
+            "code": "TOR",
+            "name": "Torment",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "TSP",
+            "name": "Time Spiral",
+            "rows": 2,
+            "quantity": 4,
+            "marketTotal": 1.9
+          },
+          {
+            "code": "UDS",
+            "name": "Urza's Destiny",
+            "rows": 1,
+            "quantity": 4,
+            "marketTotal": 1.04
+          },
+          {
+            "code": "UGL",
+            "name": "Unglued",
+            "rows": 2,
+            "quantity": 3,
+            "marketTotal": 21.42
+          },
+          {
+            "code": "ULG",
+            "name": "Urza's Legacy",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.45
+          },
+          {
+            "code": "USG",
+            "name": "Urza's Saga",
+            "rows": 2,
+            "quantity": 6,
+            "marketTotal": 2.36
+          },
+          {
+            "code": "WC98",
+            "name": "World Championship Decks 1998",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 12.52
+          },
+          {
+            "code": "WC99",
+            "name": "World Championship Decks 1999",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 8.48
+          }
+        ],
+        "codes": [
+          "3ED",
+          "ATH",
+          "BRB",
+          "DDG",
+          "DDQ",
+          "EXO",
+          "INV",
+          "ITP",
+          "JVC",
+          "MIR",
+          "MMQ",
+          "PCY",
+          "PLC",
+          "POR",
+          "ROE",
+          "SHM",
+          "TMP",
+          "TOR",
+          "TSP",
+          "UDS",
+          "UGL",
+          "ULG",
+          "USG",
+          "WC98",
+          "WC99"
+        ]
+      },
+      {
+        "id": "commander",
+        "name": "Commander and Multiplayer",
+        "rows": 18,
+        "quantity": 18,
+        "marketTotal": 31.64,
+        "sets": [
+          {
+            "code": "AFC",
+            "name": "Forgotten Realms Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 16.44
+          },
+          {
+            "code": "BBD",
+            "name": "Battlebond",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.19
+          },
+          {
+            "code": "CLB",
+            "name": "Commander Legends: Battle for Baldur's Gate",
+            "rows": 5,
+            "quantity": 5,
+            "marketTotal": 12.72
+          },
+          {
+            "code": "CM2",
+            "name": "Commander Anthology Volume II",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.19
+          },
+          {
+            "code": "CMD",
+            "name": "Commander 2011",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.27
+          },
+          {
+            "code": "CMR",
+            "name": "Commander Legends",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.7
+          },
+          {
+            "code": "CNS",
+            "name": "Conspiracy",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.24
+          },
+          {
+            "code": "MOC",
+            "name": "March of the Machine Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "PCA",
+            "name": "Planechase Anthology",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0.89
+          }
+        ],
+        "codes": [
+          "AFC",
+          "BBD",
+          "CLB",
+          "CM2",
+          "CMD",
+          "CMR",
+          "CNS",
+          "MOC",
+          "PCA"
+        ]
+      },
+      {
+        "id": "core-sets",
+        "name": "Core Sets and Foundations",
+        "rows": 160,
+        "quantity": 211,
+        "marketTotal": 30.69,
+        "sets": [
+          {
+            "code": "10E",
+            "name": "Tenth Edition",
+            "rows": 3,
+            "quantity": 4,
+            "marketTotal": 0.79
+          },
+          {
+            "code": "FDN",
+            "name": "Foundations",
+            "rows": 19,
+            "quantity": 22,
+            "marketTotal": 4.64
+          },
+          {
+            "code": "J25",
+            "name": "Foundations Jumpstart",
+            "rows": 4,
+            "quantity": 17,
+            "marketTotal": 2.82
+          },
+          {
+            "code": "M10",
+            "name": "Magic 2010",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0.08
+          },
+          {
+            "code": "M11",
+            "name": "Magic 2011",
+            "rows": 2,
+            "quantity": 4,
+            "marketTotal": 0.58
+          },
+          {
+            "code": "M12",
+            "name": "Magic 2012",
+            "rows": 8,
+            "quantity": 8,
+            "marketTotal": 1
+          },
+          {
+            "code": "M13",
+            "name": "Magic 2013",
+            "rows": 28,
+            "quantity": 39,
+            "marketTotal": 5.19
+          },
+          {
+            "code": "M14",
+            "name": "Magic 2014",
+            "rows": 43,
+            "quantity": 54,
+            "marketTotal": 7.47
+          },
+          {
+            "code": "M15",
+            "name": "Magic 2015",
+            "rows": 24,
+            "quantity": 33,
+            "marketTotal": 4.43
+          },
+          {
+            "code": "M19",
+            "name": "Core Set 2019",
+            "rows": 6,
+            "quantity": 7,
+            "marketTotal": 1.19
+          },
+          {
+            "code": "M20",
+            "name": "Core Set 2020",
+            "rows": 5,
+            "quantity": 5,
+            "marketTotal": 0.73
+          },
+          {
+            "code": "M21",
+            "name": "Core Set 2021",
+            "rows": 6,
+            "quantity": 6,
+            "marketTotal": 1.22
+          },
+          {
+            "code": "ORI",
+            "name": "Magic Origins",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0.17
+          },
+          {
+            "code": "TFDN",
+            "name": "Foundations Tokens",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 0
+          },
+          {
+            "code": "W16",
+            "name": "Welcome Deck 2016",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.02
+          },
+          {
+            "code": "W17",
+            "name": "Welcome Deck 2017",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.36
+          }
+        ],
+        "codes": [
+          "10E",
+          "FDN",
+          "J25",
+          "M10",
+          "M11",
+          "M12",
+          "M13",
+          "M14",
+          "M15",
+          "M19",
+          "M20",
+          "M21",
+          "ORI",
+          "TFDN",
+          "W16",
+          "W17"
+        ]
+      },
+      {
+        "id": "dominaria",
+        "name": "Dominaria",
+        "rows": 15,
+        "quantity": 16,
+        "marketTotal": 2.3,
+        "sets": [
+          {
+            "code": "DMR",
+            "name": "Dominaria Remastered",
+            "rows": 3,
+            "quantity": 4,
+            "marketTotal": 0.83
+          },
+          {
+            "code": "DMU",
+            "name": "Dominaria United",
+            "rows": 11,
+            "quantity": 11,
+            "marketTotal": 1.3
+          },
+          {
+            "code": "DOM",
+            "name": "Dominaria",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.17
+          }
+        ],
+        "codes": [
+          "DMR",
+          "DMU",
+          "DOM"
+        ]
+      },
+      {
+        "id": "duskmourn",
+        "name": "Duskmourn",
+        "rows": 8,
+        "quantity": 8,
+        "marketTotal": 4.25,
+        "sets": [
+          {
+            "code": "DSC",
+            "name": "Duskmourn: House of Horror Commander",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 0.29
+          },
+          {
+            "code": "DSK",
+            "name": "Duskmourn: House of Horror",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 3.96
+          },
+          {
+            "code": "TDSC",
+            "name": "Duskmourn Commander Tokens",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "DSC",
+          "DSK",
+          "TDSC"
+        ]
+      },
+      {
+        "id": "edge-of-eternities",
+        "name": "Edge of Eternities",
+        "rows": 7,
+        "quantity": 7,
+        "marketTotal": 1.49,
+        "sets": [
+          {
+            "code": "EOC",
+            "name": "Edge of Eternities Commander",
+            "rows": 5,
+            "quantity": 5,
+            "marketTotal": 0.92
+          },
+          {
+            "code": "EOE",
+            "name": "Edge of Eternities",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0.57
+          }
+        ],
+        "codes": [
+          "EOC",
+          "EOE"
+        ]
+      },
+      {
+        "id": "fallout",
+        "name": "Fallout Universes Beyond",
+        "rows": 107,
+        "quantity": 126,
+        "marketTotal": 136.64,
+        "sets": [
+          {
+            "code": "PIP",
+            "name": "Fallout",
+            "rows": 95,
+            "quantity": 104,
+            "marketTotal": 136.64
+          },
+          {
+            "code": "TPIP",
+            "name": "Fallout Tokens",
+            "rows": 12,
+            "quantity": 22,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "PIP",
+          "TPIP"
+        ]
+      },
+      {
+        "id": "final-fantasy",
+        "name": "Final Fantasy Universes Beyond",
+        "rows": 113,
+        "quantity": 136,
+        "marketTotal": 90.44,
+        "sets": [
+          {
+            "code": "FIC",
+            "name": "Final Fantasy Commander",
+            "rows": 97,
+            "quantity": 104,
+            "marketTotal": 87.3
+          },
+          {
+            "code": "FIN",
+            "name": "Final Fantasy",
+            "rows": 10,
+            "quantity": 12,
+            "marketTotal": 3.14
+          },
+          {
+            "code": "TFIC",
+            "name": "Final Fantasy Commander Tokens",
+            "rows": 2,
+            "quantity": 4,
+            "marketTotal": 0
+          },
+          {
+            "code": "TFIN",
+            "name": "Final Fantasy Tokens",
+            "rows": 4,
+            "quantity": 16,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "FIC",
+          "FIN",
+          "TFIC",
+          "TFIN"
+        ]
+      },
+      {
+        "id": "innistrad",
+        "name": "Innistrad",
+        "rows": 5,
+        "quantity": 5,
+        "marketTotal": 1.49,
+        "sets": [
+          {
+            "code": "EMN",
+            "name": "Eldritch Moon",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 1.2
+          },
+          {
+            "code": "INR",
+            "name": "Innistrad Remastered",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.2
+          },
+          {
+            "code": "MIC",
+            "name": "Midnight Hunt Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.09
+          }
+        ],
+        "codes": [
+          "EMN",
+          "INR",
+          "MIC"
+        ]
+      },
+      {
+        "id": "ixalan",
+        "name": "Ixalan",
+        "rows": 6,
+        "quantity": 6,
+        "marketTotal": 1.31,
+        "sets": [
+          {
+            "code": "LCC",
+            "name": "The Lost Caverns of Ixalan Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.3
+          },
+          {
+            "code": "LCI",
+            "name": "The Lost Caverns of Ixalan",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 0.93
+          },
+          {
+            "code": "XLN",
+            "name": "Ixalan",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.08
+          }
+        ],
+        "codes": [
+          "LCC",
+          "LCI",
+          "XLN"
+        ]
+      },
+      {
+        "id": "kamigawa",
+        "name": "Kamigawa",
+        "rows": 5,
+        "quantity": 5,
+        "marketTotal": 4.13,
+        "sets": [
+          {
+            "code": "NEC",
+            "name": "Neon Dynasty Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 1
+          },
+          {
+            "code": "NEO",
+            "name": "Kamigawa: Neon Dynasty",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 3.13
+          }
+        ],
+        "codes": [
+          "NEC",
+          "NEO"
+        ]
+      },
+      {
+        "id": "lorwyn",
+        "name": "Lorwyn",
+        "rows": 7,
+        "quantity": 8,
+        "marketTotal": 2.21,
+        "sets": [
+          {
+            "code": "ECC",
+            "name": "Lorwyn Eclipsed Commander",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.3
+          },
+          {
+            "code": "ECL",
+            "name": "Lorwyn Eclipsed",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.75
+          },
+          {
+            "code": "LRW",
+            "name": "Lorwyn",
+            "rows": 1,
+            "quantity": 2,
+            "marketTotal": 1.16
+          }
+        ],
+        "codes": [
+          "ECC",
+          "ECL",
+          "LRW"
+        ]
+      },
+      {
+        "id": "marvel",
+        "name": "Marvel Universes Beyond",
+        "rows": 462,
+        "quantity": 664,
+        "marketTotal": 424.38,
+        "sets": [
+          {
+            "code": "MAR",
+            "name": "Marvel Universe",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 20.34
+          },
+          {
+            "code": "MSC",
+            "name": "Marvel Super Heroes Commander",
+            "rows": 182,
+            "quantity": 204,
+            "marketTotal": 278.85
+          },
+          {
+            "code": "MSH",
+            "name": "Marvel Super Heroes",
+            "rows": 244,
+            "quantity": 399,
+            "marketTotal": 105.94
+          },
+          {
+            "code": "SPE",
+            "name": "Marvel's Spider-Man Eternal",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 15.91
+          },
+          {
+            "code": "SPM",
+            "name": "Marvel's Spider-Man",
+            "rows": 21,
+            "quantity": 21,
+            "marketTotal": 3.34
+          },
+          {
+            "code": "TMSC",
+            "name": "Marvel Super Heroes Commander Tokens",
+            "rows": 1,
+            "quantity": 10,
+            "marketTotal": 0
+          },
+          {
+            "code": "TMSH",
+            "name": "Marvel Super Heroes Tokens",
+            "rows": 12,
+            "quantity": 28,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "MAR",
+          "MSC",
+          "MSH",
+          "SPE",
+          "SPM",
+          "TMSC",
+          "TMSH"
+        ]
+      },
+      {
+        "id": "masters",
+        "name": "Masters and Reprints",
+        "rows": 14,
+        "quantity": 15,
+        "marketTotal": 4.39,
+        "sets": [
+          {
+            "code": "2XM",
+            "name": "Double Masters",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 2.6
+          },
+          {
+            "code": "EMA",
+            "name": "Eternal Masters",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.27
+          },
+          {
+            "code": "IMA",
+            "name": "Iconic Masters",
+            "rows": 1,
+            "quantity": 2,
+            "marketTotal": 0.28
+          },
+          {
+            "code": "MM2",
+            "name": "Modern Masters 2015",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0.45
+          },
+          {
+            "code": "MM3",
+            "name": "Modern Masters 2017",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.18
+          },
+          {
+            "code": "TSR",
+            "name": "Time Spiral Remastered",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 0.51
+          },
+          {
+            "code": "UMA",
+            "name": "Ultimate Masters",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.1
+          }
+        ],
+        "codes": [
+          "2XM",
+          "EMA",
+          "IMA",
+          "MM2",
+          "MM3",
+          "TSR",
+          "UMA"
+        ]
+      },
+      {
+        "id": "middle-earth",
+        "name": "Middle-earth Universes Beyond",
+        "rows": 3,
+        "quantity": 17,
+        "marketTotal": 0.38,
+        "sets": [
+          {
+            "code": "HOB",
+            "name": "The Hobbit",
+            "rows": 2,
+            "quantity": 16,
+            "marketTotal": 0
+          },
+          {
+            "code": "LTC",
+            "name": "Tales of Middle-earth Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.38
+          }
+        ],
+        "codes": [
+          "HOB",
+          "LTC"
+        ]
+      },
+      {
+        "id": "modern-horizons",
+        "name": "Modern Horizons",
+        "rows": 23,
+        "quantity": 23,
+        "marketTotal": 2.44,
+        "sets": [
+          {
+            "code": "H2R",
+            "name": "Modern Horizons 2 Timeshifts",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.38
+          },
+          {
+            "code": "M3C",
+            "name": "Modern Horizons 3 Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.2
+          },
+          {
+            "code": "MH1",
+            "name": "Modern Horizons",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "MH2",
+            "name": "Modern Horizons 2",
+            "rows": 12,
+            "quantity": 12,
+            "marketTotal": 0.17
+          },
+          {
+            "code": "MH3",
+            "name": "Modern Horizons 3",
+            "rows": 8,
+            "quantity": 8,
+            "marketTotal": 1.69
+          }
+        ],
+        "codes": [
+          "H2R",
+          "M3C",
+          "MH1",
+          "MH2",
+          "MH3"
+        ]
+      },
+      {
+        "id": "karlov-manor",
+        "name": "Murders at Karlov Manor",
+        "rows": 32,
+        "quantity": 33,
+        "marketTotal": 17.8,
+        "sets": [
+          {
+            "code": "MKC",
+            "name": "Murders at Karlov Manor Commander",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.48
+          },
+          {
+            "code": "MKM",
+            "name": "Murders at Karlov Manor",
+            "rows": 26,
+            "quantity": 27,
+            "marketTotal": 17.32
+          },
+          {
+            "code": "TMKM",
+            "name": "Murders at Karlov Manor Tokens",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "MKC",
+          "MKM",
+          "TMKM"
+        ]
+      },
+      {
+        "id": "new-capenna",
+        "name": "New Capenna",
+        "rows": 6,
+        "quantity": 6,
+        "marketTotal": 0.8,
+        "sets": [
+          {
+            "code": "NCC",
+            "name": "New Capenna Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "SNC",
+            "name": "Streets of New Capenna",
+            "rows": 5,
+            "quantity": 5,
+            "marketTotal": 0.8
+          }
+        ],
+        "codes": [
+          "NCC",
+          "SNC"
+        ]
+      },
+      {
+        "id": "other-magic",
+        "name": "Other Magic Sets",
+        "rows": 27,
+        "quantity": 27,
+        "marketTotal": 76.31,
+        "sets": [
+          {
+            "code": "AER",
+            "name": "Aether Revolt",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.34
+          },
+          {
+            "code": "AFR",
+            "name": "Adventures in the Forgotten Realms",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "CUSTOM",
+            "name": "Crystal Sully Custom Tokens",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0
+          },
+          {
+            "code": "DFT",
+            "name": "Aetherdrift",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.85
+          },
+          {
+            "code": "HA7",
+            "name": "Historic Anthology 7",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "IKO",
+            "name": "Ikoria: Lair of Behemoths",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0.33
+          },
+          {
+            "code": "KHM",
+            "name": "Kaldheim",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.69
+          },
+          {
+            "code": "MOM",
+            "name": "March of the Machine",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 7.32
+          },
+          {
+            "code": "PLST",
+            "name": "The List",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 12.41
+          },
+          {
+            "code": "SLD",
+            "name": "Secret Lair Drop",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 47.77
+          },
+          {
+            "code": "SPG",
+            "name": "Special Guests",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 6.41
+          },
+          {
+            "code": "TMOM",
+            "name": "March of the Machine Tokens",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "TWAR",
+            "name": "War of the Spark Tokens",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.19
+          },
+          {
+            "code": "UNF",
+            "name": "Unfinity",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "AER",
+          "AFR",
+          "CUSTOM",
+          "DFT",
+          "HA7",
+          "IKO",
+          "KHM",
+          "MOM",
+          "PLST",
+          "SLD",
+          "SPG",
+          "TMOM",
+          "TWAR",
+          "UNF"
+        ]
+      },
+      {
+        "id": "outlaws-thunder-junction",
+        "name": "Outlaws of Thunder Junction",
+        "rows": 10,
+        "quantity": 10,
+        "marketTotal": 18.36,
+        "sets": [
+          {
+            "code": "OTC",
+            "name": "Outlaws of Thunder Junction Commander",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 17.74
+          },
+          {
+            "code": "OTJ",
+            "name": "Outlaws of Thunder Junction",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 0.62
+          },
+          {
+            "code": "TOTC",
+            "name": "Outlaws of Thunder Junction Commander Tokens",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "OTC",
+          "OTJ",
+          "TOTC"
+        ]
+      },
+      {
+        "id": "phyrexia",
+        "name": "Phyrexia",
+        "rows": 5,
+        "quantity": 5,
+        "marketTotal": 2.35,
+        "sets": [
+          {
+            "code": "DDE",
+            "name": "Duel Decks: Phyrexia vs. the Coalition",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 1.65
+          },
+          {
+            "code": "ONE",
+            "name": "Phyrexia: All Will Be One",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 0.7
+          }
+        ],
+        "codes": [
+          "DDE",
+          "ONE"
+        ]
+      },
+      {
+        "id": "ravnica",
+        "name": "Ravnica",
+        "rows": 9,
+        "quantity": 11,
+        "marketTotal": 10.65,
+        "sets": [
+          {
+            "code": "CLU",
+            "name": "Ravnica: Clue Edition",
+            "rows": 1,
+            "quantity": 3,
+            "marketTotal": 8.4
+          },
+          {
+            "code": "DGM",
+            "name": "Dragon's Maze",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.28
+          },
+          {
+            "code": "GRN",
+            "name": "Guilds of Ravnica",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.11
+          },
+          {
+            "code": "RAV",
+            "name": "Ravnica: City of Guilds",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.85
+          },
+          {
+            "code": "RNA",
+            "name": "Ravnica Allegiance",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.06
+          },
+          {
+            "code": "RTR",
+            "name": "Return to Ravnica",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.1
+          },
+          {
+            "code": "RVR",
+            "name": "Ravnica Remastered",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0.5
+          },
+          {
+            "code": "TRTR",
+            "name": "Return to Ravnica Tokens",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.35
+          }
+        ],
+        "codes": [
+          "CLU",
+          "DGM",
+          "GRN",
+          "RAV",
+          "RNA",
+          "RTR",
+          "RVR",
+          "TRTR"
+        ]
+      },
+      {
+        "id": "strixhaven",
+        "name": "Strixhaven",
+        "rows": 164,
+        "quantity": 197,
+        "marketTotal": 130.83,
+        "sets": [
+          {
+            "code": "C21",
+            "name": "Commander 2021",
+            "rows": 75,
+            "quantity": 75,
+            "marketTotal": 111.19
+          },
+          {
+            "code": "SOA",
+            "name": "Secrets of Strixhaven Mystical Archive",
+            "rows": 5,
+            "quantity": 5,
+            "marketTotal": 1.27
+          },
+          {
+            "code": "SOC",
+            "name": "Secrets of Strixhaven Commander",
+            "rows": 19,
+            "quantity": 19,
+            "marketTotal": 0
+          },
+          {
+            "code": "SOS",
+            "name": "Secrets of Strixhaven",
+            "rows": 56,
+            "quantity": 69,
+            "marketTotal": 14.72
+          },
+          {
+            "code": "STX",
+            "name": "Strixhaven: School of Mages",
+            "rows": 7,
+            "quantity": 27,
+            "marketTotal": 3.65
+          },
+          {
+            "code": "TSOS",
+            "name": "Secrets of Strixhaven Tokens",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0
+          }
+        ],
+        "codes": [
+          "C21",
+          "SOA",
+          "SOC",
+          "SOS",
+          "STX",
+          "TSOS"
+        ]
+      },
+      {
+        "id": "tarkir",
+        "name": "Tarkir",
+        "rows": 16,
+        "quantity": 17,
+        "marketTotal": 40,
+        "sets": [
+          {
+            "code": "DTK",
+            "name": "Dragons of Tarkir",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.21
+          },
+          {
+            "code": "FRF",
+            "name": "Fate Reforged",
+            "rows": 6,
+            "quantity": 7,
+            "marketTotal": 1.02
+          },
+          {
+            "code": "KTK",
+            "name": "Khans of Tarkir",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.57
+          },
+          {
+            "code": "TDC",
+            "name": "Tarkir: Dragonstorm Commander",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 0.35
+          },
+          {
+            "code": "TDM",
+            "name": "Tarkir: Dragonstorm",
+            "rows": 3,
+            "quantity": 3,
+            "marketTotal": 37.85
+          }
+        ],
+        "codes": [
+          "DTK",
+          "FRF",
+          "KTK",
+          "TDC",
+          "TDM"
+        ]
+      },
+      {
+        "id": "tmnt",
+        "name": "Teenage Mutant Ninja Turtles Universes Beyond",
+        "rows": 6,
+        "quantity": 6,
+        "marketTotal": 4.96,
+        "sets": [
+          {
+            "code": "PZA",
+            "name": "Teenage Mutant Ninja Turtles Source Material",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 2.82
+          },
+          {
+            "code": "TMC",
+            "name": "Teenage Mutant Ninja Turtles Eternal",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "TMT",
+            "name": "Teenage Mutant Ninja Turtles",
+            "rows": 4,
+            "quantity": 4,
+            "marketTotal": 2.14
+          }
+        ],
+        "codes": [
+          "PZA",
+          "TMC",
+          "TMT"
+        ]
+      },
+      {
+        "id": "brothers-war",
+        "name": "The Brothers' War",
+        "rows": 3,
+        "quantity": 3,
+        "marketTotal": 0.71,
+        "sets": [
+          {
+            "code": "BRO",
+            "name": "The Brothers' War",
+            "rows": 2,
+            "quantity": 2,
+            "marketTotal": 0.3
+          },
+          {
+            "code": "BRR",
+            "name": "The Brothers' War Retro Artifacts",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.41
+          }
+        ],
+        "codes": [
+          "BRO",
+          "BRR"
+        ]
+      },
+      {
+        "id": "warhammer-40000",
+        "name": "Warhammer 40,000 Universes Beyond",
+        "rows": 2,
+        "quantity": 3,
+        "marketTotal": 19.1,
+        "sets": [
+          {
+            "code": "40K",
+            "name": "Warhammer 40,000 Commander",
+            "rows": 2,
+            "quantity": 3,
+            "marketTotal": 19.1
+          }
+        ],
+        "codes": [
+          "40K"
+        ]
+      },
+      {
+        "id": "eldraine",
+        "name": "Wilds of Eldraine",
+        "rows": 15,
+        "quantity": 15,
+        "marketTotal": 3.25,
+        "sets": [
+          {
+            "code": "ELD",
+            "name": "Throne of Eldraine",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.13
+          },
+          {
+            "code": "TWOE",
+            "name": "Wilds of Eldraine Tokens",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0
+          },
+          {
+            "code": "WOE",
+            "name": "Wilds of Eldraine",
+            "rows": 12,
+            "quantity": 12,
+            "marketTotal": 1.79
+          },
+          {
+            "code": "WOT",
+            "name": "Wilds of Eldraine: Enchanting Tales",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 1.33
+          }
+        ],
+        "codes": [
+          "ELD",
+          "TWOE",
+          "WOE",
+          "WOT"
+        ]
+      },
+      {
+        "id": "zendikar",
+        "name": "Zendikar",
+        "rows": 15,
+        "quantity": 29,
+        "marketTotal": 18.19,
+        "sets": [
+          {
+            "code": "BFZ",
+            "name": "Battle for Zendikar",
+            "rows": 6,
+            "quantity": 7,
+            "marketTotal": 1.04
+          },
+          {
+            "code": "WWK",
+            "name": "Worldwake",
+            "rows": 1,
+            "quantity": 2,
+            "marketTotal": 0.26
+          },
+          {
+            "code": "ZEN",
+            "name": "Zendikar",
+            "rows": 6,
+            "quantity": 18,
+            "marketTotal": 16.27
+          },
+          {
+            "code": "ZNC",
+            "name": "Zendikar Rising Commander",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.35
+          },
+          {
+            "code": "ZNR",
+            "name": "Zendikar Rising",
+            "rows": 1,
+            "quantity": 1,
+            "marketTotal": 0.27
+          }
+        ],
+        "codes": [
+          "BFZ",
+          "WWK",
+          "ZEN",
+          "ZNC",
+          "ZNR"
+        ]
+      }
+    ]
+  }
+}
