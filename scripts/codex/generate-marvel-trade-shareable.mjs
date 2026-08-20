@@ -2,10 +2,13 @@
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { gzipSync } from "node:zlib";
 
 const repoRoot = process.cwd();
-const shareableSlug = "marvel-trade-binder";
+const shareableSlug = "trade-binder";
+const legacyShareableSlug = "marvel-trade-binder";
 const outputDir = path.join(repoRoot, "docs", "shareables", shareableSlug);
+const legacyOutputDir = path.join(repoRoot, "docs", "shareables", legacyShareableSlug);
 const dataDir = path.join(outputDir, "data");
 const localCardImageDir = path.join(outputDir, "assets", "local-card-images");
 const localCardImages = new Map();
@@ -29,8 +32,14 @@ const setFamilyDefinitions = [
   {
     id: "marvel",
     name: "Marvel Universes Beyond",
-    codes: ["MAR", "MSC", "MSH", "SPM"],
+    codes: ["MAR", "MSC", "MSH", "SPE", "SPM", "TMSC", "TMSH"],
     matchNames: ["marvel", "spider-man"],
+  },
+  {
+    id: "warhammer-40000",
+    name: "Warhammer 40,000 Universes Beyond",
+    codes: ["40K"],
+    matchNames: ["warhammer"],
   },
   {
     id: "final-fantasy",
@@ -59,7 +68,7 @@ const setFamilyDefinitions = [
   {
     id: "middle-earth",
     name: "Middle-earth Universes Beyond",
-    codes: ["LTC", "HOB"],
+    codes: ["HOB", "LTC", "LTR"],
     matchNames: ["middle-earth", "hobbit"],
   },
   {
@@ -497,75 +506,75 @@ function deriveTradability({ owner, collectionId, tags, name, colorIdentity, dec
   const normalized = normalizeName(name);
   if (owner === "Eleni") {
     return {
-      key: "not_tradable",
-      label: "Not tradable",
-      rank: 3,
+      key: "not_available",
+      label: "Not available for trade",
+      rank: 4,
       personalValue: 5,
       reason: "Owned by Eleni",
     };
   }
   if (/dogmeat/i.test(name)) {
     return {
-      key: "not_tradable",
-      label: "Not tradable",
-      rank: 3,
+      key: "not_available",
+      label: "Not available for trade",
+      rank: 4,
       personalValue: 5,
       reason: "Dogmeat commander copy",
     };
   }
   if (collectionId === "custom-token-photos" || tags.includes("custom-token")) {
     return {
-      key: "not_tradable",
-      label: "Not tradable",
-      rank: 3,
+      key: "not_available",
+      label: "Not available for trade",
+      rank: 4,
       personalValue: 4,
       reason: "Custom token photo reference",
     };
   }
   if (collectionId === "artist-signed-cards" || tags.includes("artist-signed") || tags.includes("signed-by-artist")) {
     return {
-      key: "high_value",
-      label: "Hard trade",
+      key: "ask_about_trade",
+      label: "Ask about trade",
       rank: 2,
       personalValue: 5,
-      reason: "Signed artist card",
+      reason: "Signed artist card. Ask Kyle before treating it as tradeable.",
     };
   }
   if (decks.avengers.has(normalized) || tags.includes("avengers-assemble")) {
     return {
-      key: "high_value",
-      label: "Hard trade",
+      key: "ask_about_trade",
+      label: "Ask about trade",
       rank: 2,
       personalValue: 5,
-      reason: deckTradeRules.avengers.label,
+      reason: `${deckTradeRules.avengers.label}. Ask Kyle before treating it as tradeable.`,
     };
   }
   if (collectionId === "fallout-themed-cards") {
     if (decks.scrappy.has(normalized) || tags.includes("deck-scrappy-survivors")) {
       return {
-        key: "high_value",
-        label: "Hard trade",
+        key: "ask_about_trade",
+        label: "Ask about trade",
         rank: 2,
         personalValue: 5,
-        reason: deckTradeRules.scrappy.label,
+        reason: `${deckTradeRules.scrappy.label}. Ask Kyle before treating it as tradeable.`,
       };
     }
     if (nayaOnly(colorIdentity)) {
       return {
-        key: "high_value",
-        label: "Hard trade",
+        key: "ask_about_trade",
+        label: "Ask about trade",
         rank: 2,
         personalValue: 5,
-        reason: "Fallout red/green/white fit",
+        reason: "Fallout red/green/white fit. Ask Kyle before treating it as tradeable.",
       };
     }
   }
   return {
-    key: "neutral",
-    label: "Tradable",
-    rank: 1,
+    key: "ask_about_trade",
+    label: "Ask about trade",
+    rank: 2,
     personalValue: 3,
-    reason: "Neutral trade value",
+    reason: "Availability has not been reviewed. Ask Kyle before treating this card as tradeable.",
   };
 }
 
@@ -578,21 +587,24 @@ function humanizeTradeStatus(status) {
 
 function explicitTradability(row) {
   const status = String(row.trade_status || "").trim().toLowerCase();
-  if (!status) return null;
+  const note = publicNote(row.trade_notes);
+  // `not_for_trade` was bulk-imported as the default, so it only remains a
+  // hard no when a curator supplied a real public note. No row is presented
+  // as confirmed available until Kyle has reviewed it.
+  if (!status || status === "available" || status === "maybe" || (status === "not_for_trade" && !note)) return null;
   const defaults = {
-    available: { label: "Available to trade", rank: 1, personalValue: 1 },
-    maybe: { label: "Maybe trade", rank: 2, personalValue: 3 },
-    reserved: { label: "Reserved", rank: 3, personalValue: 5 },
-    not_for_trade: { label: "Not tradable", rank: 4, personalValue: 5 },
-    traded: { label: "Traded", rank: 5, personalValue: 5 },
+    not_tradable: { key: "not_available", label: "Not available for trade", rank: 4, personalValue: 5 },
+    reserved: { key: "not_available", label: "Not available for trade", rank: 4, personalValue: 5 },
+    not_for_trade: { key: "not_available", label: "Not available for trade", rank: 4, personalValue: 5 },
+    traded: { key: "not_available", label: "Not available for trade", rank: 4, personalValue: 5 },
   };
-  const definition = defaults[status] || { label: humanizeTradeStatus(status), rank: 3, personalValue: 3 };
+  const definition = defaults[status] || { key: "not_available", label: "Not available for trade", rank: 4, personalValue: 5 };
   return {
-    key: status,
+    key: definition.key,
     label: definition.label,
     rank: definition.rank,
     personalValue: parseNumber(row.personal_value) ?? definition.personalValue,
-    reason: publicNote(row.trade_notes) || `Forge trade status: ${humanizeTradeStatus(status)}`,
+    reason: note || `Forge trade status: ${humanizeTradeStatus(status)}`,
   };
 }
 
@@ -610,9 +622,9 @@ function toPublicCard(row, context) {
   const name = row.card_name || scryfall.name || sourceRow.manabox?.Name || sourceRow.csv?.["Card Name"] || "Unknown card";
   const tradability = isProxy
     ? {
-        key: "not_tradable",
-        label: "Proxy - not tradable",
-        rank: 3,
+        key: "not_available",
+        label: "Not available for trade",
+        rank: 4,
         personalValue: 5,
         reason: "Custom proxy, not official owned inventory",
       }
@@ -788,7 +800,7 @@ function buildSummary(cards, includedCollections) {
   const marketTotal = cards.reduce((total, card) => total + (card.marketTotal || 0), 0);
   const sortedSets = Array.from(sets.values()).sort((a, b) => a.code.localeCompare(b.code));
   return {
-    title: "Owned Card Trade Binders",
+    title: "Trade Binder",
     slug: shareableSlug,
     generatedAt,
     rowCount: cards.length,
@@ -852,7 +864,7 @@ function pageHtml(summary) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Browse Kyle and Eleni owned Magic card binders with filters, tradability notes, comparison, preview, and export.">
+    <meta name="description" content="A fast, public Magic card trade binder with clear availability notes, mobile-friendly search, filters, comparison, and exports.">
     <meta name="theme-color" content="#141413">
     <title>${summary.title} | Homebrew Forge</title>
     <script>document.documentElement.classList.add("js-enhanced");</script>
@@ -862,8 +874,9 @@ function pageHtml(summary) {
     <a class="skip-link" href="#results">Skip to cards</a>
     <header class="app-header">
       <div>
-        <p class="eyebrow">Homebrew Forge shareable</p>
+        <p class="eyebrow">Homebrew Forge · public collection</p>
         <h1>${summary.title}</h1>
+        <p class="header-copy">Search first, then filter and export only the cards you want to discuss for a trade.</p>
       </div>
       <div class="header-stats" aria-label="Collection summary">
         <span><strong>${summary.totalQuantity}</strong> cards</span>
@@ -889,8 +902,9 @@ function pageHtml(summary) {
         <div class="search-row">
           <label class="field field-search" for="searchInput">
             <span>Search</span>
-            <input id="searchInput" type="search" placeholder="Name, type, rules text, tags" autocomplete="off">
+            <input id="searchInput" type="search" placeholder="Search name, rules text, set, or tag" autocomplete="off" aria-describedby="searchHint">
           </label>
+          <p id="searchHint" class="search-hint">Fast local search. Results update as you pause typing.</p>
           <label class="field" for="sortSelect">
             <span>Sort</span>
             <select id="sortSelect">
@@ -913,26 +927,29 @@ function pageHtml(summary) {
           </div>
         </div>
 
-        <div class="filter-grid">
-          <label class="field" for="binderFilter"><span>Add binder</span><select id="binderFilter" data-filter="binder"></select></label>
-          <label class="field" for="setFamilyFilter"><span>Add set family</span><select id="setFamilyFilter" data-filter="setFamily"></select></label>
-          <label class="field" for="setFilter"><span>Add set</span><select id="setFilter" data-filter="set"></select></label>
-          <label class="field" for="ownerFilter"><span>Add owner</span><select id="ownerFilter" data-filter="owner"></select></label>
-          <label class="field" for="tradabilityFilter"><span>Add tradability</span><select id="tradabilityFilter" data-filter="tradability"></select></label>
-          <label class="field" for="colorFilter"><span>Add color</span><select id="colorFilter" data-filter="color"></select></label>
-          <label class="field" for="typeFilter"><span>Add type</span><select id="typeFilter" data-filter="type"></select></label>
-          <label class="field" for="rarityFilter"><span>Add rarity</span><select id="rarityFilter" data-filter="rarity"></select></label>
-          <label class="field" for="finishFilter"><span>Add finish</span><select id="finishFilter" data-filter="finish"></select></label>
-          <label class="field" for="conditionFilter"><span>Add condition</span><select id="conditionFilter" data-filter="condition"></select></label>
-          <button id="resetFilters" class="secondary-action" type="button">Reset</button>
-        </div>
+        <details class="advanced-filters">
+          <summary>More filters <span>owner, availability, color, print, and condition</span></summary>
+          <div class="filter-grid">
+            <label class="field" for="binderFilter"><span>Add binder</span><select id="binderFilter" data-filter="binder"></select></label>
+            <label class="field" for="setFamilyFilter"><span>Add set family</span><select id="setFamilyFilter" data-filter="setFamily"></select></label>
+            <label class="field" for="setFilter"><span>Add set</span><select id="setFilter" data-filter="set"></select></label>
+            <label class="field" for="ownerFilter"><span>Add owner</span><select id="ownerFilter" data-filter="owner"></select></label>
+            <label class="field" for="tradabilityFilter"><span>Add availability</span><select id="tradabilityFilter" data-filter="tradability"></select></label>
+            <label class="field" for="colorFilter"><span>Add color</span><select id="colorFilter" data-filter="color"></select></label>
+            <label class="field" for="typeFilter"><span>Add type</span><select id="typeFilter" data-filter="type"></select></label>
+            <label class="field" for="rarityFilter"><span>Add rarity</span><select id="rarityFilter" data-filter="rarity"></select></label>
+            <label class="field" for="finishFilter"><span>Add finish</span><select id="finishFilter" data-filter="finish"></select></label>
+            <label class="field" for="conditionFilter"><span>Add condition</span><select id="conditionFilter" data-filter="condition"></select></label>
+            <button id="resetFilters" class="secondary-action" type="button">Reset filters</button>
+          </div>
+        </details>
         <div id="activeFilters" class="active-filters" aria-label="Active filters"></div>
       </section>
 
       <section class="selection-bar" aria-label="Selection actions">
         <div>
           <strong id="resultCount">${summary.rowCount}</strong>
-          <span id="resultLabel">cards shown</span>
+          <span id="resultLabel">matching cards</span>
           <span class="bar-dot" aria-hidden="true"></span>
           <strong id="selectedCount">0</strong>
           <span>selected</span>
@@ -1043,10 +1060,11 @@ a { color: #b9c7ff; }
 }
 h1 {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 4.2rem);
-  line-height: 0.95;
+  font-size: clamp(2rem, 5vw, 3.55rem);
+  line-height: 1;
   letter-spacing: 0;
 }
+.header-copy { max-width: 42rem; margin: 0.7rem 0 0; color: var(--muted); line-height: 1.45; }
 .header-stats {
   display: flex;
   flex-wrap: wrap;
@@ -1132,6 +1150,7 @@ main {
   padding: 0.65rem 0.75rem;
 }
 .field-search { grid-column: span 6; }
+.search-hint { grid-column: span 6; margin: -0.15rem 0 0; color: var(--dim); font-size: 0.82rem; }
 .search-row > .field:not(.field-search) { grid-column: span 2; }
 .view-toggle {
   grid-column: span 4;
@@ -1147,6 +1166,25 @@ main {
 }
 .filter-grid > .field { grid-column: span 2; }
 .secondary-action { grid-column: span 2; }
+.advanced-filters {
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: rgba(20, 20, 18, 0.56);
+}
+.advanced-filters summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 750;
+}
+.advanced-filters summary span { color: var(--dim); font-size: 0.82rem; font-weight: 500; }
+.advanced-filters[open] summary { border-bottom: 1px solid var(--line-soft); }
+.advanced-filters .filter-grid { padding: 0.75rem; }
 .active-filters {
   display: flex;
   flex-wrap: wrap;
@@ -1337,6 +1375,18 @@ main {
   color: #101711;
   font-weight: 800;
 }
+.load-more {
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: rgba(36, 35, 31, 0.72);
+  color: var(--muted);
+}
+.load-more button { min-width: min(100%, 18rem); }
 
 .table-wrap {
   overflow-x: auto;
@@ -1621,7 +1671,7 @@ td strong { color: var(--text); }
 @media (max-width: 1080px) {
   .app-header, .selection-bar, .compare-grid { grid-template-columns: 1fr; }
   .header-stats, .selection-actions { justify-content: start; }
-  .field-search, .search-row > .field:not(.field-search), .view-toggle, .filter-grid > .field, .secondary-action { grid-column: span 6; }
+  .field-search, .search-hint, .search-row > .field:not(.field-search), .view-toggle, .filter-grid > .field, .secondary-action { grid-column: span 6; }
   .selection-bar { top: 12.2rem; }
 }
 @media (max-width: 660px) {
@@ -1629,7 +1679,8 @@ td strong { color: var(--text); }
   .app-header { padding-inline: 0.75rem; }
   .header-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: stretch; }
   .toolbar, .selection-bar { position: static; }
-  .field-search, .search-row > .field:not(.field-search), .view-toggle, .filter-grid > .field, .secondary-action { grid-column: 1 / -1; }
+  .field-search, .search-hint, .search-row > .field:not(.field-search), .view-toggle, .filter-grid > .field, .secondary-action { grid-column: 1 / -1; }
+  .advanced-filters summary { align-items: flex-start; flex-direction: column; gap: 0.1rem; }
   .view-toggle { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid-view, .compare-card, .preview-dialog, .candidate-controls, .comparison-row, .review-card { grid-template-columns: 1fr; }
   .set-row { grid-template-columns: 1fr; }
@@ -1652,8 +1703,11 @@ function scriptJs() {
   return extractBlock(function () { /*
 const state = {
   cards: [],
+  cardIndex: new Map(),
   summary: null,
   filtered: [],
+  pageSize: 72,
+  visibleLimit: 72,
   view: "grid",
   selected: new Set(),
   marked: new Set(),
@@ -1721,7 +1775,7 @@ function money(value, currency = "USD") {
 function normalize(value) { return String(value || "").toLowerCase(); }
 function colorLabel(colors) { return !colors || colors.length === 0 ? "Colorless" : colors.join(""); }
 function compareValue(value) { return value === null || value === undefined ? -Infinity : Number(value); }
-function cardById(cardId) { return state.cards.find((card) => card.id === cardId); }
+function cardById(cardId) { return state.cardIndex.get(cardId); }
 function scryfallImage(card) {
   return card?.image_uris?.normal || card?.card_faces?.[0]?.image_uris?.normal || "";
 }
@@ -1945,7 +1999,7 @@ function colorMatch(card) {
 }
 function matchesFilters(card) {
   const search = normalize(state.filters.search);
-  if (search && !normalize(cardSearchText(card)).includes(search)) return false;
+  if (search && !card.searchText.includes(search)) return false;
   if (!multiMatch(state.filters.binder, card.collectionId)) return false;
   if (!familyMatch(card)) return false;
   if (!multiMatch(state.filters.set, card.setCode)) return false;
@@ -1983,6 +2037,7 @@ function sortCards(cards) {
 }
 function applyFilters() {
   state.filtered = sortCards(state.cards.filter(matchesFilters));
+  state.visibleLimit = state.pageSize;
   if (state.view === "review" && !state.filtered.some((card) => card.id === state.reviewId)) {
     state.reviewId = state.filtered[0]?.id || null;
   }
@@ -2085,13 +2140,22 @@ function cardShell(card) {
     </div>
   </article>`;
 }
-function renderGrid(cards = state.filtered) {
-  return `<div class="grid-view">${cards.map(cardShell).join("")}</div>`;
+function renderLoadMore() {
+  if (state.visibleLimit >= state.filtered.length) return "";
+  const rendered = Math.min(state.visibleLimit, state.filtered.length);
+  const next = Math.min(state.pageSize, state.filtered.length - rendered);
+  return `<div class="load-more"><span>Showing ${rendered} of ${state.filtered.length} matching cards</span><button type="button" data-action="load-more">Show ${next} more</button></div>`;
+}
+function visibleCards() {
+  return state.filtered.slice(0, state.visibleLimit);
+}
+function renderGrid() {
+  return `<div class="grid-view">${visibleCards().map(cardShell).join("")}</div>${renderLoadMore()}`;
 }
 function renderTable() {
   return `<div class="table-wrap"><table><thead><tr>
     <th>Name</th><th>Binder</th><th>Owner</th><th>Tradability</th><th>Set</th><th>Qty</th><th>Market</th><th>Type</th><th>Actions</th>
-  </tr></thead><tbody>${state.filtered.map((card) => `<tr>
+  </tr></thead><tbody>${visibleCards().map((card) => `<tr>
     <td><strong>${escapeHtml(card.name)}</strong><br>${escapeHtml(card.rarity)}</td>
     <td>${escapeHtml(card.binderName)}</td>
     <td>${escapeHtml(card.owner)}</td>
@@ -2107,7 +2171,7 @@ function renderTable() {
       <button type="button" data-action="compare" data-card-id="${escapeHtml(card.id)}">Compare</button>
       <button type="button" data-action="preview" data-card-id="${escapeHtml(card.id)}">View</button>
     </div></td>
-  </tr>`).join("")}</tbody></table></div>`;
+  </tr>`).join("")}</tbody></table></div>${renderLoadMore()}`;
 }
 function setRow(card) {
   return `<div class="set-row">
@@ -2391,6 +2455,7 @@ function downloadXml() {
 }
 
 let scryfallRequest = null;
+let searchTimer = null;
 function buildScryfallQuery(query) {
   const trimmed = query.trim();
   if (/[:!<>=]/.test(trimmed)) return trimmed;
@@ -2481,7 +2546,11 @@ function syncCandidateComparison() {
 function wireEvents() {
   els.searchInput.addEventListener("input", (event) => {
     state.filters.search = event.target.value;
-    applyFilters();
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      searchTimer = null;
+      applyFilters();
+    }, 120);
   });
   els.sortSelect.addEventListener("change", (event) => {
     state.filters.sort = event.target.value;
@@ -2551,6 +2620,11 @@ function wireEvents() {
   els.results.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
+    if (button.dataset.action === "load-more") {
+      state.visibleLimit += state.pageSize;
+      render();
+      return;
+    }
     const cardId = button.dataset.cardId;
     if (button.dataset.action === "select") toggleSelected(cardId);
     if (button.dataset.action === "mark") toggleMarked(cardId);
@@ -2617,10 +2691,17 @@ async function init() {
     "binderShelf", "setFamilyShelf", "searchInput", "sortSelect", "binderFilter", "setFamilyFilter", "setFilter", "ownerFilter", "tradabilityFilter", "colorFilter", "typeFilter", "rarityFilter", "finishFilter", "conditionFilter", "resetFilters", "activeFilters", "selectVisible", "selectMarked", "compareSelected", "clearSelection", "downloadCsv", "downloadTxt", "downloadXml", "resultCount", "resultLabel", "selectedCount", "markedCount", "results", "previewModal",
   ]) els[id] = byId(id);
 
-  const response = await fetch("./data/cards.json");
-  const payload = await response.json();
+  const compressedResponse = await fetch("./data/cards.json.gz");
+  if (!compressedResponse.ok || !compressedResponse.body || !("DecompressionStream" in globalThis)) {
+    throw new Error("This browser cannot load the compressed local card catalogue.");
+  }
+  const payload = await new Response(compressedResponse.body.pipeThrough(new DecompressionStream("gzip"))).json();
   state.summary = payload.summary;
   state.cards = payload.cards;
+  for (const card of state.cards) {
+    card.searchText = normalize(cardSearchText(card));
+    state.cardIndex.set(card.id, card);
+  }
   initFilters();
   wireEvents();
   applyFilters();
@@ -2671,20 +2752,18 @@ The public data excludes raw import rows, local file paths, source spreadsheet p
 
 ## Current Tradability Rules
 
-- Eleni-owned cards, including Squirrel Away and partner precons, are not tradable.
-- Dogmeat commander copies are not tradable.
-- Avengers Assemble deck cards are hard trades.
-- Fallout Scrappy Survivors deck cards and red/green/white Fallout cards without blue or black are hard trades.
-- Artist-signed cards are hard trades.
-- Other Kyle-owned cards default to neutral tradability.
-- Explicit \`trade_status\` values from collection rows override inferred trade policy.
+- Eleni-owned cards, including Squirrel Away and partner precons, are not available for trade.
+- Dogmeat commander copies and custom token photo references are not available for trade.
+- Every other physical card is labeled Ask about trade, including deck and artist-signed cards.
+- The bulk-import not_for_trade default is not treated as a reviewed decision.
+- A named not_for_trade status with an actual public trade note, plus reserved, traded, and not-tradable records, remains unavailable.
 
 ## Future Auto Shareables
 
 1. Move this generator behind an in-app Shareable Builder action on Collections.
 2. Let Kyle choose a privacy profile before writing public data.
 3. Keep tradability rules in a small editable policy file instead of this script.
-4. Generate to \`docs/shareables/<slug>/\` with \`data/cards.json\` and \`shareable-spec.json\`.
+4. Generate to \`docs/shareables/<slug>/\` with a small \`data/cards.json\` manifest, the compressed \`data/cards.json.gz\` catalogue, and \`shareable-spec.json\`.
 5. Add a publish step that commits and pushes only the generated artifact after visual QA.
 `;
 }
@@ -2751,20 +2830,53 @@ function specJson(summary) {
   };
 }
 
+function canonicalTradeBinderRedirectHtml() {
+  const destination = "https://jonathankhobson.github.io/trade-binder/";
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="0; url=${destination}">
+    <link rel="canonical" href="${destination}">
+    <title>Trade Binder moved</title>
+    <script>location.replace("${destination}" + location.search + location.hash);</script>
+  </head>
+  <body>
+    <p>The Trade Binder has moved. <a href="${destination}">Open the updated Trade Binder</a>.</p>
+  </body>
+</html>
+`;
+}
+
 async function main() {
   const { cards, includedCollections } = await loadCards();
   const summary = buildSummary(cards, includedCollections);
+  const payloadJson = `${JSON.stringify({ summary, cards }, null, 2)}\n`;
+  const manifestJson = `${JSON.stringify({
+    summary,
+    cards: [],
+    compressedCatalogue: {
+      path: "cards.json.gz",
+      compression: "gzip",
+      format: "json",
+      note: "The full public catalogue is loaded by the trade-binder app from this compressed local file."
+    }
+  }, null, 2)}\n`;
   await mkdir(dataDir, { recursive: true });
+  await mkdir(legacyOutputDir, { recursive: true });
   await rm(localCardImageDir, { recursive: true, force: true });
   await mkdir(localCardImageDir, { recursive: true });
   await Promise.all(Array.from(localCardImages, ([publicName, sourcePath]) => copyFile(sourcePath, path.join(localCardImageDir, publicName))));
   await Promise.all([
-    writeFile(path.join(dataDir, "cards.json"), `${JSON.stringify({ summary, cards }, null, 2)}\n`),
-    writeFile(path.join(outputDir, "index.html"), pageHtml(summary)),
+    writeFile(path.join(dataDir, "cards.json"), manifestJson),
+    writeFile(path.join(dataDir, "cards.json.gz"), gzipSync(payloadJson)),
+    writeFile(path.join(outputDir, "index.html"), canonicalTradeBinderRedirectHtml()),
     writeFile(path.join(outputDir, "styles.css"), stylesCss()),
     writeFile(path.join(outputDir, "script.js"), scriptJs()),
     writeFile(path.join(outputDir, "README.md"), readme(summary)),
     writeFile(path.join(outputDir, "shareable-spec.json"), `${JSON.stringify(specJson(summary), null, 2)}\n`),
+    writeFile(path.join(legacyOutputDir, "index.html"), canonicalTradeBinderRedirectHtml()),
   ]);
   console.log(`Wrote ${cards.length} public rows to ${path.relative(repoRoot, outputDir)}`);
   console.log(`${summary.totalQuantity} physical cards across ${summary.binderCount} binders and ${summary.setCount} sets, ${summary.marketTotalFormatted} market snapshot`);
