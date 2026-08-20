@@ -12,12 +12,12 @@ Static GitHub Pages artifact for browsing Kyle and Eleni owned collection binder
 ## Scope
 
 - Public artifact: `docs/shareables/trade-binder/`
-- Generated at: `2026-07-26T02:14:05.802Z`
-- Binders: 26
-- Sets: 164
-- Rows: 1742
-- Total quantity: 2198
-- Market snapshot: $1,487.28
+- Generated at: `2026-08-20T19:56:41.216Z`
+- Binders: 27
+- Sets: 168
+- Rows: 2039
+- Total quantity: 2895
+- Market snapshot: $1,737.10
 
 The public data excludes raw import rows, local file paths, source spreadsheet paths, importer IDs, and auto-generated import notes. Partner-owned cards are visible for browsing but marked not tradable. Explicit Forge trade status is authoritative when present, and designated private Scryfall IDs are omitted before totals are calculated.
 
@@ -35,13 +35,11 @@ The public data excludes raw import rows, local file paths, source spreadsheet p
 
 ## Current Tradability Rules
 
-- Eleni-owned cards, including Squirrel Away and partner precons, are not tradable.
-- Dogmeat commander copies are not tradable.
-- Avengers Assemble deck cards are hard trades.
-- Fallout Scrappy Survivors deck cards and red/green/white Fallout cards without blue or black are hard trades.
-- Artist-signed cards are hard trades.
-- Other Kyle-owned cards default to neutral tradability.
-- Explicit `trade_status` values from collection rows override inferred trade policy.
+- Eleni-owned cards, including Squirrel Away and partner precons, are not available for trade.
+- Dogmeat commander copies and custom token photo references are not available for trade.
+- Every other physical card is labeled Ask about trade, including deck and artist-signed cards.
+- The bulk-import not_for_trade default is not treated as a reviewed decision.
+- A named not_for_trade status with an actual public trade note, plus reserved, traded, and not-tradable records, remains unavailable.
 
 ## Future Auto Shareables
 
