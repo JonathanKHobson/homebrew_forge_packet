@@ -2,6 +2,10 @@
 
 Purpose: build a reusable, local, spreadsheet-first program for making and maintaining **any** Magic-style homebrew card set or deck, including older sets you already made, without making the workflow depend on MTG.design, Black Panther/Wakanda/Shuri, or any one theme.
 
+## Current implementation
+
+The repository already contains a working TypeScript workspace: `packages/forge/` provides the CLI and rendering core, `packages/editor/` provides the local editor, and `docs/shareables/` contains published Pages artifacts. Start with the [project map](docs/project-map.md) and the [current vertical slice](#current-vertical-slice) below. The architecture and `forge` loop that follow also describe intended workflow; use the shipped commands in the current vertical slice for this checkout.
+
 ## Recommended architecture
 
 Build a TypeScript/React + Node CLI app with a shared rendering core:
@@ -111,9 +115,9 @@ skills/homebrew-forge/
   SKILL.md
 ```
 
-## First practical build target
+## Original target workflow (design reference)
 
-Do not start with every frame in Magic history. Start with this reproducible loop:
+This block is a design target, not a command sequence verified in the current checkout. In particular, the current CLI does not define `forge init`. Use the shipped commands under [Current vertical slice](#current-vertical-slice) for maintenance. The original target was:
 
 ```text
 forge init
@@ -140,7 +144,7 @@ This packet now includes a working TypeScript workspace under `packages/forge`:
 - writes individual PNGs under `output/<SET>/images/`,
 - writes Cockatrice XML, custom images, and a ZIP under `output/<SET>/cockatrice/`.
 
-On this Mac, bootstrap local pnpm first because there is no global npm/pnpm:
+For a fresh clone, bootstrap the repo-local pnpm wrapper before running these commands:
 
 ```bash
 ./scripts/bootstrap-pnpm.sh
