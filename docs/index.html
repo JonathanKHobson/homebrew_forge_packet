@@ -5,7 +5,7 @@
 (function () {
   if (location.hostname !== 'jonathankhobson.github.io') return;
   if (new URLSearchParams(location.search).get('_legacy') === '1') return;
-  const sourcePrefix = '/homebrew_forge_packet/docs/';
+  const sourcePrefix = '/homebrew_forge_packet/';
   if (!location.pathname.startsWith(sourcePrefix)) return;
   location.replace('https://gamemaster-kyle.jkylehobson.chatgpt.site/homebrew-forge/' + location.pathname.slice(sourcePrefix.length) + location.search + location.hash);
 })();
