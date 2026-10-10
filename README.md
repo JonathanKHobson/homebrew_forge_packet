@@ -163,3 +163,9 @@ PATH="$PWD/node_modules/.bin:$PATH" forge assets check --pack basic-m15-local --
 PATH="$PWD/node_modules/.bin:$PATH" forge render --set DEMO --profile review_png
 PATH="$PWD/node_modules/.bin:$PATH" forge export cockatrice --set DEMO --zip
 ```
+
+## Site publication
+
+The `docs/` tree remains this repository’s public Pages source. The native GameMasterKyle Site hosts a pinned projection under `/homebrew-forge/`; GitHub Pages remains a compatibility address and source for original downloads.
+
+[Open the current public experience](https://gamemaster-kyle.jkylehobson.chatgpt.site/homebrew-forge/).
